@@ -12,22 +12,22 @@ class _ClientModuleState extends State<ClientModule> {
   final List<Map<String, dynamic>> items = [
     {
       'client_name': 'Jams Karter',
-      'created_at': '2024-03-14 10:23:36',
+      'created_at': 'Gurugram',
       'is_active': true,
     },
     {
       'client_name': 'Peter Parker',
-      'created_at': '2024-03-15 11:45:20',
+      'created_at': 'Mumbai',
       'is_active': false,
     },
     {
       'client_name': 'Ken Tino',
-      'created_at': '2024-03-15 11:45:20',
+      'created_at': 'Jaipur',
       'is_active': false,
     },
     {
       'client_name': 'Will Smith',
-      'created_at': '2024-03-15 11:45:20',
+      'created_at': 'Delhi',
       'is_active': true,
     },
   ];
@@ -37,7 +37,7 @@ class _ClientModuleState extends State<ClientModule> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Client Module",
+          "Client",
           style: TextStyle(
             fontSize: 24.0,
             color: colorMixGrad, // Replace with your colorSecondGrad
@@ -49,6 +49,72 @@ class _ClientModuleState extends State<ClientModule> {
       body: Container(
         child: Column(
           children: [
+
+        Padding(
+        padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [colorFirstGrad, colorSecondGrad],
+                  ),
+                  borderRadius: BorderRadius.circular(25.0),
+                ),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.grey[200],
+                    borderRadius: BorderRadius.circular(10.0),
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Row(
+                    children: [
+                      Icon(Icons.search, color: Colors.grey),
+                      SizedBox(width: 10.0),
+                      Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search',
+                            hintStyle: TextStyle(color: Colors.grey),
+                            border: InputBorder.none,
+                          ),
+                          style: TextStyle(
+                            fontSize: 16.0,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 20.0), // Spacer between search and add button
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [colorFirstGrad, colorSecondGrad],
+                ),
+                borderRadius: BorderRadius.circular(25.0),
+              ),
+              child: IconButton(
+                onPressed: () {
+                  // Navigate to add client screen
+                  Navigator.pushNamed(context, '/add_client');
+                },
+                icon: Icon(
+                  Icons.add,
+                  color: Colors.white,
+                ),
+                iconSize: 30.0,
+              ),
+            ),
+          ],
+        ),
+      ),
+
             Expanded(
               child: SingleChildScrollView(
                 child: Padding(
@@ -62,72 +128,7 @@ class _ClientModuleState extends State<ClientModule> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [colorFirstGrad,colorSecondGrad],
-                        ),
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Handle search button press
-                          // Implement search functionality
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 12.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20.0),
-                          ),
-                        ),
-                        child: const Text(
-                          'Search',
-                          style: TextStyle(color: Colors.white,fontSize: 18),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 20.0), // Spacer between buttons
-                  Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [colorFirstGrad, colorSecondGrad],
-                        ),
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Navigate to add client screen
-                          Navigator.pushNamed(context, '/add_client');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(horizontal: 35.0, vertical: 12.0),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25.0),
-                          ),
-                        ),
-                        child: const Text(
-                          'Add',
-                          style: TextStyle(color: Colors.white,fontSize: 18),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 48)
+
           ],
         ),
       ),
@@ -452,17 +453,18 @@ class ScannedHistoryList extends StatelessWidget {
       physics: NeverScrollableScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
-
+        // Determine the background color based on is_active status
+        Color? cardColor = items[index]['is_active'] ? Colors.red[10] : Colors.grey[300];
 
         return Card(
           margin: const EdgeInsets.all(8.0),
-          elevation: 1.0,
+          elevation: 2.0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
-          color: Color.fromRGBO(245, 246, 250, 1), // Set the color based on is_active status
+          color: cardColor, // Set the color based on is_active status
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.only(left: 12.0,bottom: 12.0,right: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -474,12 +476,7 @@ class ScannedHistoryList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Client Name:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 4.0),
-                          Text(items[index]['client_name']),
+                          Text(items[index]['client_name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                         ],
                       ),
                     ),
@@ -493,49 +490,12 @@ class ScannedHistoryList extends StatelessWidget {
                             _showEditDialog(context, items[index]);
                           },
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            // Show delete confirmation dialog
-                            _showDeleteDialog(context, index);
-                          },
-                        ),
                       ],
                     ),
                   ],
                 ),
-                SizedBox(height: 4.0),
-                Text(
-                  'Created at:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 4.0),
-                Text(items[index]['created_at']),
-                SizedBox(height: 8.0),
-                Text(
-                  'Is Active:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 4.0),
-                Row(
-                  children: [
-                    items[index]['is_active']
-                        ? Row(
-                      children: [
-                        Text('Yes'),
-                        SizedBox(width: 4.0),
-                        Icon(Icons.check, color: Colors.green),
-                      ],
-                    )
-                        : Row(
-                      children: [
-                        Text('No'),
-                        SizedBox(width: 4.0),
-                        Icon(Icons.close, color: Colors.red),
-                      ],
-                    ),
-                  ],
-                ),
+                Text(items[index]['created_at'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4.0),
               ],
             ),
           ),
@@ -544,41 +504,6 @@ class ScannedHistoryList extends StatelessWidget {
     );
   }
 
-
-
-
-  void _showDeleteDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete this item?'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Delete'),
-              onPressed: () {
-                // Perform delete action
-                _deleteItem(index);
-                Navigator.of(context).pop(); // Close dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _deleteItem(int index) {
-    // Implement your delete logic here, such as deleting item from a list or database
-    print('Deleting item at index $index');
-  }
 
   void _showEditDialog(BuildContext context, Map<String, dynamic> item) {
     showDialog(

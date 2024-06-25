@@ -149,7 +149,11 @@ class MapScreenState extends State<ProfilePage>
                                    Flexible(
                                     child:  TextField(
                                       decoration: const InputDecoration(
-                                        hintText: "Enter Your Name",
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide:
+                                          BorderSide(color: colorMixGrad), // Border color when focused
+                                        ),
+                                        hintText: "Name",
                                       ),
                                       enabled: !_status,
                                       autofocus: !_status,
@@ -168,7 +172,7 @@ class MapScreenState extends State<ProfilePage>
                                     mainAxisSize: MainAxisSize.min,
                                     children: <Widget>[
                                        Text(
-                                        'Email ID',
+                                        'Email',
                                         style: TextStyle(
                                             fontSize: 16.0,
                                             fontWeight: FontWeight.bold),
@@ -186,7 +190,11 @@ class MapScreenState extends State<ProfilePage>
                                    Flexible(
                                     child:  TextField(
                                       decoration: const InputDecoration(
-                                          hintText: "Enter Email ID"),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide:
+                                            BorderSide(color: colorMixGrad), // Border color when focused
+                                          ),
+                                          hintText: "Email"),
                                       enabled: !_status,
                                     ),
                                   ),
@@ -221,8 +229,14 @@ class MapScreenState extends State<ProfilePage>
                                    Flexible(
                                     child:  TextField(
                                       decoration: const InputDecoration(
-                                          hintText: "Enter Mobile Number"),
+
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide:
+                                            BorderSide(color: colorMixGrad), // Border color when focused
+                                          ),
+                                          hintText: "Mobile"),
                                       enabled: !_status,
+
                                     ),
                                   ),
                                 ],
@@ -237,7 +251,7 @@ class MapScreenState extends State<ProfilePage>
                                   const Expanded(
                                     flex: 2,
                                     child: Text(
-                                      'Pin Code',
+                                      'Privilege',
                                       style: TextStyle(
                                           fontSize: 16.0,
                                           fontWeight: FontWeight.bold),
@@ -247,7 +261,7 @@ class MapScreenState extends State<ProfilePage>
                                     flex: 2,
                                     child: Container(
                                       child:  const Text(
-                                        'State',
+                                        'Status',
                                         style: TextStyle(
                                             fontSize: 16.0,
                                             fontWeight: FontWeight.bold),
@@ -269,7 +283,11 @@ class MapScreenState extends State<ProfilePage>
                                       padding: EdgeInsets.only(right: 10.0),
                                       child:  TextField(
                                         decoration: const InputDecoration(
-                                            hintText: "Enter Pin Code"),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide:
+                                              BorderSide(color: colorMixGrad), // Border color when focused
+                                            ),
+                                            hintText: "Privilege"),
                                         enabled: !_status,
                                       ),
                                     ),
@@ -278,7 +296,11 @@ class MapScreenState extends State<ProfilePage>
                                     flex: 2,
                                     child:  TextField(
                                       decoration: const InputDecoration(
-                                          hintText: "Enter State"),
+                                          focusedBorder: OutlineInputBorder(
+                                            borderSide:
+                                            BorderSide(color: colorMixGrad), // Border color when focused
+                                          ),
+                                          hintText: "Status"),
                                       enabled: !_status,
                                     ),
                                   ),

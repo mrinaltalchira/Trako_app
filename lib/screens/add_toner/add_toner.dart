@@ -26,7 +26,7 @@ class _AddTonerState extends State<AddToner> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HomeScreen().buildAppBar(context),
+
       body: SingleChildScrollView(
           child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 26.0),

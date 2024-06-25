@@ -11,7 +11,26 @@ class AddMachine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: HomeScreen().buildAppBar(context),
+      appBar: AppBar(
+        centerTitle: true,
+        title: Image.asset(
+          "assets/images/app_name_logo.png",
+          width: 120,
+          height: 40,
+        ),
+        actions: <Widget>[
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: IconButton(
+              icon: Icon(Icons.person),
+              onPressed: () {
+                Navigator.pushNamed(context, '/profile');
+              },
+            ),
+          ),
+          SizedBox(width: 7),
+        ],
+      ),
       body: SingleChildScrollView(
           child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 26.0),
@@ -20,11 +39,11 @@ class AddMachine extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(
-                      height: 50,
+                      height: 20,
                     ),
                     const Center(
                       child: Text(
-                        "Add Machine Information \nand Confirm Submission:",
+                        "Add New Machine:",
                         textAlign: TextAlign.center,
                         // Align text center horizontally
                         style: TextStyle(
@@ -35,10 +54,34 @@ class AddMachine extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(
-                      height: 10,
+                      height: 30,
                     ),
-                    const NameInputTextField(),
-                    const EmailInputTextField(),
+                    Text(
+                      "Model Name",
+                      // Dynamic text, removed const
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    const MachineNameInputTextField(),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    Text(
+                      "Model Code",
+                      // Dynamic text, removed const
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 5),
+                    const MachineCodeInputTextField(),
+                    const SizedBox(
+                      height: 20,
+                    ),
                     SizedBox(
                         child: Padding(
                           padding:
@@ -65,123 +108,79 @@ class AddMachine extends StatelessWidget {
   }
 }
 
-class NameInputTextField extends StatelessWidget {
-  const NameInputTextField({Key? key}) : super(key: key);
+
+
+
+class MachineNameInputTextField extends StatefulWidget {
+  const MachineNameInputTextField({Key? key}) : super(key: key);
 
   @override
+  _MachineNameInputTextFieldState createState() => _MachineNameInputTextFieldState();
+}
+
+class _MachineNameInputTextFieldState extends State<MachineNameInputTextField> {
+  @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0), // Example radius value
-          border: Border.all(color: Colors.transparent),
+    return TextField(
+      keyboardType: TextInputType.emailAddress,
+
+      decoration: InputDecoration(
+        hintText: 'Model Name',
+
+        // Changed hintText to 'Email'
+        hintStyle: TextStyle(color: Colors.grey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(5, 10),
-                    child: Container(
-                      width: 200,
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          filled: false,
-                          hintText: 'Machine Name',
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 190,
-                    child: const LinearGradientDivider(
-                      height: 1,
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                        // Example gradient colors
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 21),
-                ],
-              ),
-            ),
-          ],
+
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide:
+          BorderSide(color: colorMixGrad), // Border color when focused
         ),
+        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+      ),
+      style: TextStyle(
+        fontSize: 16.0,
+        color: Colors.black,
       ),
     );
   }
 }
 
-class EmailInputTextField extends StatelessWidget {
-  const EmailInputTextField({Key? key}) : super(key: key);
+
+class MachineCodeInputTextField extends StatefulWidget {
+  const MachineCodeInputTextField({Key? key}) : super(key: key);
 
   @override
+  _MachineCodeInputTextFieldState createState() => _MachineCodeInputTextFieldState();
+}
+
+class _MachineCodeInputTextFieldState extends State<MachineCodeInputTextField> {
+  @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0), // Example radius value
-          border: Border.all(color: Colors.transparent),
+    return TextField(
+      keyboardType: TextInputType.emailAddress,
+
+      decoration: InputDecoration(
+        hintText: 'Model Code',
+
+        // Changed hintText to 'Email'
+        hintStyle: TextStyle(color: Colors.grey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(5, 10),
-                    child: Container(
-                      width: 200,
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          filled: false,
-                          hintText: 'Machine Code',
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 190,
-                    child: const LinearGradientDivider(
-                      height: 1,
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                        // Example gradient colors
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 21),
-                ],
-              ),
-            ),
-          ],
+
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide:
+          BorderSide(color: colorMixGrad), // Border color when focused
         ),
+        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+      ),
+      style: TextStyle(
+        fontSize: 16.0,
+        color: Colors.black,
       ),
     );
   }

@@ -1,12 +1,9 @@
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
-import 'package:tonner_app/screens/home/home.dart';
 import '../../color/colors.dart';
 import '../../globals.dart';
-
-
+import '../client/client.dart';
+import '../home/home.dart';
 
 class AuthProcess extends StatefulWidget {
   const AuthProcess({Key? key}) : super(key: key);
@@ -15,48 +12,37 @@ class AuthProcess extends StatefulWidget {
   _AuthProcessState createState() => _AuthProcessState();
 }
 
-class _AuthProcessState extends State<AuthProcess> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      setState(() {});
-    });
-  }
+class _AuthProcessState extends State<AuthProcess> {
+  bool isPhoneInput =
+      true; // Flag to track whether to show phone input or email input
 
   @override
   void dispose() {
-    _tabController.dispose();
     super.dispose();
+  }
+
+  // Method to toggle between phone input and email input
+  void toggleInputType() {
+    setState(() {
+      isPhoneInput = !isPhoneInput;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     /* appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        title: Container(
-          height: 50,
-          alignment: Alignment.center,
-          child: Image.asset(
-            'assets/images/app_name_logo.png',
-            fit: BoxFit.contain,
-            height: 40, // Adjust height as needed
-          ),
-        ),
-      ),*/
       body: SingleChildScrollView(
         child: Center(
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 50.0),
-            constraints: BoxConstraints(minHeight: MediaQuery.of(context).size.height - kToolbarHeight),
+            padding: EdgeInsets.symmetric(horizontal: 50.0),
+            // Removed const from padding
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height - kToolbarHeight,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 30,),
+                SizedBox(height: 30), // Removed const from SizedBox
                 Container(
                   height: 100,
                   alignment: Alignment.center,
@@ -66,86 +52,87 @@ class _AuthProcessState extends State<AuthProcess> with SingleTickerProviderStat
                     height: 70, // Adjust height as needed
                   ),
                 ),
-
-                const SizedBox(height: 70,),
-
-                Container(
-                  width: 400, // Adjust width as needed
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(25.0),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    tabs: const [
-                      Tab(
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Phone No.',
-                            style: TextStyle(fontSize: 16), // Adjust the font size here
-                          ),
-                        ),
-
+                SizedBox(height: 50), // Removed const from SizedBox
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      "Login",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
                       ),
-                      Tab(
-                        child: Align(
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Email',
-                            style: TextStyle(fontSize: 16), // Adjust the font size here
-                          ),
-                        ),
-                      ),
-
-
-                    ],
-                    indicator: BoxDecoration(
-                      borderRadius: BorderRadius.circular(25.0),
-                      color: colorFirstGrad, // Example indicator color
                     ),
-                    labelColor: Colors.white, // Example label text color
-                    unselectedLabelColor: Colors.black, // Example unselected label text color
-                  ),
+                    SizedBox(height: 10), // Removed const from SizedBox
+                    Text(
+                      "Welcome to the app",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(height: 70), // Removed const from SizedBox
+                    Text(
+                      isPhoneInput ? "Phone number" : "Email",
+                      // Dynamic text, removed const
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 5), // Removed const from SizedBox
+                  ],
                 ),
-                const SizedBox(height: 40),
-                // Conditional display based on selected tab
-                if (_tabController.index == 0) // Phone no. tab selected
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                    child: const Column(
+                isPhoneInput
+                    ? IntlPhoneInputTextField()
+                    : EmailInputTextField(), // Dynamic widget, removed const
+                SizedBox(height: 10), // Removed const from SizedBox
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        MobileInputTextField(),
-                        PasswordInputTextField(),
+                        Text(
+                          "Password",
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            // Implement forgot password functionality
+                          },
+                          child: Text(
+                            "Forgot password",
+                            style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.normal,
+                                color: Colors.blueAccent),
+                          ),
+                        ),
                       ],
                     ),
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 50.0),
-                    child: const Column(
-                      children: [
-                        EmailInputTextField(),
-                        PasswordInputTextField(),
-                      ],
-                    ),
-                  ),
-                const SizedBox(height: 40),
+                    SizedBox(height: 5), // Removed const from SizedBox
+                  ],
+                ),
+                PasswordInputTextField(),
+                SizedBox(height: 60), // Removed const from SizedBox
                 GestureDetector(
                   onTap: () {
-                    showSnackBar(context,"Clicked on login");
+                    showSnackBar(context, "Clicked on login");
                   },
-                  
                   child: SizedBox(
-                    width: 200,
                     child: GradientButton(
-                      gradientColors: const [colorFirstGrad, colorSecondGrad],
+                      gradientColors: [colorFirstGrad, colorSecondGrad],
+                      // Removed const from gradientColors
                       height: 45.0,
                       width: 10.0,
                       radius: 25.0,
                       buttonText: "Sign in",
+                      // Dynamic text, removed const
                       onPressed: () {
+                        // Validate inputs if needed
                         Navigator.of(context).pushReplacement(
                           MaterialPageRoute(
                             builder: (context) => const HomeScreen(),
@@ -154,30 +141,49 @@ class _AuthProcessState extends State<AuthProcess> with SingleTickerProviderStat
                         showSnackBar(context, "Welcome Onboard.");
                       },
                     ),
-                  )
+                  ),
                 ),
-                const SizedBox(height: 10),
-                 RichText(
-                  text: TextSpan(
-
-                    children: <TextSpan>[
-                      const TextSpan(
-                        text: 'Forgot password? ',
-                        style: TextStyle(color: Colors.black,fontSize: 13),
-                      ),
-                      TextSpan(
-                        text: 'Click here',
-                        style: const TextStyle(
-                          color: Colors.blue,
-                          fontSize: 13
+                SizedBox(height: 15), // Removed const from SizedBox
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 10.0),
+                        // Removed const from margin
+                        child: Divider(
+                          color: Colors.grey,
+                          height: 36,
                         ),
-                        recognizer: TapGestureRecognizer()
-                          ..onTap = () {
-                            // Navigate to forgot password screen or handle click event
-                            showSnackBar(context,"Forget password to be implemented");
-                          },
                       ),
-                    ],
+                    ),
+                    Text(
+                      "or sign in with", // Removed const from text
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    Expanded(
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 10.0),
+                        // Removed const from margin
+                        child: Divider(
+                          color: Colors.grey,
+                          height: 36,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 15), // Removed const from SizedBox
+                SizedBox(
+                  child: GradientButton(
+                    gradientColors: [colorMixGrad, colorMixGrad],
+                    // Removed const from gradientColors
+                    height: 45.0,
+                    width: 10.0,
+                    radius: 25.0,
+                    buttonText: isPhoneInput ? "Email" : "Phone number",
+                    // Dynamic text, removed const
+                    onPressed:
+                        toggleInputType, // Toggle between phone and email input
                   ),
                 ),
               ],
@@ -189,173 +195,41 @@ class _AuthProcessState extends State<AuthProcess> with SingleTickerProviderStat
   }
 }
 
-class MobileInputTextField extends StatelessWidget {
-  const MobileInputTextField({Key? key}) : super(key: key);
+class IntlPhoneInputTextField extends StatelessWidget {
+  const IntlPhoneInputTextField({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0), // Example radius value
-          border: Border.all(color: Colors.transparent),
+    return IntlPhoneField(
+      decoration: InputDecoration(
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(
+            color: colorMixGrad, // Example focused border color
+          ),
         ),
-        child: Row(
-          children: [
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 50,
-                  height: 22,
-                  child: Transform.translate(
-                    offset: const Offset(5, 12),
-                    child: const IntlPhoneField(
-                      decoration: InputDecoration(
-                        border: InputBorder.none,
-                        filled: false,
-                      ),
-                      initialCountryCode: 'IN',
-                      showCountryFlag: false,
-                      showDropdownIcon: false,
-                      showCursor: false,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.normal,
-                      ),
-                      dropdownTextStyle: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 5),
-                const SizedBox(
-                  width: 40,
-                  child: const LinearGradientDivider(
-                    height: 1,
-                    gradient: LinearGradient(
-                      colors: [colorFirstGrad, colorSecondGrad],
-                      // Example gradient colors
-                      begin: Alignment.centerLeft,
-                      end: Alignment.centerRight,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(5, 10),
-                    child: Container(
-                      width: 200,
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          filled: false,
-                          hintText: 'Mobile No.',
-                          contentPadding:
-                              EdgeInsets.symmetric(vertical: 8.0),
-                        ),
-                        keyboardType: TextInputType.phone,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(15),
-                          FilteringTextInputFormatter.digitsOnly,
-                        ],
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 180,
-                    child: const LinearGradientDivider(
-                      height: 1,
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                        // Example gradient colors
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 21),
-                ],
-              ),
-            ),
-          ],
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
         ),
+        hintText: '|  Phone number',
+        hintStyle: TextStyle(color: Colors.grey),
+        contentPadding: EdgeInsets.symmetric(
+            vertical: 15.0, horizontal: 20.0), // Removed const from EdgeInsets
       ),
-    );
-  }
-}
-
-class EmailInputTextField extends StatelessWidget {
-  const EmailInputTextField({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0), // Example radius value
-          border: Border.all(color: Colors.transparent),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(5, 10),
-                    child: Container(
-                      width: 200,
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          filled: false,
-                          hintText: 'Enter Email',
-                          contentPadding:
-                          EdgeInsets.symmetric(vertical: 8.0),
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 180,
-                    child: const LinearGradientDivider(
-                      height: 1,
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                        // Example gradient colors
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 21),
-                ],
-              ),
-            ),
-          ],
-        ),
+      initialCountryCode: 'IN',
+      // Example initial country code
+      onChanged: (phone) {
+        print(phone.completeNumber); // Handle country code and number
+      },
+      showCountryFlag: true,
+      showDropdownIcon: false,
+      style: TextStyle(
+        fontSize: 16.0,
+        color: Colors.black,
+      ),
+      dropdownTextStyle: TextStyle(
+        fontSize: 16.0,
+        color: Colors.black,
       ),
     );
   }
@@ -373,93 +247,73 @@ class _PasswordInputTextFieldState extends State<PasswordInputTextField> {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(
+    return TextField(
+      decoration: InputDecoration(
+        hintText: 'Password',
+        hintStyle: TextStyle(color: Colors.grey),
+        suffixIcon: GestureDetector(
+          onTap: () {
+            setState(() {
+              _obscureText = !_obscureText;
+            });
+          },
+          child: Icon(
+            _obscureText ? Icons.visibility : Icons.visibility_off,
+            color: Colors.grey,
+          ),
+        ),
+        border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          border: Border.all(color: Colors.transparent),
         ),
-        child: Row(
-          children: [
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(5, 10),
-                    child: SizedBox(
-                      width: 200,
-                      child: TextField(
-                        decoration: const InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          filled: false,
-                          hintText: 'Password',
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-                        ),
-                        keyboardType: TextInputType.text,
-                        obscureText: _obscureText,
-                        inputFormatters: [
-                          LengthLimitingTextInputFormatter(15),
-                        ],
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 180,
-                    child: const LinearGradientDivider(
-                      height: 1,
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 21),
-                ],
-              ),
-            ),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
-              },
-              child: Icon(
-                _obscureText ? Icons.visibility_off : Icons.visibility,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide:
+              BorderSide(color: colorMixGrad), // Border color when focused
         ),
+        contentPadding: EdgeInsets.symmetric(
+            vertical: 12.0, horizontal: 16.0), // Removed const from EdgeInsets
+      ),
+      obscureText: _obscureText,
+      style: TextStyle(
+        fontSize: 16.0,
+        color: Colors.black,
       ),
     );
   }
 }
 
-class LinearGradientDivider extends StatelessWidget {
-  const LinearGradientDivider({
-    Key? key,
-    required this.height,
-    required this.gradient,
-  }) : super(key: key);
-
-  final double height;
-  final LinearGradient gradient;
+class EmailInputTextField extends StatefulWidget {
+  const EmailInputTextField({Key? key}) : super(key: key);
 
   @override
+  _EmailInputTextFieldState createState() => _EmailInputTextFieldState();
+}
+
+class _EmailInputTextFieldState extends State<EmailInputTextField> {
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        gradient: gradient,
+    return TextField(
+      keyboardType: TextInputType.emailAddress,
+
+      decoration: InputDecoration(
+        hintText: 'Email',
+
+        // Changed hintText to 'Email'
+        hintStyle: TextStyle(color: Colors.grey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide:
+              BorderSide(color: colorMixGrad), // Border color when focused
+        ),
+        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+      ),
+      style: TextStyle(
+        fontSize: 16.0,
+        color: Colors.black,
       ),
     );
   }

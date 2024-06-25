@@ -1,4 +1,3 @@
-
 import 'dart:developer';
 import 'dart:io';
 
@@ -10,8 +9,6 @@ import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/screens/add_toner/add_toner.dart';
 import 'package:tonner_app/screens/dasboard/dashboard.dart';
-
-
 
 
 class SupplyChain extends StatelessWidget{
@@ -43,7 +40,7 @@ class SupplyChain extends StatelessWidget{
       return Scaffold(
         appBar: AppBar(
           title: const Text(
-            "Supply Chain Module",
+            "Supply Chain",
             style: TextStyle(
               fontSize: 24.0,
               color: colorMixGrad, // Replace with your colorSecondGrad
@@ -55,6 +52,71 @@ class SupplyChain extends StatelessWidget{
         body: Container(
           child: Column(
             children: [
+
+              Padding(
+                padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [colorFirstGrad, colorSecondGrad],
+                            ),
+                            borderRadius: BorderRadius.circular(25.0),
+                          ),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 16.0),
+                            child: Row(
+                              children: [
+                                Icon(Icons.search, color: Colors.grey),
+                                SizedBox(width: 10.0),
+                                Expanded(
+                                  child: TextField(
+                                    decoration: InputDecoration(
+                                      hintText: 'Search',
+                                      hintStyle: TextStyle(color: Colors.grey),
+                                      border: InputBorder.none,
+                                    ),
+                                    style: TextStyle(
+                                      fontSize: 16.0,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 20.0), // Spacer between search and add button
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [colorFirstGrad, colorSecondGrad],
+                          ),
+                          borderRadius: BorderRadius.circular(25.0),
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            // Navigate to add client screen
+                            Navigator.pushNamed(context, '/rq_view_tracesci');
+                          },
+                          icon: Icon(
+                            Icons.add,
+                            color: Colors.white,
+                          ),
+                          iconSize: 30.0,
+                        ),
+                      ),
+                    ],
+                ),
+              ),
               Expanded(
                 child: SingleChildScrollView(
                   child: Padding(
@@ -68,71 +130,6 @@ class SupplyChain extends StatelessWidget{
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [colorFirstGrad,colorSecondGrad],
-                          ),
-                          borderRadius: BorderRadius.circular(25.0),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // Handle search button press
-                            // Implement search functionality
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 30.0, vertical: 12.0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0),
-                            ),
-                          ),
-                          child: const Text(
-                            'Search',
-                            style: TextStyle(color: Colors.white,fontSize: 18),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 20.0), // Spacer between buttons
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [colorFirstGrad, colorSecondGrad],
-                          ),
-                          borderRadius: BorderRadius.circular(25.0),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pushNamed(context, '/rq_view_tracesci');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 35.0, vertical: 12.0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25.0),
-                            ),
-                          ),
-                          child: const Text(
-                            'Add',
-                            style: TextStyle(color: Colors.white,fontSize: 18),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 48)
             ],
           ),
         ),
@@ -160,9 +157,9 @@ class SupplyChainList extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
-          color: Color.fromRGBO(245, 246, 250, 1),
+          color: Colors.red[10],
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.only(left: 12.0,bottom: 12.0,right: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -174,12 +171,7 @@ class SupplyChainList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Machine Name:',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          SizedBox(height: 4.0),
-                          Text(items[index]['productName']),
+                          Text(items[index]['productName'],style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18)),
                         ],
                       ),
                     ),
@@ -193,27 +185,12 @@ class SupplyChainList extends StatelessWidget {
                             _showEditDialog(context, items[index]);
                           },
                         ),
-                        IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            // Show delete confirmation dialog
-                            _showDeleteDialog(context, index);
-                          },
-                        ),
                       ],
                     ),
                   ],
                 ),
-                SizedBox(height: 8.0),
-                Text(
-                  'Machine Code:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 4.0),
-                Text(items[index]['scannedOn']),
-                SizedBox(height: 8.0),
-
-
+                Text(items[index]['scannedOn'],style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4.0),
               ],
             ),
           ),
@@ -223,38 +200,7 @@ class SupplyChainList extends StatelessWidget {
   }
 
 
-  void _showDeleteDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete this item?'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Delete'),
-              onPressed: () {
-                // Perform delete action
-                _deleteItem(index);
-                Navigator.of(context).pop(); // Close dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
-  void _deleteItem(int index) {
-    // Implement your delete logic here, such as deleting item from a list or database
-    print('Deleting item at index $index');
-  }
 
   void _showEditDialog(BuildContext context, Map<String, dynamic> item) {
     showDialog(

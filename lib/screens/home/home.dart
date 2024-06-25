@@ -1,82 +1,38 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/dasboard/dashboard.dart';
 import 'package:tonner_app/screens/products/machine.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+import '../authFlow/signin.dart';
 
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: buildAppBar(context),
-        /*body: Body(),
-      // We are not able to BottomNavigationBar because the icon parameter dont except SVG
-      // We also use Provied to manage the state of our Nav
-
-       */
-        body: MyHomePage()
-
-    );
-  }
-
-  AppBar buildAppBar(BuildContext context) {
-    return AppBar(
-      centerTitle: true,
-      title: Image.asset(
-        "assets/images/app_name_logo.png",
-        width: 120, // Adjust width as per your requirement
-        height: 40, // Adjust height as per your requirement
-      ),
-      actions: <Widget>[
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-          child: CustomImageWidget(
-            imageUrl: 'assets/images/ic_profile.png',
-            width: 30,
-            height: 30,
-            radius: 25,
-            isNetworkImage: false,
-            onTap: () {
-              Navigator.pushNamed(context, '/profile');
-            },
-          ),
-        ),
-        SizedBox(width: 7), // Adjust as needed
-      ],
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({Key? key}) : super(key: key);
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  late int _selectedIndex = 0;
-  late PageController _pageController; // Remove late keyword here
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedIndex = 0;
+  late PageController _pageController;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-        initialPage: _selectedIndex); // Initialize _pageController here
+    _pageController = PageController(initialPage: _selectedIndex);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
+      appBar: buildAppBar(context),
+      drawer: buildDrawer(context),
       body: PageView(
-        physics: const NeverScrollableScrollPhysics(),
-        controller: _pageController, // Use _pageController here
+        physics: NeverScrollableScrollPhysics(),
+        controller: _pageController,
         onPageChanged: (index) {
           setState(() {
             _selectedIndex = index;
@@ -89,127 +45,244 @@ class _MyHomePageState extends State<MyHomePage> {
           MachineModule(),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              offset: Offset(0, -7),
-              blurRadius: 30,
-              color: Color(0xFF4B1A39).withOpacity(0.2),
+    );
+  }
+
+  AppBar buildAppBar(BuildContext context) {
+    return AppBar(
+      centerTitle: true,
+      title: Image.asset(
+        "assets/images/app_name_logo.png",
+        width: 120,
+        height: 40,
+      ),
+      actions: <Widget>[
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          child: IconButton(
+            icon: Icon(Icons.person),
+            onPressed: () {
+              Navigator.pushNamed(context, '/profile');
+            },
+          ),
+        ),
+        SizedBox(width: 7),
+      ],
+    );
+  }
+
+  Drawer buildDrawer(BuildContext context) {
+    return Drawer(
+      child: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [colorFirstGrad, colorSecondGrad],
+            begin: Alignment.topRight,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            const SizedBox(
+              height: 100,
+              child: DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                ),
+                child: Center(
+                  child: Text(
+                    'Tracesci.in',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.dashboard, color: Colors.white),
+              title: Text('Dashboard', style: TextStyle(color: Colors.white)),
+              selected: _selectedIndex == 0,
+              onTap: () {
+                _onItemTapped(0);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person, color: Colors.white),
+              title: const Text('Clients', style: TextStyle(color: Colors.white)),
+              selected: _selectedIndex == 1,
+              onTap: () {
+                _onItemTapped(1);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.account_tree_outlined, color: Colors.white),
+              title: const Text('Supply Chain', style: TextStyle(color: Colors.white)),
+              selected: _selectedIndex == 2,
+              onTap: () {
+                _onItemTapped(2);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add_business, color: Colors.white),
+              title: const Text('Machines', style: TextStyle(color: Colors.white)),
+              selected: _selectedIndex == 3,
+              onTap: () {
+                _onItemTapped(3);
+                Navigator.pop(context);
+              },
+            ),
+
+            ListTile(
+              leading: const Icon(Icons.exit_to_app, color: Colors.white),
+              title: const Text('Logout', style: TextStyle(color: Colors.white)),
+              onTap: () {
+                showToast("Logout button pressed");
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  Navigator.pushAndRemoveUntil(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AuthProcess()),
+                        (Route<dynamic> route) => false,
+                  );
+                });
+              },
             ),
           ],
         ),
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              IconButton(
-                icon: Icon(Icons.dashboard),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 0;
-                  });
-                  _pageController.jumpToPage(0);
-                },
-                color: _selectedIndex == 0 ? Colors.blue : Colors.grey,
-              ),
-              IconButton(
-                icon: Icon(Icons.person),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 1;
-                  });
-                  _pageController.jumpToPage(1);
-                },
-                color: _selectedIndex == 1 ? Colors.blue : Colors.grey,
-              ),
-              IconButton(
-                icon: Icon(Icons.account_tree_outlined),
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 2;
-                  });
-                  _pageController.jumpToPage(2);
-                },
-                color: _selectedIndex == 2 ? Colors.blue : Colors.grey,
-              ),
-              IconButton(
-                icon: Icon(Icons.add_business),
+      ),
+    );
+  }
 
-                onPressed: () {
-                  setState(() {
-                    _selectedIndex = 3;
-                  });
-                  _pageController.jumpToPage(3);
-                },
-                color: _selectedIndex == 3 ? Colors.blue : Colors.grey,
-              ),
-            ],
-          ),
-        ),
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+      _pageController.animateToPage(
+        index,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.ease,
+      );
+    });
+  }
+
+  void showToast(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 2),
       ),
     );
   }
 }
 
-
-class NameInputTextField extends StatelessWidget {
-  const NameInputTextField({Key? key}) : super(key: key);
+class CategoriesDashboard extends StatelessWidget {
+  const CategoriesDashboard({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0), // Example radius value
-          border: Border.all(color: Colors.transparent),
-        ),
-        child: Row(
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(5, 10),
-                    child: Container(
-                      width: 200,
-                      child: const TextField(
-                        decoration: InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          filled: false,
-                          hintText: 'Enter Name',
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0),
+            const Text(
+              "Dashboard",
+              style: TextStyle(
+                fontSize: 24.0,
+                color: colorFirstGrad,
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16.0),
+            GridView.builder(
+              physics: NeverScrollableScrollPhysics(),
+              shrinkWrap: true,
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                mainAxisSpacing: 16.0,
+                crossAxisSpacing: 16.0,
+                childAspectRatio: 1.2,
+              ),
+              itemBuilder: (BuildContext context, int index) {
+                return GestureDetector(
+                  onTap: () {
+                    // Handle onTap for each category item
+                    int categoryId = StaticData.categories[index]["id"];
+                    showSnackBar(context, "Clicked on - id_${categoryId}");
+
+                    // You can navigate to another screen or perform any action here
+                  },
+                  child: Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18.0),
+                    ),
+                    elevation: 3.0,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset(
+                          StaticData.categories[index]["icon"],
+                          width: 80,
+                          height: 40,
+                          fit: BoxFit.contain,
                         ),
-                        keyboardType: TextInputType.emailAddress,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.normal,
+                        SizedBox(height: 8.0),
+                        Text(
+                          StaticData.categories[index]["title"],
+                          textAlign: TextAlign.center,
                         ),
-                      ),
+                      ],
                     ),
                   ),
-                  const SizedBox(
-                    width: 190,
-                    child: const LinearGradientDivider(
-                      height: 1,
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                        // Example gradient colors
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
+                );
+              },
+              itemCount: StaticData.categories.length,
+            ),
+            SizedBox(height: 24.0),
+            AspectRatio(
+              aspectRatio: 1.8, // Adjusted aspect ratio for LineChart
+              child: LineChart(
+                LineChartData(
+                  lineBarsData: [
+                    LineChartBarData(
+                      spots: [
+                        FlSpot(0, 0),
+                        FlSpot(2, 5),
+                         FlSpot(3, 10),
+                        FlSpot(4, 5),
+                        FlSpot(5, 2),
+                        FlSpot(6, 14),
+                      ],
+                      gradient: const LinearGradient(
+                        colors: [colorFirstGrad, colorMixGrad, colorSecondGrad],
                       ),
+                      isCurved: true,
+                      curveSmoothness: 0.6,
+                      isStrokeCapRound: true,
+                      belowBarData: BarAreaData(show: true),
                     ),
-                  ),
-                  const SizedBox(height: 21),
-                ],
+                  ],
+                ),
               ),
             ),
+            SizedBox(height: 24.0),
           ],
         ),
+      ),
+    );
+  }
+
+  void showSnackBar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: Duration(seconds: 1),
       ),
     );
   }
