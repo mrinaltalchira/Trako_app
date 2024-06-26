@@ -6,9 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/screens/add_toner/add_toner.dart';
-import 'package:tonner_app/screens/dasboard/dashboard.dart';
 
 
 class SupplyChain extends StatelessWidget{
@@ -35,106 +33,106 @@ class SupplyChain extends StatelessWidget{
   ];
 
 
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          title: const Text(
-            "Supply Chain",
-            style: TextStyle(
-              fontSize: 24.0,
-              color: colorMixGrad, // Replace with your colorSecondGrad
-              fontWeight: FontWeight.w600,
-            ),
-            textAlign: TextAlign.center,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "Supply Chain",
+          style: TextStyle(
+            fontSize: 24.0,
+            color: colorMixGrad, // Replace with your colorSecondGrad
+            fontWeight: FontWeight.w600,
           ),
+          textAlign: TextAlign.center,
         ),
-        body: Container(
-          child: Column(
-            children: [
+      ),
+      body: Container(
+        child: Column(
+          children: [
 
-              Padding(
-                padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [colorFirstGrad, colorSecondGrad],
-                            ),
-                            borderRadius: BorderRadius.circular(25.0),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.grey[200],
-                              borderRadius: BorderRadius.circular(10.0),
-                            ),
-                            padding: EdgeInsets.symmetric(horizontal: 16.0),
-                            child: Row(
-                              children: [
-                                Icon(Icons.search, color: Colors.grey),
-                                SizedBox(width: 10.0),
-                                Expanded(
-                                  child: TextField(
-                                    decoration: InputDecoration(
-                                      hintText: 'Search',
-                                      hintStyle: TextStyle(color: Colors.grey),
-                                      border: InputBorder.none,
-                                    ),
-                                    style: TextStyle(
-                                      fontSize: 16.0,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+            Padding(
+              padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [colorFirstGrad, colorSecondGrad],
                         ),
+                        borderRadius: BorderRadius.circular(25.0),
                       ),
-                      const SizedBox(width: 20.0), // Spacer between search and add button
-                      Container(
+                      child: Container(
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [colorFirstGrad, colorSecondGrad],
-                          ),
-                          borderRadius: BorderRadius.circular(25.0),
+                          color: Colors.grey[200],
+                          borderRadius: BorderRadius.circular(10.0),
                         ),
-                        child: IconButton(
-                          onPressed: () {
-                            // Navigate to add client screen
-                            Navigator.pushNamed(context, '/rq_view_tracesci');
-                          },
-                          icon: Icon(
-                            Icons.add,
-                            color: Colors.white,
-                          ),
-                          iconSize: 30.0,
+                        padding: EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Row(
+                          children: [
+                            Icon(Icons.search, color: Colors.grey),
+                            SizedBox(width: 10.0),
+                            Expanded(
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  hintText: 'Search',
+                                  hintStyle: TextStyle(color: Colors.grey),
+                                  border: InputBorder.none,
+                                ),
+                                style: TextStyle(
+                                  fontSize: 16.0,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        SupplyChainList(items: items),
-                      ],
                     ),
+                  ),
+                  const SizedBox(width: 20.0), // Spacer between search and add button
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [colorFirstGrad, colorSecondGrad],
+                      ),
+                      borderRadius: BorderRadius.circular(25.0),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        // Navigate to add client screen
+                        Navigator.pushNamed(context, '/add_toner');
+                      },
+                      icon: Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                      iconSize: 30.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      SupplyChainList(items: items),
+                    ],
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      );
-    }
+      ),
+    );
+  }
 
 
 }
@@ -344,17 +342,7 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
 
   void _navigateToAddToner() {
     if (result != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AddToner(qrData:'${result!.code}'),
-        ),
-      ).then((_) {
-        // Reset result after navigating to prevent multiple openings
-        setState(() {
-          result = null;
-        });
-      });
+      Navigator.pop(context, result!.code);
     }
   }
 

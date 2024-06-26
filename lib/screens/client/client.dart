@@ -4,6 +4,8 @@ import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 
 class ClientModule extends StatefulWidget {
+  const ClientModule({super.key});
+
   @override
   _ClientModuleState createState() => _ClientModuleState();
 }
@@ -46,98 +48,96 @@ class _ClientModuleState extends State<ClientModule> {
           textAlign: TextAlign.center,
         ),
       ),
-      body: Container(
-        child: Column(
-          children: [
+      body: Column(
+        children: [
 
-        Padding(
-        padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [colorFirstGrad, colorSecondGrad],
-                  ),
-                  borderRadius: BorderRadius.circular(25.0),
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(10.0),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.search, color: Colors.grey),
-                      SizedBox(width: 10.0),
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search',
-                            hintStyle: TextStyle(color: Colors.grey),
-                            border: InputBorder.none,
-                          ),
-                          style: TextStyle(
-                            fontSize: 16.0,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 20.0), // Spacer between search and add button
-            Container(
+      Padding(
+      padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Expanded(
+            child: Container(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [colorFirstGrad, colorSecondGrad],
                 ),
                 borderRadius: BorderRadius.circular(25.0),
               ),
-              child: IconButton(
-                onPressed: () {
-                  // Navigate to add client screen
-                  Navigator.pushNamed(context, '/add_client');
-                },
-                icon: Icon(
-                  Icons.add,
-                  color: Colors.white,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
-                iconSize: 30.0,
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: const Row(
+                  children: [
+                    Icon(Icons.search, color: Colors.grey),
+                    SizedBox(width: 10.0),
+                    Expanded(
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search',
+                          hintStyle: TextStyle(color: Colors.grey),
+                          border: InputBorder.none,
+                        ),
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 20.0), // Spacer between search and add button
+          Container(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [colorFirstGrad, colorSecondGrad],
+              ),
+              borderRadius: BorderRadius.circular(25.0),
+            ),
+            child: IconButton(
+              onPressed: () {
+                // Navigate to add client screen
+                Navigator.pushNamed(context, '/add_client');
+              },
+              icon: const Icon(
+                Icons.add,
+                color: Colors.white,
+              ),
+              iconSize: 30.0,
+            ),
+          ),
+        ],
       ),
+            ),
 
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ScannedHistoryList(items: items),
-                    ],
-                  ),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ScannedHistoryList(items: items),
+                  ],
                 ),
               ),
             ),
+          ),
 
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
 class NameInputTextField extends StatelessWidget {
-  const NameInputTextField({Key? key}) : super(key: key);
+  const NameInputTextField({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -176,7 +176,7 @@ class NameInputTextField extends StatelessWidget {
                   ),
                   const SizedBox(
                     width: 190,
-                    child: const LinearGradientDivider(
+                    child: LinearGradientDivider(
                       height: 1,
                       gradient: LinearGradient(
                         colors: [colorFirstGrad, colorSecondGrad],
@@ -198,7 +198,7 @@ class NameInputTextField extends StatelessWidget {
 }
 
 class EmailInputTextField extends StatelessWidget {
-  const EmailInputTextField({Key? key}) : super(key: key);
+  const EmailInputTextField({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -217,9 +217,9 @@ class EmailInputTextField extends StatelessWidget {
                 children: [
                   Transform.translate(
                     offset: const Offset(5, 10),
-                    child: Container(
+                    child: const SizedBox(
                       width: 200,
-                      child: const TextField(
+                      child: TextField(
                         decoration: InputDecoration(
                           hintStyle: TextStyle(color: Colors.grey),
                           border: InputBorder.none,
@@ -237,7 +237,7 @@ class EmailInputTextField extends StatelessWidget {
                   ),
                   const SizedBox(
                     width: 190,
-                    child: const LinearGradientDivider(
+                    child: LinearGradientDivider(
                       height: 1,
                       gradient: LinearGradient(
                         colors: [colorFirstGrad, colorSecondGrad],
@@ -259,7 +259,7 @@ class EmailInputTextField extends StatelessWidget {
 }
 
 class PhoneInputTextField extends StatelessWidget {
-  const PhoneInputTextField({Key? key}) : super(key: key);
+  const PhoneInputTextField({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +298,7 @@ class PhoneInputTextField extends StatelessWidget {
                   ),
                   const SizedBox(
                     width: 190,
-                    child: const LinearGradientDivider(
+                    child:   LinearGradientDivider(
                       height: 1,
                       gradient: LinearGradient(
                         colors: [colorFirstGrad, colorSecondGrad],
@@ -320,7 +320,7 @@ class PhoneInputTextField extends StatelessWidget {
 }
 
 class AddressInputTextField extends StatelessWidget {
-  const AddressInputTextField({Key? key}) : super(key: key);
+  const AddressInputTextField({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -339,9 +339,9 @@ class AddressInputTextField extends StatelessWidget {
                 children: [
                   Transform.translate(
                     offset: const Offset(5, 10),
-                    child: Container(
+                    child: const SizedBox(
                       width: 200,
-                      child: const TextField(
+                      child: TextField(
                         decoration: InputDecoration(
                           hintStyle: TextStyle(color: Colors.grey),
                           border: InputBorder.none,
@@ -383,7 +383,7 @@ class AddressInputTextField extends StatelessWidget {
 
 
 class ContactPersonInputTextField extends StatelessWidget {
-  const ContactPersonInputTextField({Key? key}) : super(key: key);
+  const ContactPersonInputTextField({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -422,7 +422,7 @@ class ContactPersonInputTextField extends StatelessWidget {
                   ),
                   const SizedBox(
                     width: 190,
-                    child: const LinearGradientDivider(
+                    child:  LinearGradientDivider(
                       height: 1,
                       gradient: LinearGradient(
                         colors: [colorFirstGrad, colorSecondGrad],
@@ -445,12 +445,13 @@ class ContactPersonInputTextField extends StatelessWidget {
 class ScannedHistoryList extends StatelessWidget {
   final List<Map<String, dynamic>> items;
 
-  const ScannedHistoryList({Key? key, required this.items}) : super(key: key);
+  const ScannedHistoryList({super.key, required this.items});
 
+  @override
   Widget build(BuildContext context) {
     return ListView.builder(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
         // Determine the background color based on is_active status
@@ -476,7 +477,7 @@ class ScannedHistoryList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(items[index]['client_name'], style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                          Text(items[index]['client_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                         ],
                       ),
                     ),
@@ -484,7 +485,7 @@ class ScannedHistoryList extends StatelessWidget {
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.edit),
+                          icon: const Icon(Icons.edit),
                           onPressed: () {
                             // Handle edit action
                             _showEditDialog(context, items[index]);
@@ -510,17 +511,17 @@ class ScannedHistoryList extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Product'),
+          title: const Text('Edit Product'),
           content: Text('Edit details of ${item['client_name']}'),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Edit'),
+              child: const Text('Edit'),
               onPressed: () {
                 // Perform edit action
                 _editItem(item);

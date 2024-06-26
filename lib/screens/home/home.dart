@@ -4,7 +4,9 @@ import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/dasboard/dashboard.dart';
 import 'package:tonner_app/screens/products/machine.dart';
+import 'package:tonner_app/screens/reports/reports.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
+import 'package:tonner_app/screens/user_privilege/user_privilege.dart';
 
 import '../authFlow/signin.dart';
 
@@ -30,7 +32,15 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: buildAppBar(context),
       drawer: buildDrawer(context),
-      body: PageView(
+      body:  WillPopScope(
+        onWillPop: () async {
+          if (_selectedIndex != 0) {
+            _onItemTapped(0); // Navigate to Dashboard if not already there
+            return false; // Do not pop the current route
+          }
+          return true; // Allow normal back behavior if already on Dashboard
+        },
+        child:PageView(
         physics: NeverScrollableScrollPhysics(),
         controller: _pageController,
         onPageChanged: (index) {
@@ -43,9 +53,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ClientModule(),
           SupplyChain(),
           MachineModule(),
+          MyReportScreen(),
+          UserPrivilege()
         ],
       ),
-    );
+    ));
   }
 
   AppBar buildAppBar(BuildContext context) {
@@ -73,7 +85,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Drawer buildDrawer(BuildContext context) {
     return Drawer(
+
       child: Container(
+
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [colorFirstGrad, colorSecondGrad],
@@ -81,6 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
             end: Alignment.bottomRight,
           ),
         ),
+
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
@@ -112,7 +127,8 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.person, color: Colors.white),
-              title: const Text('Clients', style: TextStyle(color: Colors.white)),
+              title:
+                  const Text('Clients', style: TextStyle(color: Colors.white)),
               selected: _selectedIndex == 1,
               onTap: () {
                 _onItemTapped(1);
@@ -120,8 +136,10 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.account_tree_outlined, color: Colors.white),
-              title: const Text('Supply Chain', style: TextStyle(color: Colors.white)),
+              leading:
+                  const Icon(Icons.account_tree_outlined, color: Colors.white),
+              title: const Text('Supply Chain',
+                  style: TextStyle(color: Colors.white)),
               selected: _selectedIndex == 2,
               onTap: () {
                 _onItemTapped(2);
@@ -130,24 +148,46 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             ListTile(
               leading: const Icon(Icons.add_business, color: Colors.white),
-              title: const Text('Machines', style: TextStyle(color: Colors.white)),
+              title:
+                  const Text('Machines', style: TextStyle(color: Colors.white)),
               selected: _selectedIndex == 3,
               onTap: () {
                 _onItemTapped(3);
                 Navigator.pop(context);
               },
             ),
-
+            ListTile(
+              leading: const Icon(Icons.report, color: Colors.white),
+              title:
+                  const Text('Reports', style: TextStyle(color: Colors.white)),
+              selected: _selectedIndex == 4,
+              onTap: () {
+                _onItemTapped(4);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.add, color: Colors.white),
+              title:
+                  const Text('User Privilege', style: TextStyle(color: Colors.white)),
+              selected: _selectedIndex == 5,
+              onTap: () {
+                _onItemTapped(5);
+                Navigator.pop(context);
+              },
+            ),
             ListTile(
               leading: const Icon(Icons.exit_to_app, color: Colors.white),
-              title: const Text('Logout', style: TextStyle(color: Colors.white)),
+              title:
+                  const Text('Logout', style: TextStyle(color: Colors.white)),
               onTap: () {
                 showToast("Logout button pressed");
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(builder: (context) => const AuthProcess()),
-                        (Route<dynamic> route) => false,
+                    MaterialPageRoute(
+                        builder: (context) => const AuthProcess()),
+                    (Route<dynamic> route) => false,
                   );
                 });
               },
@@ -254,7 +294,7 @@ class CategoriesDashboard extends StatelessWidget {
                       spots: [
                         FlSpot(0, 0),
                         FlSpot(2, 5),
-                         FlSpot(3, 10),
+                        FlSpot(3, 10),
                         FlSpot(4, 5),
                         FlSpot(5, 2),
                         FlSpot(6, 14),

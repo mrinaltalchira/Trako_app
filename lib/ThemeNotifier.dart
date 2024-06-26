@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ThemeNotifier extends ChangeNotifier {
-  ThemeData _currentTheme;
 
+
+  ThemeData _currentTheme;
   ThemeNotifier(this._currentTheme);
 
   ThemeData get currentTheme => _currentTheme;
@@ -11,4 +12,5 @@ class ThemeNotifier extends ChangeNotifier {
     _currentTheme = newTheme;
     notifyListeners();
   }
+
 }

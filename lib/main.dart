@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tonner_app/app_data.dart';
+import 'package:tonner_app/screens/add_toner/add_toner.dart';
 import 'package:tonner_app/screens/authFlow/forgetPass.dart';
 import 'package:tonner_app/screens/authFlow/signin.dart';
 import 'package:tonner_app/screens/client/add_client.dart';
@@ -8,6 +10,7 @@ import 'package:tonner_app/screens/products/add_machine.dart';
 import 'package:tonner_app/screens/products/machine.dart';
 import 'package:tonner_app/screens/profile/profile.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
+import 'package:tonner_app/screens/user_privilege/user_privilege.dart';
 
 import 'ThemeNotifier.dart';
 import 'color/colors.dart';
@@ -19,9 +22,9 @@ void main() {
         ChangeNotifierProvider<ThemeNotifier>(
           create: (context) => ThemeNotifier(
             ThemeData(
-              scaffoldBackgroundColor: white,
+              scaffoldBackgroundColor: Colors.white,
               appBarTheme: const AppBarTheme(
-                color: white,
+                color: Colors.white,
                 elevation: 0,
               ),
               visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -36,6 +39,9 @@ void main() {
               ),
             ),
           ),
+        ),
+        ChangeNotifierProvider<AppData>(
+          create: (context) => AppData(),
         ),
       ],
       child: MyApp(),
@@ -58,11 +64,14 @@ class MyApp extends StatelessWidget {
               '/add_client': (context) => AddClient(),
               '/add_machine': (context) => const AddMachine(),
               '/rq_view_tracesci': (context) => const QRViewTracesci(),
+              '/add_toner': (context) => const AddToner(),
+              '/user_privilege': (context) =>  UserPrivilege(),
+
             }
-            /* routes: {
+          /* routes: {
             '/report': (context) => const Report(),
           }, */
-            );
+        );
       },
     );
   }
