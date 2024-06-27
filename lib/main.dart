@@ -2,19 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tonner_app/app_data.dart';
 import 'package:tonner_app/screens/add_toner/add_toner.dart';
-import 'package:tonner_app/screens/authFlow/forgetPass.dart';
 import 'package:tonner_app/screens/authFlow/signin.dart';
 import 'package:tonner_app/screens/client/add_client.dart';
 import 'package:tonner_app/screens/home/home.dart';
 import 'package:tonner_app/screens/products/add_machine.dart';
-import 'package:tonner_app/screens/products/machine.dart';
 import 'package:tonner_app/screens/profile/profile.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
-import 'package:tonner_app/screens/user_privilege/create_user.dart';
-import 'package:tonner_app/screens/user_privilege/user_privilege.dart';
+import 'package:tonner_app/screens/users/accessibility.dart';
+import 'package:tonner_app/screens/users/add_user.dart';
+import 'package:tonner_app/screens/users/create_user.dart';
+import 'package:tonner_app/screens/users/machine_status.dart';
+import 'package:tonner_app/screens/users/users.dart';
+import 'package:tonner_app/screens/users/user_status.dart';
 
 import 'ThemeNotifier.dart';
-import 'color/colors.dart';
 
 void main() {
   runApp(
@@ -66,14 +67,16 @@ class MyApp extends StatelessWidget {
               '/add_machine': (context) => const AddMachine(),
               '/rq_view_tracesci': (context) => const QRViewTracesci(),
               '/add_toner': (context) => const AddToner(),
-              '/user_privilege': (context) =>  UserPrivilege(),
-              '/create_user': (context) =>  CreateUser(),
-
+              '/users': (context) => const UsersModule(),
+              '/add_user': (context) => AddUser(),
+              '/user_status': (context) => UserStatus(),
+              '/machine_status': (context) => const MachineStatus(),
+              '/accessibility': (context) => Accessibility(),
             }
-          /* routes: {
+            /* routes: {
             '/report': (context) => const Report(),
           }, */
-        );
+            );
       },
     );
   }

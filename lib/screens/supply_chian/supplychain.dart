@@ -169,7 +169,17 @@ class SupplyChainList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(items[index]['productName'],style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18)),
+
+                          Text(
+                            items[index]['productName'],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+
                         ],
                       ),
                     ),

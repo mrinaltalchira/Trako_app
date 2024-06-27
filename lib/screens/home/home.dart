@@ -6,7 +6,7 @@ import 'package:tonner_app/screens/dasboard/dashboard.dart';
 import 'package:tonner_app/screens/products/machine.dart';
 import 'package:tonner_app/screens/reports/reports.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
-import 'package:tonner_app/screens/user_privilege/user_privilege.dart';
+import 'package:tonner_app/screens/users/users.dart';
 
 import '../authFlow/signin.dart';
 
@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: buildAppBar(context),
       drawer: buildDrawer(context),
-      body:  WillPopScope(
+      body: WillPopScope(
         onWillPop: () async {
           if (_selectedIndex != 0) {
             _onItemTapped(0); // Navigate to Dashboard if not already there
@@ -40,33 +40,43 @@ class _HomeScreenState extends State<HomeScreen> {
           }
           return true; // Allow normal back behavior if already on Dashboard
         },
-        child:PageView(
-        physics: NeverScrollableScrollPhysics(),
-        controller: _pageController,
-        onPageChanged: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
-        children: <Widget>[
-          CategoriesDashboard(),
-          ClientModule(),
-          SupplyChain(),
-          MachineModule(),
-          MyReportScreen(),
-          UserPrivilege()
-        ],
+        child: PageView(
+          physics: NeverScrollableScrollPhysics(),
+          controller: _pageController,
+          onPageChanged: (index) {
+            setState(() {
+              _selectedIndex = index;
+            });
+          },
+          children: <Widget>[
+            CategoriesDashboard(),
+            ClientModule(),
+            SupplyChain(),
+            MachineModule(),
+            MyReportScreen(),
+            UsersModule(),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   AppBar buildAppBar(BuildContext context) {
     return AppBar(
       centerTitle: true,
-      title: Image.asset(
-        "assets/images/app_name_logo.png",
-        width: 120,
-        height: 40,
+      title: ShaderMask(
+        shaderCallback: (Rect bounds) {
+          return const LinearGradient(
+            colors: [Colors.white, Colors.white],
+            tileMode: TileMode.mirror,
+          ).createShader(bounds);
+        },
+        blendMode: BlendMode.srcATop,
+        child: Image.asset(
+          "assets/images/app_name_logo.png",
+          width: 120,
+          height: 40,
+        ),
       ),
       actions: <Widget>[
         Padding(
@@ -85,9 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Drawer buildDrawer(BuildContext context) {
     return Drawer(
-
       child: Container(
-
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [colorFirstGrad, colorSecondGrad],
@@ -95,99 +103,71 @@ class _HomeScreenState extends State<HomeScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
-            const SizedBox(
+            SizedBox(
               height: 100,
               child: DrawerHeader(
                 decoration: BoxDecoration(
                   color: Colors.transparent,
                 ),
-                child: Center(
-                  child: Text(
-                    'Tracesci.in',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                    ),
+                child: ShaderMask(
+                  shaderCallback: (Rect bounds) {
+                    return const LinearGradient(
+                      colors: [Colors.white, Colors.white],
+                      tileMode: TileMode.mirror,
+                    ).createShader(bounds);
+                  },
+                  blendMode: BlendMode.srcATop,
+                  child: Image.asset(
+                    "assets/images/app_name_logo.png",
+                    width: 100,
+                    height: 40,
                   ),
                 ),
               ),
             ),
-            ListTile(
-              leading: Icon(Icons.dashboard, color: Colors.white),
-              title: Text('Dashboard', style: TextStyle(color: Colors.white)),
-              selected: _selectedIndex == 0,
-              onTap: () {
-                _onItemTapped(0);
-                Navigator.pop(context);
-              },
+            _buildDrawerItem(
+              icon: Icons.dashboard,
+              text: 'Dashboard',
+              index: 0,
             ),
-            ListTile(
-              leading: const Icon(Icons.person, color: Colors.white),
-              title:
-                  const Text('Clients', style: TextStyle(color: Colors.white)),
-              selected: _selectedIndex == 1,
-              onTap: () {
-                _onItemTapped(1);
-                Navigator.pop(context);
-              },
+            _buildDrawerItem(
+              icon: Icons.person,
+              text: 'Clients',
+              index: 1,
             ),
-            ListTile(
-              leading:
-                  const Icon(Icons.account_tree_outlined, color: Colors.white),
-              title: const Text('Supply Chain',
-                  style: TextStyle(color: Colors.white)),
-              selected: _selectedIndex == 2,
-              onTap: () {
-                _onItemTapped(2);
-                Navigator.pop(context);
-              },
+            _buildDrawerItem(
+              icon: Icons.account_tree_outlined,
+              text: 'Supply Chain',
+              index: 2,
             ),
-            ListTile(
-              leading: const Icon(Icons.add_business, color: Colors.white),
-              title:
-                  const Text('Machines', style: TextStyle(color: Colors.white)),
-              selected: _selectedIndex == 3,
-              onTap: () {
-                _onItemTapped(3);
-                Navigator.pop(context);
-              },
+            _buildDrawerItem(
+              icon: Icons.add_business,
+              text: 'Machines',
+              index: 3,
             ),
-            ListTile(
-              leading: const Icon(Icons.report, color: Colors.white),
-              title:
-                  const Text('Reports', style: TextStyle(color: Colors.white)),
-              selected: _selectedIndex == 4,
-              onTap: () {
-                _onItemTapped(4);
-                Navigator.pop(context);
-              },
+            _buildDrawerItem(
+              icon: Icons.report,
+              text: 'Reports',
+              index: 4,
             ),
-            ListTile(
-              leading: const Icon(Icons.add, color: Colors.white),
-              title:
-                  const Text('User Privilege', style: TextStyle(color: Colors.white)),
-              selected: _selectedIndex == 5,
-              onTap: () {
-                _onItemTapped(5);
-                Navigator.pop(context);
-              },
+            _buildDrawerItem(
+              icon: Icons.add,
+              text: 'Users',
+              index: 5,
             ),
             ListTile(
               leading: const Icon(Icons.exit_to_app, color: Colors.white),
-              title:
-                  const Text('Logout', style: TextStyle(color: Colors.white)),
+              title: const Text('Logout', style: TextStyle(color: Colors.white)),
               onTap: () {
                 showToast("Logout button pressed");
                 WidgetsBinding.instance.addPostFrameCallback((_) {
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(
-                        builder: (context) => const AuthProcess()),
-                    (Route<dynamic> route) => false,
+                    MaterialPageRoute(builder: (context) => const AuthProcess()),
+                        (Route<dynamic> route) => false,
                   );
                 });
               },
@@ -195,6 +175,20 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+      {required IconData icon, required String text, required int index}) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.white),
+      title: Text(text, style: TextStyle(color: Colors.white)),
+      selected: _selectedIndex == index,
+      selectedTileColor: Colors.blueAccent.withOpacity(0.3),
+      onTap: () {
+        _onItemTapped(index);
+        Navigator.pop(context);
+      },
     );
   }
 
@@ -218,6 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
 
 class CategoriesDashboard extends StatelessWidget {
   const CategoriesDashboard({Key? key}) : super(key: key);
