@@ -297,7 +297,6 @@ class _DispatchReceiveRadioButtonState
                 onChanged: (DispatchReceive? value) {
                   setState(() {
                     _selectedOption = value;
-
                   });
                 },
               ),

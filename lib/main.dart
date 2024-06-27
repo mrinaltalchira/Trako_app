@@ -10,6 +10,7 @@ import 'package:tonner_app/screens/products/add_machine.dart';
 import 'package:tonner_app/screens/products/machine.dart';
 import 'package:tonner_app/screens/profile/profile.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
+import 'package:tonner_app/screens/user_privilege/create_user.dart';
 import 'package:tonner_app/screens/user_privilege/user_privilege.dart';
 
 import 'ThemeNotifier.dart';
@@ -66,6 +67,7 @@ class MyApp extends StatelessWidget {
               '/rq_view_tracesci': (context) => const QRViewTracesci(),
               '/add_toner': (context) => const AddToner(),
               '/user_privilege': (context) =>  UserPrivilege(),
+              '/create_user': (context) =>  CreateUser(),
 
             }
           /* routes: {

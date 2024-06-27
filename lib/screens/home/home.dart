@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.transparent,
                 ),
                 child: Center(
-                  child: Text( 
+                  child: Text(
                     'Tracesci.in',
                     style: TextStyle(
                       color: Colors.white,
