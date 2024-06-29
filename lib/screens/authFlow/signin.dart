@@ -13,8 +13,7 @@ class AuthProcess extends StatefulWidget {
 }
 
 class _AuthProcessState extends State<AuthProcess> {
-  bool isPhoneInput =
-      true; // Flag to track whether to show phone input or email input
+  bool isPhoneInput = true; // Flag to track whether to show phone input or email input
 
   @override
   void dispose() {
