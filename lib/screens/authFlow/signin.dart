@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
+import 'package:tonner_app/model/login_model.dart';
+import 'package:tonner_app/network/ApiService.dart';
+import 'package:tonner_app/pref_manager.dart';
+
 import '../../color/colors.dart';
 import '../../globals.dart';
-import '../client/client.dart';
 import '../home/home.dart';
 
 class AuthProcess extends StatefulWidget {
@@ -14,6 +17,10 @@ class AuthProcess extends StatefulWidget {
 
 class _AuthProcessState extends State<AuthProcess> {
   bool isPhoneInput = true; // Flag to track whether to show phone input or email input
+  final ApiService apiService = ApiService();
+  final TextEditingController phoneController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   @override
   void dispose() {
@@ -41,7 +48,8 @@ class _AuthProcessState extends State<AuthProcess> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 30), // Removed const from SizedBox
+                SizedBox(height: 30),
+                // Removed const from SizedBox
                 Container(
                   height: 100,
                   alignment: Alignment.center,
@@ -51,7 +59,8 @@ class _AuthProcessState extends State<AuthProcess> {
                     height: 70, // Adjust height as needed
                   ),
                 ),
-                SizedBox(height: 50), // Removed const from SizedBox
+                SizedBox(height: 50),
+                // Removed const from SizedBox
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -84,9 +93,15 @@ class _AuthProcessState extends State<AuthProcess> {
                   ],
                 ),
                 isPhoneInput
-                    ? IntlPhoneInputTextField()
-                    : EmailInputTextField(), // Dynamic widget, removed const
-                SizedBox(height: 10), // Removed const from SizedBox
+                    ? IntlPhoneInputTextField(
+                        controller: phoneController,
+                      )
+                    : EmailInputTextField(
+                        controller: emailController,
+                      ),
+                // Dynamic widget, removed const
+                SizedBox(height: 10),
+                // Removed const from SizedBox
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -115,8 +130,11 @@ class _AuthProcessState extends State<AuthProcess> {
                     SizedBox(height: 5), // Removed const from SizedBox
                   ],
                 ),
-                PasswordInputTextField(),
-                SizedBox(height: 60), // Removed const from SizedBox
+                PasswordInputTextField(
+                  controller: passwordController,
+                ),
+                SizedBox(height: 60),
+                // Removed const from SizedBox
                 GestureDetector(
                   onTap: () {
                     showSnackBar(context, "Clicked on login");
@@ -131,18 +149,13 @@ class _AuthProcessState extends State<AuthProcess> {
                       buttonText: "Sign in",
                       // Dynamic text, removed const
                       onPressed: () {
-                        // Validate inputs if needed
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
-                        );
-                        showSnackBar(context, "Welcome Onboard.");
+                        validateAndSignIn();
                       },
                     ),
                   ),
                 ),
-                SizedBox(height: 15), // Removed const from SizedBox
+                SizedBox(height: 15),
+                // Removed const from SizedBox
                 Row(
                   children: [
                     Expanded(
@@ -155,9 +168,23 @@ class _AuthProcessState extends State<AuthProcess> {
                         ),
                       ),
                     ),
-                    Text(
-                      "or sign in with", // Removed const from text
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    GestureDetector(
+                      onTap: () {
+                        // Add your navigation or action here
+                        // For example, navigate to another screen
+                        Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                            builder: (context) => const HomeScreen(),
+                          ),
+                        );
+                      },
+                      child: Text(
+                        "or sign in with",
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey,
+                            decoration: TextDecoration.underline),
+                      ),
                     ),
                     Expanded(
                       child: Container(
@@ -171,19 +198,21 @@ class _AuthProcessState extends State<AuthProcess> {
                     ),
                   ],
                 ),
-                SizedBox(height: 15), // Removed const from SizedBox
+                SizedBox(height: 15),
+                // Removed const from SizedBox
                 SizedBox(
                   child: GradientButton(
-                    gradientColors: [colorMixGrad, colorMixGrad],
-                    // Removed const from gradientColors
-                    height: 45.0,
-                    width: 10.0,
-                    radius: 25.0,
-                    buttonText: isPhoneInput ? "Email" : "Phone number",
-                    // Dynamic text, removed const
-                    onPressed:
-                        toggleInputType, // Toggle between phone and email input
-                  ),
+                      gradientColors: [colorMixGrad, colorMixGrad],
+                      // Removed const from gradientColors
+                      height: 45.0,
+                      width: 10.0,
+                      radius: 25.0,
+                      buttonText: isPhoneInput ? "Email" : "Phone number",
+                      // Dynamic text, removed const
+                      onPressed: () {
+                        showSnackBar(context, isPhoneInput.toString());
+                        toggleInputType(); // Toggle between phone and email input
+                      }),
                 ),
               ],
             ),
@@ -192,14 +221,114 @@ class _AuthProcessState extends State<AuthProcess> {
       ),
     );
   }
-}
+
+  Future<void> validateAndSignIn() async {
+    // Validate phone number
+    if (isPhoneInput) {
+      if (phoneController.text.isEmpty) {
+        showSnackBar(context, "Phone number is required.");
+        return;
+      }
+      // Additional phone number validation can be added here
+    } else {
+      // Validate email
+      if (emailController.text.isEmpty) {
+        showSnackBar(context, "Email is required.");
+        return;
+      }
+      // Additional email validation can be added here
+    }
+
+    // Validate password
+    if (passwordController.text.isEmpty) {
+      showSnackBar(context, "Password is required.");
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(child: CircularProgressIndicator());
+      },
+    );
+
+    // Call the login API
+    try {
+      final ApiService apiService = ApiService();
+      late final Map<String, dynamic> loginResponse;
+
+      // Determine whether to use phone or email for login
+      if (isPhoneInput) {
+        loginResponse = await apiService.login(
+            null, phoneController.text, passwordController.text);
+      } else {
+        loginResponse = await apiService.login(
+            emailController.text, null, passwordController.text);
+      }
+
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Check if the login was successful based on the response structure
+      if (loginResponse.containsKey('error') &&
+          loginResponse.containsKey('status')) {
+        if (!loginResponse['error'] && loginResponse['status'] == 200) {
+          // Successful login
+
+          // Check specific success message
+          if (loginResponse['message'] == 'Success') {
+            // Extract token and handle it
+            User user = User.fromJson(loginResponse['data']['user']);
+            String token = user.token;
+            // final token = loginResponse['data']['user'][['token']];
+            if (token.isNotEmpty) {
+
+              PrefManager().setToken(token.toString());
+
+              // Navigate to home screen
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const HomeScreen(),
+                ),
+              );
+            } else {
+              showSnackBar(context, "Token not found in response.");
+            }
+          } else {
+            showSnackBar(context, loginResponse['message']);
+          }
+        } else {
+          // Login failed
+          showSnackBar(context, "Login failed. Please check your credentials.");
+        }
+      } else {
+        // Unexpected response structure
+        showSnackBar(context,
+            "Unexpected response from server. Please try again later.");
+      }
+    } catch (e) {
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Handle API errors
+      showSnackBar(
+          context, "Failed to connect to the server. Please try again later.");
+      print("Login API Error: $e");
+    }
+  }
+  }
 
 class IntlPhoneInputTextField extends StatelessWidget {
-  const IntlPhoneInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const IntlPhoneInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return IntlPhoneField(
+      controller: controller,
       decoration: InputDecoration(
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
@@ -235,7 +364,10 @@ class IntlPhoneInputTextField extends StatelessWidget {
 }
 
 class PasswordInputTextField extends StatefulWidget {
-  const PasswordInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const PasswordInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _PasswordInputTextFieldState createState() => _PasswordInputTextFieldState();
@@ -247,6 +379,7 @@ class _PasswordInputTextFieldState extends State<PasswordInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       decoration: InputDecoration(
         hintText: 'Password',
         hintStyle: TextStyle(color: Colors.grey),
@@ -281,28 +414,23 @@ class _PasswordInputTextFieldState extends State<PasswordInputTextField> {
   }
 }
 
-class EmailInputTextField extends StatefulWidget {
-  const EmailInputTextField({Key? key}) : super(key: key);
+class EmailInputTextField extends StatelessWidget {
+  final TextEditingController controller;
 
-  @override
-  _EmailInputTextFieldState createState() => _EmailInputTextFieldState();
-}
+  const EmailInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
-class _EmailInputTextFieldState extends State<EmailInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       keyboardType: TextInputType.emailAddress,
-
       decoration: InputDecoration(
         hintText: 'Email',
-
-        // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
-
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide:

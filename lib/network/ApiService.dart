@@ -1,63 +1,154 @@
 import 'dart:convert';
-import 'package:flutter/cupertino.dart';
-import 'package:http/http.dart' as http;
-import 'package:tonner_app/globals.dart';
+import 'package:dio/dio.dart';
+import 'package:tonner_app/model/all_clients.dart';
+import 'package:tonner_app/pref_manager.dart';
 
 class ApiService {
-  final String baseUrl = "http://127.0.0.1:8080/api";
+  final String baseUrl = 'http://192.168.0.138:8000/api';
+  late Dio _dio;
+  late String? token;
 
-
-  Future<http.Response> getRequest(String endpoint) async {
-    final url = Uri.parse('$baseUrl/$endpoint');
-    final response = await http.get(url);
-    if (response.statusCode == 200) {
-      return response;
-    } else {
-      throw Exception('Failed to load data');
-    }
+  ApiService() {
+    initializeApiService();
   }
 
-  Future<http.Response> postRequest(String endpoint, Map<String, dynamic> data) async {
-    final url = Uri.parse('$baseUrl/$endpoint');
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(data),
-    );
-    if (response.statusCode == 200) {
-      return response;
-    } else {
-      throw Exception('Failed to post data');
-    }
-  }
-
-
-
-
-  Future<void> login(BuildContext context,String phone, String password) async {
-    final endpoint = 'login';
-    final data = {'phone': phone, 'password': password};
-
+  Future<void> initializeApiService() async {
     try {
-      final response = await postRequest(endpoint, data);
-      if (response.statusCode == 200) {
-        // Show toast with the response
-       showSnackBar(
-         context, 'Login successful: ${response.body}',
-        );
-      } else {
-        showSnackBar( context,
-            'Login failed: ${response.body}'
-        );
-      }
+      token = await PrefManager().getToken();
+
+      BaseOptions options = BaseOptions(
+        baseUrl: baseUrl,
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+      );
+      _dio = Dio(options);
+      _dio.interceptors.add(LoggerInterceptor());
     } catch (e) {
-      showSnackBar( context,
-          'Error: $e'
+      print('Failed to initialize ApiService: $e');
+      throw Exception('Failed to initialize ApiService');
+    }
+  }
+
+  Future<Map<String, dynamic>> login(String? email, String? phone, String password) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before login
+
+      final response = await _dio.post(
+        '$baseUrl/login',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        ),
+        data: jsonEncode({
+          if (email != null && email.isNotEmpty) 'email': email,
+          if (phone != null && phone.isNotEmpty) 'phone': phone,
+          'password': password,
+        }),
+      ).timeout(const Duration(seconds: 15));
+
+      return response.data;
+    } catch (e) {
+      print('Login API error: $e');
+      throw Exception('Login API Failed to connect to the server.');
+    }
+  }
+
+  Future<Map<String, dynamic>> addClient({
+    required String name,
+    required String city,
+    required String email,
+    required String phone,
+    required String address,
+    required String contactPerson,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addClient
+
+      final url = '/add-client'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          'name': name,
+          'city': city,
+          'email': email,
+          'phone': phone,
+          'address': address,
+          'contact_person': contactPerson,
+        }),
       );
 
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to add client');
+      }
+    } catch (e) {
+      print('Add Client API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<List<Client>> getAllClients() async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before getAllClients
+
+      final response = await _dio.get(
+        '$baseUrl/all-client',
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.data);
+        List<Client> clients = (data['data']['clients'] as List)
+            .map((json) => Client.fromJson(json))
+            .toList();
+        return clients;
+      } else {
+        throw Exception('Failed to load clients');
+      }
+    } catch (e) {
+      print('Get All Clients API error: $e');
+      throw Exception('Failed to connect to the server.');
     }
   }
 }
 
+class LoggerInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    print("Request to: ${options.uri}");
+    print("Request Headers: ${options.headers}");
+    print("Request Data: ${options.data}");
+    return super.onRequest(options, handler);
+  }
 
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    print("Response from: ${response.requestOptions.uri}");
+    print("Response Status: ${response.statusCode}");
+    print("Response Headers: ${response.headers}");
+    print("Response Data: ${response.data}");
+    return super.onResponse(response, handler);
+  }
 
+  @override
+  void onError(DioError err, ErrorInterceptorHandler handler) {
+    print("Error from: ${err.requestOptions.uri}");
+    print("Error Message: ${err.message}");
+    if (err.response != null) {
+      print("Error Data: ${err.response?.data}");
+    }
+    return super.onError(err, handler);
+  }
+}

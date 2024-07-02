@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/model/all_clients.dart';
+import 'package:tonner_app/network/ApiService.dart';
 
 class ClientModule extends StatefulWidget {
   const ClientModule({super.key});
@@ -11,28 +13,27 @@ class ClientModule extends StatefulWidget {
 }
 
 class _ClientModuleState extends State<ClientModule> {
-  final List<Map<String, dynamic>> items = [
-    {
-      'client_name': 'Jams Karter',
-      'created_at': 'Gurugram',
-      'is_active': true,
-    },
-    {
-      'client_name': 'Peter Parker',
-      'created_at': 'Mumbai',
-      'is_active': false,
-    },
-    {
-      'client_name': 'Ken Tino',
-      'created_at': 'Jaipur',
-      'is_active': false,
-    },
-    {
-      'client_name': 'Will Smith',
-      'created_at': 'Delhi',
-      'is_active': true,
-    },
-  ];
+
+  late Future<List<Client>> clientsFuture;
+  final ApiService _apiService = ApiService(); // Initialize your ApiService
+
+  @override
+  void initState() {
+    super.initState();
+    clientsFuture = getClientsList();
+  }
+
+  Future<List<Client>> getClientsList() async {
+    try {
+      List<Client> clients = await _apiService.getAllClients();
+      return clients;
+    } catch (e) {
+      // Handle error
+      print('Error fetching clients: $e');
+      return [];
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -75,7 +76,19 @@ class _ClientModuleState extends State<ClientModule> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ScannedHistoryList(items: items),
+                    FutureBuilder<List<Client>>(
+                      future: clientsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(child: Text('Error: ${snapshot.error}'));
+                        } else {
+                          List<Client> clients = snapshot.data ?? []; // Handle null case if necessary
+                          return ScannedHistoryList(items: clients);
+                        }
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -85,6 +98,7 @@ class _ClientModuleState extends State<ClientModule> {
       ),
     );
   }
+
 }
 
 class CustomSearchField extends StatelessWidget {
@@ -225,9 +239,9 @@ class CustomInputTextField extends StatelessWidget {
 }
 
 class ScannedHistoryList extends StatelessWidget {
-  final List<Map<String, dynamic>> items;
+  final List<Client> items;
 
-  const ScannedHistoryList({super.key, required this.items});
+  const ScannedHistoryList({Key? key, required this.items}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -236,7 +250,8 @@ class ScannedHistoryList extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        Color? cardColor = items[index]['is_active'] ? Colors.red[10] : Colors.grey[300];
+      Color? cardColor = items[index].isActive ? Colors.red[10] : Colors.grey[300];
+
 
         return Card(
           margin: const EdgeInsets.all(8.0),
@@ -254,7 +269,7 @@ class ScannedHistoryList extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(items[index]['client_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      child: Text(items[index].name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit),
@@ -264,7 +279,7 @@ class ScannedHistoryList extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text(items[index]['created_at'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(items[index].createdAt.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4.0),
               ],
             ),
@@ -274,13 +289,13 @@ class ScannedHistoryList extends StatelessWidget {
     );
   }
 
-  void _showEditDialog(BuildContext context, Map<String, dynamic> item) {
+  void _showEditDialog(BuildContext context, Client client) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Product'),
-          content: Text('Edit details of ${item['client_name']}'),
+          title: const Text('Edit Client'),
+          content: Text('Edit details of ${client.name}'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -291,7 +306,7 @@ class ScannedHistoryList extends StatelessWidget {
             TextButton(
               child: const Text('Edit'),
               onPressed: () {
-                _editItem(item);
+                _editClient(context, client);
                 Navigator.of(context).pop();
               },
             ),
@@ -301,8 +316,10 @@ class ScannedHistoryList extends StatelessWidget {
     );
   }
 
-  void _editItem(Map<String, dynamic> item) {
-    print('Editing item: ${item['client_name']}');
+  void _editClient(BuildContext context, Client client) {
+    // Implement your logic to edit the client
+    print('Editing client: ${client.name}');
+    // Add your logic here to update client data
   }
 }
 

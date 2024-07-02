@@ -2,10 +2,28 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/home/home.dart';
 
-class AddClient extends StatelessWidget {
+class AddClient extends StatefulWidget {
+  @override
+  State<AddClient> createState() => _AddClientState();
+}
+
+class _AddClientState extends State<AddClient> {
+  final TextEditingController nameController = TextEditingController();
+
+  final TextEditingController cityController = TextEditingController();
+
+  final TextEditingController emailController = TextEditingController();
+
+  final TextEditingController phoneController = TextEditingController();
+
+  final TextEditingController addressController = TextEditingController();
+
+  final TextEditingController contactPersonController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +47,6 @@ class AddClient extends StatelessWidget {
           SizedBox(width: 7),
         ],
       ),
-
       body: SingleChildScrollView(
           child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 36.0),
@@ -56,7 +73,7 @@ class AddClient extends StatelessWidget {
                       height: 20,
                     ),
                     Text(
-                    "Name",
+                      "Name",
                       // Dynamic text, removed const
                       style: TextStyle(
                         fontSize: 16,
@@ -64,7 +81,9 @@ class AddClient extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5), // Removed const from SizedBox
-                    const NameInputTextField(),
+                    NameInputTextField(
+                      controller: nameController,
+                    ),
                     const SizedBox(
                       height: 20,
                     ),
@@ -77,7 +96,7 @@ class AddClient extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5),
-                    const CityInputTextField(),
+                    CityInputTextField(controller: cityController),
                     const SizedBox(
                       height: 20,
                     ),
@@ -90,7 +109,7 @@ class AddClient extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5),
-                    const EmailInputTextField(),
+                    EmailInputTextField(controller: emailController),
                     const SizedBox(
                       height: 20,
                     ),
@@ -103,7 +122,7 @@ class AddClient extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5),
-                    const PhoneInputTextField(),
+                    PhoneInputTextField(controller: phoneController),
                     const SizedBox(
                       height: 20,
                     ),
@@ -116,7 +135,7 @@ class AddClient extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5),
-                    const AddressInputTextField(),
+                    AddressInputTextField(controller: addressController),
                     const SizedBox(
                       height: 20,
                     ),
@@ -129,7 +148,8 @@ class AddClient extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5),
-                    const ContactPersonInputTextField(),
+                    ContactPersonInputTextField(
+                        controller: contactPersonController),
                     const SizedBox(
                       height: 20,
                     ),
@@ -144,10 +164,8 @@ class AddClient extends StatelessWidget {
                         radius: 25.0,
                         buttonText: "Submit",
                         onPressed: () {
-                          /*Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const QRViewTracesci(),
-                      ));*/
-                          showSnackBar(context, "Submited");
+                          validateAndSignIn();
+
                         },
                       ),
                     )),
@@ -157,12 +175,103 @@ class AddClient extends StatelessWidget {
                   ]))),
     );
   }
+
+  Future<void> validateAndSignIn() async {
+    // Validate phone nu
+
+    if (nameController.text.isEmpty) {
+      showSnackBar(context, "Full name is required.");
+      return;
+    }
+
+    if (cityController.text.isEmpty) {
+      showSnackBar(context, "City is required.");
+      return;
+    }
+
+    if (emailController.text.isEmpty) {
+      showSnackBar(context, "Email is required & must be unique.");
+      return;
+    }
+
+    if (phoneController.text.isEmpty) {
+      showSnackBar(context, "Phone is required & must be unique.");
+      return;
+    }
+
+    if (addressController.text.isEmpty) {
+      showSnackBar(context, "Address is required.");
+      return;
+    }
+
+    if (contactPersonController.text.isEmpty) {
+      showSnackBar(context, "Contact name is required.");
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(child: CircularProgressIndicator());
+      },
+    );
+
+    // Call the login API
+    try {
+      final ApiService apiService = ApiService();
+      late final Map<String, dynamic> addClientResponse;
+
+      // Determine whether to use phone or email for login
+
+      addClientResponse = await apiService.addClient(
+          name: nameController.text,
+          city: cityController.text,
+          email: emailController.text,
+          phone: phoneController.text,
+          address: addressController.text,
+          contactPerson: contactPersonController.text);
+
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Check if the login was successful based on the response structure
+      if (addClientResponse.containsKey('error') &&
+          addClientResponse.containsKey('status')) {
+        if (!addClientResponse['error'] && addClientResponse['status'] == 200) {
+
+
+          if (addClientResponse['message'] == 'Success') {
+            showSnackBar(context, addClientResponse['message']);
+          } else {
+            showSnackBar(context, addClientResponse['message']);
+          }
+
+        } else {
+          // Login failed
+          showSnackBar(context, "Login failed. Please check your credentials.");
+        }
+      } else {
+        // Unexpected response structure
+        showSnackBar(context,
+            "Unexpected response from server. Please try again later.");
+      }
+    } catch (e) {
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Handle API errors
+      showSnackBar( context, "Failed to connect to the server. Please try again later.");
+      print("Login API Error: $e");
+    }
+  }
 }
 
-
-
 class NameInputTextField extends StatefulWidget {
-  const NameInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const NameInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _NameInputTextFieldState createState() => _NameInputTextFieldState();
@@ -173,7 +282,7 @@ class _NameInputTextFieldState extends State<NameInputTextField> {
   Widget build(BuildContext context) {
     return TextField(
       keyboardType: TextInputType.emailAddress,
-
+      controller: widget.controller,
       decoration: InputDecoration(
         hintText: 'Name',
 
@@ -186,7 +295,7 @@ class _NameInputTextFieldState extends State<NameInputTextField> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide:
-          BorderSide(color: colorMixGrad), // Border color when focused
+              BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
@@ -199,7 +308,10 @@ class _NameInputTextFieldState extends State<NameInputTextField> {
 }
 
 class CityInputTextField extends StatefulWidget {
-  const CityInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const CityInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _CityInputTextFieldState createState() => _CityInputTextFieldState();
@@ -209,8 +321,8 @@ class _CityInputTextFieldState extends State<CityInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
-
       decoration: InputDecoration(
         hintText: 'City',
 
@@ -223,7 +335,7 @@ class _CityInputTextFieldState extends State<CityInputTextField> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide:
-          BorderSide(color: colorMixGrad), // Border color when focused
+              BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
@@ -236,7 +348,10 @@ class _CityInputTextFieldState extends State<CityInputTextField> {
 }
 
 class EmailInputTextField extends StatefulWidget {
-  const EmailInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const EmailInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _EmailInputTextFieldState createState() => _EmailInputTextFieldState();
@@ -246,8 +361,8 @@ class _EmailInputTextFieldState extends State<EmailInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
-
       decoration: InputDecoration(
         hintText: 'Email',
 
@@ -260,7 +375,7 @@ class _EmailInputTextFieldState extends State<EmailInputTextField> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide:
-          BorderSide(color: colorMixGrad), // Border color when focused
+              BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
@@ -273,7 +388,10 @@ class _EmailInputTextFieldState extends State<EmailInputTextField> {
 }
 
 class PhoneInputTextField extends StatefulWidget {
-  const PhoneInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const PhoneInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _PhoneInputTextFieldState createState() => _PhoneInputTextFieldState();
@@ -283,8 +401,8 @@ class _PhoneInputTextFieldState extends State<PhoneInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
-
       decoration: InputDecoration(
         hintText: 'Phone',
 
@@ -297,7 +415,7 @@ class _PhoneInputTextFieldState extends State<PhoneInputTextField> {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide:
-          BorderSide(color: colorMixGrad), // Border color when focused
+              BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
@@ -310,7 +428,10 @@ class _PhoneInputTextFieldState extends State<PhoneInputTextField> {
 }
 
 class AddressInputTextField extends StatefulWidget {
-  const AddressInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const AddressInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _AddressInputTextFieldState createState() => _AddressInputTextFieldState();
@@ -320,8 +441,10 @@ class _AddressInputTextFieldState extends State<AddressInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       keyboardType: TextInputType.multiline,
-      maxLines: null, // Allows unlimited lines of text input
+      maxLines: null,
+      // Allows unlimited lines of text input
 
       decoration: InputDecoration(
         hintText: 'Address',
@@ -329,10 +452,10 @@ class _AddressInputTextFieldState extends State<AddressInputTextField> {
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
-
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: BorderSide(color: colorMixGrad), // Border color when focused
+          borderSide:
+              BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
@@ -345,18 +468,23 @@ class _AddressInputTextFieldState extends State<AddressInputTextField> {
 }
 
 class ContactPersonInputTextField extends StatefulWidget {
-  const ContactPersonInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const ContactPersonInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
-  _ContactPersonInputTextFieldState createState() => _ContactPersonInputTextFieldState();
+  _ContactPersonInputTextFieldState createState() =>
+      _ContactPersonInputTextFieldState();
 }
 
-class _ContactPersonInputTextFieldState extends State<ContactPersonInputTextField> {
+class _ContactPersonInputTextFieldState
+    extends State<ContactPersonInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
-
       decoration: InputDecoration(
         hintText: 'Contact name',
 
@@ -369,7 +497,7 @@ class _ContactPersonInputTextFieldState extends State<ContactPersonInputTextFiel
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide:
-          BorderSide(color: colorMixGrad), // Border color when focused
+              BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),

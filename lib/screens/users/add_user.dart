@@ -210,8 +210,8 @@ class UserRolesSpinner extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
       value: selectedValue,
-      hint: const Text('Select an option'),
-      items: ['Super Admin', 'Admin', 'Client', 'User'].map((String value) {
+      hint: const Text('Select Role'),
+      items: [ 'Admin', 'Client', 'Logistic','User'].map((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),

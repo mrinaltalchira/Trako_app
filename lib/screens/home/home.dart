@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
+import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/pref_manager.dart';
 import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/dasboard/dashboard.dart';
 import 'package:tonner_app/screens/products/machine.dart';
@@ -84,7 +86,8 @@ class _HomeScreenState extends State<HomeScreen> {
           child: IconButton(
             icon: Icon(Icons.person),
             onPressed: () {
-              Navigator.pushNamed(context, '/profile');
+              showSnackBar(context, PrefManager().getToken().toString());
+              // Navigator.pushNamed(context, '/profile');
             },
           ),
         ),
