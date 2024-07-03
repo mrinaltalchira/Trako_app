@@ -9,6 +9,9 @@ class User {
   final String authority;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool machineModule;
+  final bool clientModule;
+  final bool userModule;
 
   User({
     required this.id,
@@ -21,6 +24,9 @@ class User {
     required this.authority,
     required this.createdAt,
     required this.updatedAt,
+    required this.machineModule,
+    required this.clientModule,
+    required this.userModule,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -30,11 +36,14 @@ class User {
       email: json['email'],
       token: json['token'],
       phone: json['phone'],
-      isActive: json['is_active'],
+      isActive: int.parse(json['is_active']),
       userRole: json['user_role'],
-      authority: json['authority'],
+      authority: json['authority'] ?? '', // adjust if authority is available in JSON
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
+      machineModule: json['machine_module'] == '1', // Convert '1' to true, '0' to false
+      clientModule: json['client_module'] == '1', // Convert '1' to true, '0' to false
+      userModule: json['user_module'] == '1', // Convert '1' to true, '0' to false
     );
   }
 }

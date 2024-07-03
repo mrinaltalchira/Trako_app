@@ -2,14 +2,25 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/home/home.dart';
 
-class AddMachine extends StatelessWidget {
-  const AddMachine({super.key});
+class AddMachine extends StatefulWidget {
+   AddMachine({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  State<AddMachine> createState() => _AddMachineState();
+}
+
+
+class _AddMachineState extends State<AddMachine> {
+   final TextEditingController machine_name_Controller = TextEditingController();
+
+   final TextEditingController machine_code_Controller = TextEditingController();
+
+  @override
+  Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -65,7 +76,7 @@ class AddMachine extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5),
-                    const MachineNameInputTextField(),
+                     MachineNameInputTextField(controller: machine_name_Controller,),
                     const SizedBox(
                       height: 20,
                     ),
@@ -78,7 +89,7 @@ class AddMachine extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 5),
-                    const MachineCodeInputTextField(),
+                     MachineCodeInputTextField(controller: machine_code_Controller,),
                     const SizedBox(
                       height: 20,
                     ),
@@ -95,24 +106,91 @@ class AddMachine extends StatelessWidget {
                             onPressed: () {
                               /*Navigator.of(context).push(MaterialPageRoute(
                         builder: (context) => const QRViewTracesci(),
-                      ));*/
-                              showSnackBar(context, "Submited");
+                      ));*/  validateAndSignIn();
+
                             },
                           ),
                         )),
-                    SizedBox(
+                    const SizedBox(
                       height: 100,
                     )
-                  ]))),
+                  ])
+          )
+      ),
     );
   }
+
+   Future<void> validateAndSignIn() async {
+
+     if (machine_name_Controller.text.isEmpty) {
+        showSnackBar(context, "Model Name is required.");
+        return;
+     }
+
+     if (machine_code_Controller.text.isEmpty) {
+        showSnackBar(context, "Model Code is required.");
+        return;
+     }
+
+     showDialog(
+       context: context,
+       barrierDismissible: false,
+       builder: (BuildContext context) {
+         return Center(child: CircularProgressIndicator());
+       },
+     );
+
+     // Call the login API
+     try {
+
+       final ApiService apiService = ApiService();
+       late final Map<String, dynamic> addMachineResponse;
+
+
+       addMachineResponse = await apiService.addMachine(
+           model_name: machine_name_Controller.text,
+           model_code: machine_code_Controller.text
+       );
+
+       Navigator.of(context).pop();
+
+       // Check if the login was successful based on the response structure
+       if (addMachineResponse.containsKey('error') &&
+           addMachineResponse.containsKey('status')) {
+         if (!addMachineResponse['error'] && addMachineResponse['status'] == 200) {
+           if (addMachineResponse['message'] == 'Success') {
+             machine_name_Controller.text = "";
+             machine_code_Controller.text = "";
+             showSnackBar(context, "Client created successfully.");
+           } else {
+             showSnackBar(context, addMachineResponse['message']);
+           }
+         } else {
+           // Login failed
+           showSnackBar(context, "Login failed. Please check your credentials.");
+         }
+       } else {
+         // Unexpected response structure
+         showSnackBar(context,
+             "Unexpected response from server. Please try again later.");
+       }
+     } catch (e) {
+       // Dismiss loading indicator
+       Navigator.of(context).pop();
+
+       // Handle API errors
+       showSnackBar(
+           context, "Failed to connect to the server. Please try again later.");
+       print("Login API Error: $e");
+     }
+   }
+
 }
 
-
-
-
 class MachineNameInputTextField extends StatefulWidget {
-  const MachineNameInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+   MachineNameInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _MachineNameInputTextFieldState createState() => _MachineNameInputTextFieldState();
@@ -122,6 +200,7 @@ class _MachineNameInputTextFieldState extends State<MachineNameInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
 
       decoration: InputDecoration(
@@ -135,22 +214,21 @@ class _MachineNameInputTextFieldState extends State<MachineNameInputTextField> {
 
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-          BorderSide(color: colorMixGrad), // Border color when focused
+          borderSide: const BorderSide(color: colorMixGrad), // Border color when focused
         ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
-      style: TextStyle(
+      style: const TextStyle(
         fontSize: 16.0,
-        color: Colors.black,
+        color: Colors.black
       ),
     );
   }
 }
 
-
 class MachineCodeInputTextField extends StatefulWidget {
-  const MachineCodeInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+   MachineCodeInputTextField({Key? key, required this.controller}) : super(key: key);
 
   @override
   _MachineCodeInputTextFieldState createState() => _MachineCodeInputTextFieldState();
@@ -160,6 +238,8 @@ class _MachineCodeInputTextFieldState extends State<MachineCodeInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+
+      controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
 
       decoration: InputDecoration(

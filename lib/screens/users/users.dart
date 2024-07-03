@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/model/all_user.dart';
+import 'package:tonner_app/network/ApiService.dart';
 
 class UsersModule extends StatefulWidget {
   const UsersModule({super.key});
@@ -11,28 +13,28 @@ class UsersModule extends StatefulWidget {
 }
 
 class _UsersModuleState extends State<UsersModule> {
-  final List<Map<String, dynamic>> items = [
-    {
-      'client_name': 'Jams Karter',
-      'created_at': 'Gurugram',
-      'is_active': true,
-    },
-    {
-      'client_name': 'Peter Parker',
-      'created_at': 'Mumbai',
-      'is_active': false,
-    },
-    {
-      'client_name': 'Ken Tino',
-      'created_at': 'Jaipur',
-      'is_active': false,
-    },
-    {
-      'client_name': 'Will Smith',
-      'created_at': 'Delhi',
-      'is_active': true,
-    },
-  ];
+  late Future<List<User>> clientsFuture;
+  final ApiService _apiService = ApiService(); // Initialize your ApiService
+
+  @override
+  void initState() {
+    super.initState();
+    clientsFuture = getClientsList(null);
+  }
+
+  Future<List<User>> getClientsList(String? search) async {
+    try {
+      List<User> users = await _apiService.getAllUsers(search);
+      // Debug print to check the fetched clients
+      print('Fetched clients: $users');
+      return users;
+    } catch (e) {
+      // Handle error
+      print('Error fetching clients: $e');
+      return [];
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -50,49 +52,23 @@ class _UsersModuleState extends State<UsersModule> {
       ),
       body: Column(
         children: [
-
           Padding(
-            padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
+            padding: const EdgeInsets.only(
+                left: 25.0, right: 25.0, top: 10, bottom: 10),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                      ),
-                      borderRadius: BorderRadius.circular(25.0),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(10.0),
-                      ),
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.search, color: Colors.grey),
-                          SizedBox(width: 10.0),
-                          Expanded(
-                            child: TextField(
-                              decoration: InputDecoration(
-                                hintText: 'Search',
-                                hintStyle: TextStyle(color: Colors.grey),
-                                border: InputBorder.none,
-                              ),
-                              style: TextStyle(
-                                fontSize: 16.0,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  child: CustomSearchField(
+                    onSearchChanged: (searchQuery) {
+                      setState(() {
+                        clientsFuture = getClientsList(searchQuery);
+                      });
+                    },
                   ),
                 ),
-                const SizedBox(width: 20.0), // Spacer between search and add button
+                const SizedBox(width: 20.0),
+                // Spacer between search and add button
                 Container(
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
@@ -115,7 +91,6 @@ class _UsersModuleState extends State<UsersModule> {
               ],
             ),
           ),
-
           Expanded(
             child: SingleChildScrollView(
               child: Padding(
@@ -123,13 +98,31 @@ class _UsersModuleState extends State<UsersModule> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    ScannedHistoryList(items: items),
+                    FutureBuilder<List<User>>(
+                      future: clientsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
+                        } else if (snapshot.hasError) {
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
+                        } else {
+                          List<User> users = snapshot.data ??
+                              []; // Handle null case if necessary
+                          // Debug print to check the clients before passing to the widget
+                          print('Clients to display: $users');
+
+                          return ScannedHistoryList(items: users);
+                        }
+                      },
+                    ),
                   ],
                 ),
               ),
             ),
           ),
-
         ],
       ),
     );
@@ -298,7 +291,7 @@ class PhoneInputTextField extends StatelessWidget {
                   ),
                   const SizedBox(
                     width: 190,
-                    child:   LinearGradientDivider(
+                    child: LinearGradientDivider(
                       height: 1,
                       gradient: LinearGradient(
                         colors: [colorFirstGrad, colorSecondGrad],
@@ -369,7 +362,6 @@ class AddressInputTextField extends StatelessWidget {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 21),
                 ],
               ),
@@ -380,7 +372,6 @@ class AddressInputTextField extends StatelessWidget {
     );
   }
 }
-
 
 class ContactPersonInputTextField extends StatelessWidget {
   const ContactPersonInputTextField({super.key});
@@ -422,7 +413,7 @@ class ContactPersonInputTextField extends StatelessWidget {
                   ),
                   const SizedBox(
                     width: 190,
-                    child:  LinearGradientDivider(
+                    child: LinearGradientDivider(
                       height: 1,
                       gradient: LinearGradient(
                         colors: [colorFirstGrad, colorSecondGrad],
@@ -442,8 +433,9 @@ class ContactPersonInputTextField extends StatelessWidget {
     );
   }
 }
+
 class ScannedHistoryList extends StatelessWidget {
-  final List<Map<String, dynamic>> items;
+  final List<User> items;
 
   const ScannedHistoryList({super.key, required this.items});
 
@@ -455,7 +447,7 @@ class ScannedHistoryList extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         // Determine the background color based on is_active status
-        Color? cardColor = items[index]['is_active'] ? Colors.red[10] : Colors.grey[300];
+        Color? cardColor = items[index].isActive == "0" ? Colors.red[10] : Colors.grey[300];
 
         return Card(
           margin: const EdgeInsets.all(8.0),
@@ -463,9 +455,11 @@ class ScannedHistoryList extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
-          color: cardColor, // Set the color based on is_active status
+          color: cardColor,
+          // Set the color based on is_active status
           child: Padding(
-            padding: const EdgeInsets.only(left: 12.0,bottom: 12.0,right: 12.0),
+            padding:
+                const EdgeInsets.only(left: 12.0, bottom: 12.0, right: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -477,7 +471,10 @@ class ScannedHistoryList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(items[index]['client_name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                          Text(
+                            '${items[index].name[0].toUpperCase()}${items[index].name.substring(1)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                          ),
                         ],
                       ),
                     ),
@@ -495,7 +492,10 @@ class ScannedHistoryList extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text(items[index]['created_at'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  items[index].email,
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4.0),
               ],
             ),
@@ -505,14 +505,13 @@ class ScannedHistoryList extends StatelessWidget {
     );
   }
 
-
-  void _showEditDialog(BuildContext context, Map<String, dynamic> item) {
+  void _showEditDialog(BuildContext context, User client) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Product'),
-          content: Text('Edit details of ${item['client_name']}'),
+          title: const Text('Edit User'),
+          content: Text('Edit details of ${client.name}'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -523,9 +522,8 @@ class ScannedHistoryList extends StatelessWidget {
             TextButton(
               child: const Text('Edit'),
               onPressed: () {
-                // Perform edit action
-                _editItem(item);
-                Navigator.of(context).pop(); // Close dialog
+                _editClient(context, client);
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -534,8 +532,72 @@ class ScannedHistoryList extends StatelessWidget {
     );
   }
 
-  void _editItem(Map<String, dynamic> item) {
-    // Implement your edit logic here, such as updating item details
-    print('Editing item: ${item['productName']}');
+  void _editClient(BuildContext context, User client) {
+    // Implement your logic to edit the client
+    print('Editing client: ${client.name}');
+    // Add your logic here to update client data
+  }
+}
+
+class CustomSearchField extends StatefulWidget {
+  final ValueChanged<String> onSearchChanged;
+
+  const CustomSearchField({Key? key, required this.onSearchChanged})
+      : super(key: key);
+
+  @override
+  _CustomSearchFieldState createState() => _CustomSearchFieldState();
+}
+
+class _CustomSearchFieldState extends State<CustomSearchField> {
+  TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Colors.blue,
+            Colors.green
+          ], // Replace with your gradient colors
+        ),
+        borderRadius: BorderRadius.circular(25.0),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Row(
+          children: [
+            Icon(Icons.search, color: Colors.grey),
+            const SizedBox(width: 10.0),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: widget.onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

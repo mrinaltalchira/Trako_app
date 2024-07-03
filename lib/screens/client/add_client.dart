@@ -13,15 +13,10 @@ class AddClient extends StatefulWidget {
 
 class _AddClientState extends State<AddClient> {
   final TextEditingController nameController = TextEditingController();
-
   final TextEditingController cityController = TextEditingController();
-
   final TextEditingController emailController = TextEditingController();
-
   final TextEditingController phoneController = TextEditingController();
-
   final TextEditingController addressController = TextEditingController();
-
   final TextEditingController contactPersonController = TextEditingController();
 
   @override
@@ -165,7 +160,6 @@ class _AddClientState extends State<AddClient> {
                         buttonText: "Submit",
                         onPressed: () {
                           validateAndSignIn();
-
                         },
                       ),
                     )),
@@ -204,11 +198,6 @@ class _AddClientState extends State<AddClient> {
       return;
     }
 
-    if (contactPersonController.text.isEmpty) {
-      showSnackBar(context, "Contact name is required.");
-      return;
-    }
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -239,14 +228,17 @@ class _AddClientState extends State<AddClient> {
       if (addClientResponse.containsKey('error') &&
           addClientResponse.containsKey('status')) {
         if (!addClientResponse['error'] && addClientResponse['status'] == 200) {
-
-
           if (addClientResponse['message'] == 'Success') {
-            showSnackBar(context, addClientResponse['message']);
+            nameController.text = "";
+            cityController.text = "";
+            emailController.text = "";
+            phoneController.text = "";
+            addressController.text = "";
+            contactPersonController.text = "";
+            showSnackBar(context, "Client created successfully.");
           } else {
             showSnackBar(context, addClientResponse['message']);
           }
-
         } else {
           // Login failed
           showSnackBar(context, "Login failed. Please check your credentials.");
@@ -261,7 +253,8 @@ class _AddClientState extends State<AddClient> {
       Navigator.of(context).pop();
 
       // Handle API errors
-      showSnackBar( context, "Failed to connect to the server. Please try again later.");
+      showSnackBar(
+          context, "Failed to connect to the server. Please try again later.");
       print("Login API Error: $e");
     }
   }
@@ -281,11 +274,12 @@ class _NameInputTextFieldState extends State<NameInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      keyboardType: TextInputType.emailAddress,
+      maxLength: 30,
+      keyboardType: TextInputType.text,
       controller: widget.controller,
       decoration: InputDecoration(
         hintText: 'Name',
-
+          counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -323,9 +317,10 @@ class _CityInputTextFieldState extends State<CityInputTextField> {
     return TextField(
       controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
+      maxLength: 25 ,
       decoration: InputDecoration(
         hintText: 'City',
-
+          counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -362,10 +357,11 @@ class _EmailInputTextFieldState extends State<EmailInputTextField> {
   Widget build(BuildContext context) {
     return TextField(
       controller: widget.controller,
+      maxLength: 50,
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         hintText: 'Email',
-
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -402,10 +398,11 @@ class _PhoneInputTextFieldState extends State<PhoneInputTextField> {
   Widget build(BuildContext context) {
     return TextField(
       controller: widget.controller,
-      keyboardType: TextInputType.emailAddress,
+      keyboardType: TextInputType.number,
+      maxLength: 15,
       decoration: InputDecoration(
         hintText: 'Phone',
-
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -443,10 +440,12 @@ class _AddressInputTextFieldState extends State<AddressInputTextField> {
     return TextField(
       controller: widget.controller,
       keyboardType: TextInputType.multiline,
-      maxLines: null,
+      maxLines: 3,
+      maxLength: 100,
       // Allows unlimited lines of text input
 
       decoration: InputDecoration(
+        counterText: '',
         hintText: 'Address',
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -484,10 +483,11 @@ class _ContactPersonInputTextFieldState
   Widget build(BuildContext context) {
     return TextField(
       controller: widget.controller,
+      maxLength: 45,
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
-        hintText: 'Contact name',
-
+        hintText: 'Contact name (optional)',
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(

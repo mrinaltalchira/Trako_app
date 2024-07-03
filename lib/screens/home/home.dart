@@ -43,7 +43,7 @@ class _HomeScreenState extends State<HomeScreen> {
           return true; // Allow normal back behavior if already on Dashboard
         },
         child: PageView(
-          physics: NeverScrollableScrollPhysics(),
+          physics: NeverScrollableScrollPhysics(), // Disable scroll physics
           controller: _pageController,
           onPageChanged: (index) {
             setState(() {
@@ -66,19 +66,14 @@ class _HomeScreenState extends State<HomeScreen> {
   AppBar buildAppBar(BuildContext context) {
     return AppBar(
       centerTitle: true,
-      title: ShaderMask(
-        shaderCallback: (Rect bounds) {
-          return const LinearGradient(
-            colors: [Colors.white, Colors.white],
-            tileMode: TileMode.mirror,
-          ).createShader(bounds);
+      title: Image.asset(
+        "assets/images/app_name_logo.png",
+        width: 120,
+        height: 40,
+        errorBuilder: (context, error, stackTrace) {
+          print('Error loading app logo: $error');
+          return Text('Error loading logo');
         },
-        blendMode: BlendMode.srcATop,
-        child: Image.asset(
-          "assets/images/app_name_logo.png",
-          width: 120,
-          height: 40,
-        ),
       ),
       actions: <Widget>[
         Padding(
@@ -95,6 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ],
     );
   }
+
 
   Drawer buildDrawer(BuildContext context) {
     return Drawer(
@@ -198,11 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      _pageController.animateToPage(
-        index,
-        duration: Duration(milliseconds: 300),
-        curve: Curves.ease,
-      );
+      _pageController.jumpToPage(index); // Directly jump to the page
     });
   }
 

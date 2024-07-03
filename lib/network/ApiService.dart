@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:tonner_app/model/all_clients.dart';
+import 'package:tonner_app/model/all_machine.dart';
+import 'package:tonner_app/model/all_user.dart';
 import 'package:tonner_app/pref_manager.dart';
 
 class ApiService {
-  final String baseUrl = 'http://192.168.0.138:8000/api';
+  final String baseUrl = 'http://192.168.1.29:8000/api';
   late Dio _dio;
   late String? token;
 
@@ -54,6 +56,9 @@ class ApiService {
     }
   }
 
+
+  ///////////////////////////////// client
+
   Future<Map<String, dynamic>> addClient({
     required String name,
     required String city,
@@ -95,24 +100,27 @@ class ApiService {
     }
   }
 
-  Future<List<Client>> getAllClients() async {
+  Future<List<Client>> getAllClients(String? search) async {
     try {
       await initializeApiService(); // Ensure token is initialized before getAllClients
 
       final response = await _dio.get(
         '$baseUrl/all-client',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
           },
         ),
+
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.data);
-        List<Client> clients = (data['data']['clients'] as List)
-            .map((json) => Client.fromJson(json))
-            .toList();
+        final data = response.data;
+        final clientsJson = data['data']['clients'] as List;
+        List<Client> clients = clientsJson.map((json) => Client.fromJson(json)).toList();
         return clients;
       } else {
         throw Exception('Failed to load clients');
@@ -122,7 +130,159 @@ class ApiService {
       throw Exception('Failed to connect to the server.');
     }
   }
-}
+
+
+  /////////////////////////////// machine
+
+  Future<Map<String, dynamic>> addMachine({
+    required String model_name,
+    required String model_code,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addClient
+
+      final url = '/add-machine'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          'model_name': model_name,
+          'model_code': model_code,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to add machine');
+      }
+    } catch (e) {
+      print('Add machine API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+  Future<List<Machine>> getAllMachines(String? search) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before getAllClients
+
+      final response = await _dio.get(
+        '$baseUrl/all-machine',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final machineJson = data['data']['machine'] as List;
+        List<Machine> machine = machineJson.map((json) => Machine.fromJson(json)).toList();
+        return machine;
+      } else {
+        throw Exception('Failed to load machine');
+      }
+    } catch (e) {
+      print('Get All machine API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+  ////////////////////////////////////  User
+
+
+  Future<Map<String, dynamic>> addUser({
+    required String name,
+    required String email,
+    required String phone,
+    required String isActive,
+    required String userRole,
+    required String password,
+    required String machineModule,
+    required String clientModule,
+    required String userModule,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addUser
+
+      final url = '/add-user'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          "name": name,
+          "email": email,
+          "phone": phone,
+          "is_active": isActive,
+          "user_role": userRole,
+          "password": password,
+          "machine_module": machineModule,
+          "client_module": clientModule,
+          "user_module": userModule,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to add user');
+      }
+    } catch (e) {
+      print('Add user API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+  Future<List<User>> getAllUsers(String? search) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before getAllClients
+
+      final response = await _dio.get(
+        '$baseUrl/all-user',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final userJson = data['data']['user'] as List;
+        List<User> user = userJson.map((json) => User.fromJson(json)).toList();
+        return user;
+      } else {
+        throw Exception('Failed to load user');
+      }
+    } catch (e) {
+      print('Get All user API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  }
+
 
 class LoggerInterceptor extends Interceptor {
   @override

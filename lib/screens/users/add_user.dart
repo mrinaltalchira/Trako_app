@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/home/home.dart';
 
@@ -13,12 +14,126 @@ class AddUser extends StatefulWidget {
 }
 
 class _AddUserState extends State<AddUser> {
-  String? selectedClientName;
+  String? selectedUserRole;
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
   TextEditingController mobileController = TextEditingController();
-  TextEditingController privilegeController = TextEditingController();
-  TextEditingController statusController = TextEditingController();
+  TextEditingController phoneController = TextEditingController();
+  TextEditingController passwordController = TextEditingController();
+  TextEditingController confirmPasswordController = TextEditingController();
+  TextEditingController authorityController = TextEditingController();
+  TextEditingController activeStatusController = TextEditingController();
+
+  bool machineModuleChecked = false;
+  bool clientModuleChecked = false;
+  bool userPrivilegeChecked = false;
+  bool activeChecked = true; // Assuming Active is initially checked
+
+
+  Future<void> submitUser() async {
+    // Validate phone nu
+
+    if (selectedUserRole == null) {
+      showSnackBar(context, "Please select User Role.");
+      return;
+    }
+
+    if (nameController.text.isEmpty) {
+      showSnackBar(context, "Full Name is required.");
+      return;
+    }
+
+    if (emailController.text.isEmpty) {
+      showSnackBar(context, "Email is required & must be unique.");
+      return;
+    }
+
+    if (phoneController.text.isEmpty) {
+      showSnackBar(context, "Phone is required & must be unique.");
+      return;
+    }
+
+    if (passwordController.text.isEmpty) {
+      showSnackBar(context, "Password is required.");
+      return;
+    }
+
+  if (confirmPasswordController.text.isEmpty) {
+      showSnackBar(context, "Confirm Password is required.");
+      return;
+    }
+
+  if (confirmPasswordController.text != passwordController.text) {
+      showSnackBar(context, "Password not matched! Please check.");
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(child: CircularProgressIndicator());
+      },
+    );
+
+    // Call the login API
+    try {
+      final ApiService apiService = ApiService();
+      late final Map<String, dynamic> addUserResponse;
+
+      // Determine whether to use phone or email for login
+
+      addUserResponse = await apiService.addUser(
+        name: nameController.text,
+        email: emailController.text,
+        phone: phoneController.text,
+        isActive: activeChecked ? '0' : '1',
+        userRole: selectedUserRole ?? 'user', // Default to 'user' if not selected
+        password: passwordController.text,
+        machineModule: machineModuleChecked ? '0' : '1',
+        clientModule: clientModuleChecked ? '0' : '1',
+        userModule: userPrivilegeChecked ? '0' : '1');
+
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Check if the login was successful based on the response structure
+      if (addUserResponse.containsKey('error') &&
+          addUserResponse.containsKey('status')) {
+        if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
+          if (addUserResponse['message'] == 'Success') {
+            nameController.text = "";
+            emailController.text = "";
+            phoneController.text = "";
+            passwordController.text = "";
+            confirmPasswordController.text = "";
+            showSnackBar(context, "Client created successfully.");
+          } else {
+            showSnackBar(context, addUserResponse['message']);
+          }
+        } else {
+          // Login failed
+          showSnackBar(context, "Login failed. Please check your credentials.");
+        }
+      } else {
+        // Unexpected response structure
+        showSnackBar(context,
+            "Unexpected response from server. Please try again later.");
+      }
+    } catch (e) {
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Handle API errors
+      showSnackBar(
+          context, "Failed to connect to the server. Please try again later.");
+      print("Login API Error: $e");
+    }
+  }
+
+  void _handleSubmit() {
+    submitUser();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,154 +159,152 @@ class _AddUserState extends State<AddUser> {
         ],
       ),
       body: SingleChildScrollView(
-          child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 36.0),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 36.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
+              const Center(
+                child: Text(
+                  "Add New ",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: colorMixGrad,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "User Roles ",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              UserRolesSpinner(
+                selectedValue: selectedUserRole,
+                onChanged: (newValue) {
+                  setState(() {
+                    selectedUserRole = newValue;
+                  });
+                },
+              ),
+              const SizedBox(height: 20),
+              Text(
+                "Name",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              NameInputTextField(controller: nameController),
+              const SizedBox(height: 20),
+              Text(
+                "Email",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              EmailInputTextField(controller: emailController),
+              const SizedBox(height: 20),
+              Text(
+                "Phone",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              PhoneInputTextField(controller: phoneController),
+              const SizedBox(height: 20),
+              Text(
+                "Password",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              PasswordInputTextField(controller: passwordController),
+              const SizedBox(height: 20),
+              Text(
+                "Confirm Password",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              ConfirmPasswordInputTextField(
+                  controller: confirmPasswordController),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
                   children: [
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    const Center(
-                      child: Text(
-                        "Add New ",
-                        textAlign: TextAlign.center,
-                        // Align text center horizontally
-                        style: TextStyle(
-                          fontSize: 24.0,
-                          color: colorMixGrad,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
                     Text(
-                      "User Roles ",
-                      // Dynamic text, removed const
+                      "Authority",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     SizedBox(height: 5),
-                    UserRolesSpinner(
-                      selectedValue: selectedClientName,
-                      onChanged: (newValue) {
+                    CheckBoxRow(
+                      machineModuleChecked: machineModuleChecked,
+                      clientModuleChecked: clientModuleChecked,
+                      userPrivilegeChecked: userPrivilegeChecked,
+                      activeChecked: activeChecked,
+                      onMachineModuleChanged: (bool? value) {
                         setState(() {
-                          selectedClientName = newValue;
+                          machineModuleChecked = value ?? false;
+                        });
+                      },
+                      onClientModuleChanged: (bool? value) {
+                        setState(() {
+                          clientModuleChecked = value ?? false;
+                        });
+                      },
+                      onUserPrivilegeChanged: (bool? value) {
+                        setState(() {
+                          userPrivilegeChecked = value ?? false;
+                        });
+                      },
+                      onActiveChanged: (bool? value) {
+                        setState(() {
+                          activeChecked = value ?? false;
                         });
                       },
                     ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Name",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5), // Removed const from SizedBox
-                    const NameInputTextField(),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Email",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    const EmailInputTextField(),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Phone",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    const PhoneInputTextField(),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Password",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    PasswordInputTextField(),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Confirm Password",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    ConfirmPasswordInputTextField(),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            "Authority",
-                            // Dynamic text, removed const
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          SizedBox(height: 5),
-                          CheckBoxRow(),
-
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                        child: Padding(
-                      padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
-                      child: GradientButton(
-                        gradientColors: const [colorFirstGrad, colorSecondGrad],
-                        height: 45.0,
-                        width: 10.0,
-                        radius: 25.0,
-                        buttonText: "Submit",
-                        onPressed: () {
-                          /*Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const QRViewTracesci(),
-                      ));*/
-                          showSnackBar(context, "Submited");
-                        },
-                      ),
-                    )),
-                    SizedBox(
-                      height: 100,
-                    )
-                  ]))),
+                  ],
+                ),
+              ),
+              SizedBox(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
+                  child: GradientButton(
+                    gradientColors: const [colorFirstGrad, colorSecondGrad],
+                    height: 45.0,
+                    width: 10.0,
+                    radius: 25.0,
+                    buttonText: "Submit",
+                    onPressed: _handleSubmit,
+                  ),
+                ),
+              ),
+              SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -211,7 +324,7 @@ class UserRolesSpinner extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text('Select Role'),
-      items: [ 'Admin', 'Client', 'Logistic','User'].map((String value) {
+      items: ['Admin', 'Client', 'Logistic', 'User'].map((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -238,21 +351,21 @@ class UserRolesSpinner extends StatelessWidget {
   }
 }
 
-class NameInputTextField extends StatefulWidget {
-  const NameInputTextField({Key? key}) : super(key: key);
+class NameInputTextField extends StatelessWidget {
 
-  @override
-  _NameInputTextFieldState createState() => _NameInputTextFieldState();
-}
+  final TextEditingController controller;
 
-class _NameInputTextFieldState extends State<NameInputTextField> {
+  NameInputTextField({Key? key, required this.controller}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return TextField(
+      maxLength: 30,
+      controller: controller,
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         hintText: 'Name',
-
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -274,21 +387,21 @@ class _NameInputTextFieldState extends State<NameInputTextField> {
   }
 }
 
-class EmailInputTextField extends StatefulWidget {
-  const EmailInputTextField({Key? key}) : super(key: key);
+class EmailInputTextField extends StatelessWidget {
+  final TextEditingController controller;
 
-  @override
-  _EmailInputTextFieldState createState() => _EmailInputTextFieldState();
-}
+  const EmailInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
-class _EmailInputTextFieldState extends State<EmailInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      keyboardType: TextInputType.emailAddress,
+      controller: controller,
+      maxLength: 50,
+      keyboardType: TextInputType.text,
       decoration: InputDecoration(
         hintText: 'Email',
-
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -310,21 +423,21 @@ class _EmailInputTextFieldState extends State<EmailInputTextField> {
   }
 }
 
-class PhoneInputTextField extends StatefulWidget {
-  const PhoneInputTextField({Key? key}) : super(key: key);
+class PhoneInputTextField extends StatelessWidget {
+  final TextEditingController controller;
 
-  @override
-  _PhoneInputTextFieldState createState() => _PhoneInputTextFieldState();
-}
+  const PhoneInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
-class _PhoneInputTextFieldState extends State<PhoneInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
-      keyboardType: TextInputType.emailAddress,
+      maxLength: 15,
+      controller: controller,
+      keyboardType: TextInputType.number,
       decoration: InputDecoration(
         hintText: 'Phone',
-
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -347,7 +460,10 @@ class _PhoneInputTextFieldState extends State<PhoneInputTextField> {
 }
 
 class PasswordInputTextField extends StatefulWidget {
-  const PasswordInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const PasswordInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _PasswordInputTextFieldState createState() => _PasswordInputTextFieldState();
@@ -357,10 +473,12 @@ class _PasswordInputTextFieldState extends State<PasswordInputTextField> {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
+      maxLength: 30,
       keyboardType: TextInputType.visiblePassword,
       decoration: InputDecoration(
         hintText: 'Password',
-
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -383,7 +501,10 @@ class _PasswordInputTextFieldState extends State<PasswordInputTextField> {
 }
 
 class ConfirmPasswordInputTextField extends StatefulWidget {
-  const ConfirmPasswordInputTextField({Key? key}) : super(key: key);
+  final TextEditingController controller;
+
+  const ConfirmPasswordInputTextField({Key? key, required this.controller})
+      : super(key: key);
 
   @override
   _ConfirmPasswordTextFieldState createState() =>
@@ -395,10 +516,12 @@ class _ConfirmPasswordTextFieldState
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: widget.controller,
+      maxLength: 30,
       keyboardType: TextInputType.visiblePassword,
       decoration: InputDecoration(
         hintText: 'Confirm Password',
-
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -420,90 +543,26 @@ class _ConfirmPasswordTextFieldState
   }
 }
 
-class AddressInputTextField extends StatefulWidget {
-  const AddressInputTextField({Key? key}) : super(key: key);
+class CheckBoxRow extends StatelessWidget {
+  final bool machineModuleChecked;
+  final bool clientModuleChecked;
+  final bool userPrivilegeChecked;
+  final bool activeChecked;
+  final ValueChanged<bool?> onMachineModuleChanged;
+  final ValueChanged<bool?> onClientModuleChanged;
+  final ValueChanged<bool?> onUserPrivilegeChanged;
+  final ValueChanged<bool?> onActiveChanged;
 
-  @override
-  _AddressInputTextFieldState createState() => _AddressInputTextFieldState();
-}
-
-class _AddressInputTextFieldState extends State<AddressInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      keyboardType: TextInputType.multiline,
-      maxLines: null, // Allows unlimited lines of text input
-
-      decoration: InputDecoration(
-        hintText: 'Address',
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class ContactPersonInputTextField extends StatefulWidget {
-  const ContactPersonInputTextField({Key? key}) : super(key: key);
-
-  @override
-  _ContactPersonInputTextFieldState createState() =>
-      _ContactPersonInputTextFieldState();
-}
-
-class _ContactPersonInputTextFieldState
-    extends State<ContactPersonInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      keyboardType: TextInputType.emailAddress,
-      decoration: InputDecoration(
-        hintText: 'Contact name',
-
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-
-class CheckBoxRow extends StatefulWidget {
-  @override
-  _CheckBoxRowState createState() => _CheckBoxRowState();
-}
-
-class _CheckBoxRowState extends State<CheckBoxRow> {
-  bool machineModuleChecked = false;
-  bool clientModuleChecked = false;
-  bool userPrivilegeChecked = false;
-  bool activeChecked = true; // Assuming Active is initially checked
+  const CheckBoxRow({
+    required this.machineModuleChecked,
+    required this.clientModuleChecked,
+    required this.userPrivilegeChecked,
+    required this.activeChecked,
+    required this.onMachineModuleChanged,
+    required this.onClientModuleChanged,
+    required this.onUserPrivilegeChanged,
+    required this.onActiveChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -514,38 +573,26 @@ class _CheckBoxRowState extends State<CheckBoxRow> {
           children: [
             CustomCheckbox(
               value: machineModuleChecked,
-              onChanged: (bool? value) {
-                setState(() {
-                  machineModuleChecked = value ?? false;
-                });
-              },
-              activeColor: colorMixGrad, // Change the color of the checkbox
+              onChanged: onMachineModuleChanged,
+              activeColor: colorMixGrad,
             ),
             const Text('Machine Module'),
             const SizedBox(width: 20),
             CustomCheckbox(
               value: clientModuleChecked,
-              onChanged: (bool? value) {
-                setState(() {
-                  clientModuleChecked = value ?? false;
-                });
-              },
-              activeColor: colorMixGrad, // Change the color of the checkbox
+              onChanged: onClientModuleChanged,
+              activeColor: colorMixGrad,
             ),
             const Text('Client Module'),
           ],
         ),
-        const SizedBox(height: 10), // Adjust as needed for spacing
+        const SizedBox(height: 10),
         Row(
           children: [
             CustomCheckbox(
               value: userPrivilegeChecked,
-              onChanged: (bool? value) {
-                setState(() {
-                  userPrivilegeChecked = value ?? false;
-                });
-              },
-              activeColor: colorMixGrad, // Change the color of the checkbox
+              onChanged: onUserPrivilegeChanged,
+              activeColor: colorMixGrad,
             ),
             const Text('User Privilege'),
           ],
@@ -560,24 +607,16 @@ class _CheckBoxRowState extends State<CheckBoxRow> {
                 CustomRadio(
                   value: true,
                   groupValue: activeChecked,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      activeChecked = value ?? false;
-                    });
-                  },
-                  activeColor: colorMixGrad, // Change the color of the radio
+                  onChanged: onActiveChanged,
+                  activeColor: colorMixGrad,
                 ),
                 Text('Active'),
                 SizedBox(width: 20),
                 CustomRadio(
                   value: false,
                   groupValue: activeChecked,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      activeChecked = value ?? false;
-                    });
-                  },
-                  activeColor: colorMixGrad, // Change the color of the radio
+                  onChanged: onActiveChanged,
+                  activeColor: colorMixGrad,
                 ),
                 Text('Inactive'),
               ],
@@ -589,7 +628,6 @@ class _CheckBoxRowState extends State<CheckBoxRow> {
   }
 }
 
-// Custom Checkbox widget to change its color
 class CustomCheckbox extends StatelessWidget {
   final bool value;
   final ValueChanged<bool?>? onChanged;
@@ -611,7 +649,6 @@ class CustomCheckbox extends StatelessWidget {
   }
 }
 
-// Custom Radio widget to change its color
 class CustomRadio extends StatelessWidget {
   final bool value;
   final bool? groupValue;

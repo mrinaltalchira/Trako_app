@@ -1,9 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/model/all_clients.dart';
 import 'package:tonner_app/network/ApiService.dart';
+import 'dart:async';
 
 class ClientModule extends StatefulWidget {
   const ClientModule({super.key});
@@ -20,12 +19,15 @@ class _ClientModuleState extends State<ClientModule> {
   @override
   void initState() {
     super.initState();
-    clientsFuture = getClientsList();
+    clientsFuture = getClientsList(null);
   }
 
-  Future<List<Client>> getClientsList() async {
+  Future<List<Client>> getClientsList(String? search) async {
+
     try {
-      List<Client> clients = await _apiService.getAllClients();
+      List<Client> clients = await _apiService.getAllClients(search);
+      // Debug print to check the fetched clients
+      print('Fetched clients: $clients');
       return clients;
     } catch (e) {
       // Handle error
@@ -33,7 +35,6 @@ class _ClientModuleState extends State<ClientModule> {
       return [];
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -52,12 +53,19 @@ class _ClientModuleState extends State<ClientModule> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                const Expanded(
-                  child: CustomSearchField(),
+                Expanded(
+                  child: CustomSearchField(
+                    onSearchChanged: (searchQuery) {
+                      setState(() {
+                        clientsFuture = getClientsList(searchQuery);
+                      });
+                    },
+                  ),
                 ),
                 const SizedBox(width: 20.0),
                 GradientIconButton(
@@ -79,13 +87,20 @@ class _ClientModuleState extends State<ClientModule> {
                     FutureBuilder<List<Client>>(
                       future: clientsFuture,
                       builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                              child: CircularProgressIndicator());
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Error: ${snapshot.error}'));
+                          return Center(
+                              child: Text('Error: ${snapshot.error}'));
                         } else {
-                          List<Client> clients = snapshot.data ?? []; // Handle null case if necessary
-                          return ScannedHistoryList(items: clients);
+                          List<Client> clients = snapshot.data ??
+                              []; // Handle null case if necessary
+                          // Debug print to check the clients before passing to the widget
+                          print('Clients to display: $clients');
+
+                          return ClientList(items: clients);
                         }
                       },
                     ),
@@ -98,18 +113,33 @@ class _ClientModuleState extends State<ClientModule> {
       ),
     );
   }
-
 }
 
-class CustomSearchField extends StatelessWidget {
-  const CustomSearchField({super.key});
+class CustomSearchField extends StatefulWidget {
+  final ValueChanged<String> onSearchChanged;
+  const CustomSearchField({Key? key, required this.onSearchChanged}) : super(key: key);
+
+  @override
+  _CustomSearchFieldState createState() => _CustomSearchFieldState();
+}
+
+class _CustomSearchFieldState extends State<CustomSearchField> {
+  TextEditingController _searchController = TextEditingController();
+
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [colorFirstGrad, colorSecondGrad],
+          colors: [Colors.blue, Colors.green], // Replace with your gradient colors
         ),
         borderRadius: BorderRadius.circular(25.0),
       ),
@@ -119,18 +149,20 @@ class CustomSearchField extends StatelessWidget {
           borderRadius: BorderRadius.circular(10.0),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: const Row(
+        child: Row(
           children: [
             Icon(Icons.search, color: Colors.grey),
-            SizedBox(width: 10.0),
+            const SizedBox(width: 10.0),
             Expanded(
               child: TextField(
+                controller: _searchController,
+                onChanged: widget.onSearchChanged,
                 decoration: InputDecoration(
                   hintText: 'Search',
                   hintStyle: TextStyle(color: Colors.grey),
                   border: InputBorder.none,
                 ),
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 16.0,
                   color: Colors.black,
                 ),
@@ -238,30 +270,31 @@ class CustomInputTextField extends StatelessWidget {
   }
 }
 
-class ScannedHistoryList extends StatelessWidget {
+class ClientList extends StatelessWidget {
   final List<Client> items;
 
-  const ScannedHistoryList({Key? key, required this.items}) : super(key: key);
+  const ClientList({Key? key, required this.items}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+
+
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
-      Color? cardColor = items[index].isActive ? Colors.red[10] : Colors.grey[300];
-
-
+        Color? cardColor = items[index].isActive == "0" ? Colors.red[10] : Colors.grey[300];
+        print('Items length: ${items[index].isActive}');
         return Card(
           margin: const EdgeInsets.all(8.0),
           elevation: 2.0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
-          color: cardColor,
+          color: cardColor, // Assign the color based on isActive status
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
+            padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -269,7 +302,10 @@ class ScannedHistoryList extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text(items[index].name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      child: Text(
+                        '${items[index].name[0].toUpperCase()}${items[index].name.substring(1)}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.edit),
@@ -279,7 +315,10 @@ class ScannedHistoryList extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text(items[index].createdAt.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  'City: ${items[index].city[0].toUpperCase()}${items[index].city.substring(1)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 4.0),
               ],
             ),
@@ -322,6 +361,7 @@ class ScannedHistoryList extends StatelessWidget {
     // Add your logic here to update client data
   }
 }
+
 
 class LinearGradientDivider extends StatelessWidget {
   final double height;

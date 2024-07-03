@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
               '/profile': (context) => const Profile(),
               '/home_screen': (context) => const HomeScreen(),
               '/add_client': (context) => AddClient(),
-              '/add_machine': (context) => const AddMachine(),
+              '/add_machine': (context) =>  AddMachine(),
               '/rq_view_tracesci': (context) => const QRViewTracesci(),
               '/add_toner': (context) => const AddToner(),
               '/users': (context) => const UsersModule(),

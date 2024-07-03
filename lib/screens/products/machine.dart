@@ -2,6 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/model/all_machine.dart';
+import 'package:tonner_app/network/ApiService.dart';
 
 class MachineModule extends StatefulWidget {
   @override
@@ -9,27 +11,28 @@ class MachineModule extends StatefulWidget {
 }
 
 class _MachineModuleState extends State<MachineModule> {
-  final List<Map<String, dynamic>> items = [
-    {
-      'productName': 'Maple jet',
-      'scannedOn': 'gdf4g86fgv1cx3'
+  late Future<List<Machine>> machineFuture;
+  final ApiService _apiService = ApiService(); // Initialize your ApiService
 
-    },
-    {
-      'productName': 'Canon PIXMA E4570',
-      'scannedOn': 'gdf4g86fgv1cx3'
+  @override
+  void initState() {
+    super.initState();
+    machineFuture = getMachineList(null);
+  }
 
-    },
-    {
-      'productName': 'Epson EcoTank L3250',
-      'scannedOn': 'gdf4g86fgv1cx3'
+  Future<List<Machine>> getMachineList(String? search) async {
 
-    },
-    {
-      'productName': 'HP Smart Tank 529',
-      'scannedOn': '2024-03-15 11:45:20'
-    },
-  ];
+    try {
+      List<Machine> clients = await _apiService.getAllMachines(search);
+      // Debug print to check the fetched clients
+      print('Fetched clients: $clients');
+      return clients;
+    } catch (e) {
+      // Handle error
+      print('Error fetching clients: $e');
+      return [];
+    }
+  }
 
 
   @override
@@ -56,39 +59,12 @@ class _MachineModuleState extends State<MachineModule> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [colorFirstGrad, colorSecondGrad],
-                        ),
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey),
-                            SizedBox(width: 10.0),
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Search',
-                                  hintStyle: TextStyle(color: Colors.grey),
-                                  border: InputBorder.none,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    child: CustomSearchField(
+                      onSearchChanged: (searchQuery) {
+                        setState(() {
+                          machineFuture = getMachineList(searchQuery);
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(width: 20.0), // Spacer between search and add button
@@ -120,9 +96,28 @@ class _MachineModuleState extends State<MachineModule> {
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      ScannedHistoryList(items: items),
-                    ],
+                      children: [
+                        FutureBuilder<List<Machine>>(
+                          future: machineFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                  child: CircularProgressIndicator());
+                            } else if (snapshot.hasError) {
+                              return Center(
+                                  child: Text('Error: ${snapshot.error}'));
+                            } else {
+                              List<Machine> machines = snapshot.data ??
+                                  []; // Handle null case if necessary
+                              // Debug print to check the clients before passing to the widget
+                              print('Clients to display: $machines');
+
+                              return ScannedHistoryList(items: machines);
+                            }
+                          },
+                        ),
+                      ],
                   ),
                 ),
               ),
@@ -441,7 +436,7 @@ class ContactPersonInputTextField extends StatelessWidget {
   }
 }
 class ScannedHistoryList extends StatelessWidget {
-  final List<Map<String, dynamic>> items;
+  final List<Machine> items;
 
   const ScannedHistoryList({Key? key, required this.items}) : super(key: key);
 
@@ -473,13 +468,8 @@ class ScannedHistoryList extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            items[index]['productName'],
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
+                            '${items[index].modelName[0].toUpperCase()}${items[index].modelName.substring(1)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                           ),
 
                         ],
@@ -495,18 +485,21 @@ class ScannedHistoryList extends StatelessWidget {
                             _showEditDialog(context, items[index]);
                           },
                         ),
-                        IconButton(
+                       /* IconButton(
                           icon: Icon(Icons.delete),
                           onPressed: () {
                             // Show delete confirmation dialog
                             _showDeleteDialog(context, index);
                           },
-                        ),
+                        ),*/
                       ],
                     ),
                   ],
                 ),
-                Text(items[index]['scannedOn'],style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                '${items[index].modelCode[0].toUpperCase()}${items[index].modelCode.substring(1)}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
                 const SizedBox(height: 4.0),
               ],
             ),
@@ -550,13 +543,13 @@ class ScannedHistoryList extends StatelessWidget {
     print('Deleting item at index $index');
   }
 
-  void _showEditDialog(BuildContext context, Map<String, dynamic> item) {
+  void _showEditDialog(BuildContext context,Machine item) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Edit Product'),
-          content: Text('Edit details of ${item['productName']}'),
+          content: Text('Edit details of ${item.modelName}'),
           actions: <Widget>[
             TextButton(
               child: Text('Cancel'),
@@ -568,7 +561,7 @@ class ScannedHistoryList extends StatelessWidget {
               child: Text('Edit'),
               onPressed: () {
                 // Perform edit action
-                _editItem(item);
+                _editItem(item.id);
                 Navigator.of(context).pop(); // Close dialog
               },
             ),
@@ -578,8 +571,68 @@ class ScannedHistoryList extends StatelessWidget {
     );
   }
 
-  void _editItem(Map<String, dynamic> item) {
+  void _editItem(String id) {
     // Implement your edit logic here, such as updating item details
-    print('Editing item: ${item['productName']}');
+    print('Editing item: ${id}');
+  }
+}
+
+class CustomSearchField extends StatefulWidget {
+  final ValueChanged<String> onSearchChanged;
+  const CustomSearchField({Key? key, required this.onSearchChanged}) : super(key: key);
+
+  @override
+  _CustomSearchFieldState createState() => _CustomSearchFieldState();
+}
+
+class _CustomSearchFieldState extends State<CustomSearchField> {
+  TextEditingController _searchController = TextEditingController();
+
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Colors.blue, Colors.green], // Replace with your gradient colors
+        ),
+        borderRadius: BorderRadius.circular(25.0),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Row(
+          children: [
+            Icon(Icons.search, color: Colors.grey),
+            const SizedBox(width: 10.0),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: widget.onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
