@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'package:tonner_app/model/all_clients.dart';
 import 'package:tonner_app/model/all_machine.dart';
 import 'package:tonner_app/model/all_user.dart';
+import 'package:tonner_app/model/supply_fields_data.dart';
 import 'package:tonner_app/pref_manager.dart';
 
 class ApiService {
@@ -281,6 +282,76 @@ class ApiService {
     }
   }
 
+  ////////////////////////////////////   Supply
+
+  Future<Map<String, dynamic>> addSupply({
+    required String dispatch_receive,
+    required String client_name,
+    required String client_city,
+    required String model_no,
+    required String date_time,
+    required String qr_code,
+    String? reference,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addClient
+
+      final url = '/add-supply'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          "dispatch_receive": dispatch_receive,
+          "client_name": client_name,
+          "client_city": client_city, // Add this
+          "model_no": model_no,
+          "date_time": date_time,
+          "qr_code": qr_code,
+          if (reference!= null && reference.isNotEmpty) 'reference': reference,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data?? {}; // Return an empty map if response.data is null
+      } else {
+        throw Exception('Failed to add supply');
+      }
+    } catch (e) {
+      print('Add supply API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<SupplySpinnerResponse> getSpinnerDetails() async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before getAllClients
+
+      final response = await _dio.get(
+        '$baseUrl/get-spinner-details',
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        return SupplySpinnerResponse.fromJson(data);
+      } else {
+        throw Exception('Failed to load spinner details');
+      }
+    } catch (e) {
+      print('Get All spinner details API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
   }
 
 

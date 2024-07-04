@@ -1,9 +1,14 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:intl/intl.dart';
+import 'package:tonner_app/model/supply_fields_data.dart';
+import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
 
 
@@ -29,17 +34,140 @@ class AddToner extends StatefulWidget {
 }
 
 class _AddTonerState extends State<AddToner> {
-  List<String> scannedQrCodes= [];
+  final ApiService _apiService = ApiService();
+  DispatchReceive? _selectedDispatchReceive = DispatchReceive.dispatch;
+    List<String> scannedQrCodes= [];
+  List<String> clientNames = [];
+  List<String> clientCities = [];
+  List<String> modelNos = [];
   String? selectedClientName;
   String? selectedCityName;
   String? selectedTonerName;
+  TextEditingController referenceController  = TextEditingController();
+  DateTime? _selectedDateTime= DateTime.now();
+  bool _isLoading = false;
+
+
+  Future<void> submitToner() async {
+    // Validate phone nu
+
+    if (_selectedDispatchReceive == null) {
+      showSnackBar(context, "Please select Client Name");
+      return;
+    }
+    if (selectedClientName == null) {
+      showSnackBar(context, "Please select Client Name");
+      return;
+    }
+
+    if (selectedCityName == null ) {
+      showSnackBar(context, "Please select Client City");
+      return;
+    }
+
+    if (selectedTonerName == null) {
+      showSnackBar(context, "Please select Model no.");
+      return;
+    }
+
+    if (scannedQrCodes.isEmpty) {
+      showSnackBar(context, "Please add Toner code");
+      return;
+    }
+
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(child: CircularProgressIndicator());
+      },
+    );
+
+
+    // Call the login API
+    try {
+      final ApiService apiService = ApiService();
+      late final Map<String, dynamic> addUserResponse;
+
+      // Determine whether to use phone or email for login
+      String commaSeparatedString = scannedQrCodes.join(', ');
+
+      addUserResponse = await apiService.addSupply(
+          dispatch_receive: _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
+          client_name:selectedClientName.toString(),
+          client_city:selectedCityName.toString(),
+          model_no: selectedTonerName.toString(),
+          date_time: _selectedDateTime.toString() ,
+          qr_code: commaSeparatedString,
+          reference: referenceController.text
+
+      );
+
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Check if the login was successful based on the response structure
+      if (addUserResponse.containsKey('error') &&
+          addUserResponse.containsKey('status')) {
+        if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
+          if (addUserResponse['message'] == 'Success') {
+            Navigator.pop(context);
+            showSnackBar(context, "Toner Added successfully.");
+          } else {
+            showSnackBar(context, addUserResponse['message']);
+          }
+        } else {
+          // Login failed
+          showSnackBar(context, "Login failed. Please check your credentials.");
+        }
+      } else {
+        // Unexpected response structure
+        showSnackBar(context,
+            "Unexpected response from server. Please try again later.");
+      }
+    } catch (e) {
+      // Dismiss loading indicator
+      Navigator.of(context).pop();
+
+      // Handle API errors
+      showSnackBar(
+          context, "Failed to connect to the server. Please try again later.");
+      print("Login API Error: $e");
+    }
+  }
+
 
   @override
   void initState() {
     super.initState();
+    fetchData();
     scannedQrCodes = widget.qrData.isNotEmpty ? [widget.qrData] : [];
 
   }
+
+
+  Future<void> fetchData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      SupplySpinnerResponse spinnerResponse = await _apiService.getSpinnerDetails();
+      setState(() {
+        clientNames = spinnerResponse.data.clientNames;
+        clientCities = spinnerResponse.data.clientCities;
+        modelNos = spinnerResponse.data.modelNos;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching supply spinner details: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      // Handle error as needed
+    }
+  }
+
   Future<void> _scanQrCode() async {
 
     final result = await Navigator.of(context).push(MaterialPageRoute(
@@ -93,7 +221,13 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 10),
-              const DispatchReceiveRadioButton(),
+            DispatchReceiveRadioButton(
+              onChanged: (DispatchReceive? value) {
+                setState(() {
+                  _selectedDispatchReceive = value;
+                });
+              },
+            ),
               const SizedBox(height: 15),
               const Text(
                 "Client Name",
@@ -103,14 +237,15 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 5),
-              ClientNameSpinner(
-                selectedValue: selectedClientName,
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedClientName = newValue;
-                  });
-                },
-              ),
+             ClientNameSpinner(
+              selectedValue: selectedClientName,
+              onChanged: (newValue) {
+                setState(() {
+                  selectedClientName = newValue;
+                });
+              },
+              clientNames: clientNames, // Pass the fetched client names
+            ),
               const SizedBox(height: 15),
               const Text(
                 "City Name",
@@ -125,8 +260,9 @@ class _AddTonerState extends State<AddToner> {
                 onChanged: (newValue) {
                   setState(() {
                     selectedCityName = newValue;
-                  });
-                },
+                  }
+                  );
+                }, clientCity: clientCities,
               ),
               const SizedBox(height: 15),
               const Text(
@@ -137,13 +273,14 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 5),
-              TonerNameSpinner(
+              ModelNoSpinner(
                 selectedValue: selectedTonerName,
                 onChanged: (newValue) {
                   setState(() {
                     selectedTonerName = newValue;
                   });
-                },
+                }, modelLsit: modelNos,
+
               ),
               const SizedBox(height: 15),
               const Text(
@@ -157,7 +294,7 @@ class _AddTonerState extends State<AddToner> {
               DateTimeInputField(
                 initialDateTime: DateTime.now(),
                 onDateTimeChanged: (dateTime) {
-                  print('Selected DateTime: $dateTime');
+                  _selectedDateTime = dateTime;
                 },
               ),
               const SizedBox(height: 15),
@@ -196,7 +333,7 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 5),
-              ReferenceInputTextField(),
+              ReferenceInputTextField(controller: referenceController,),
 
               const SizedBox(height: 15),
               Padding(
@@ -208,7 +345,7 @@ class _AddTonerState extends State<AddToner> {
                   radius: 25.0,
                   buttonText: "Submit",
                   onPressed: () {
-                    showSnackBar(context, "Submitted");
+                    submitToner();
                   },
                 ),
               ),
@@ -224,7 +361,8 @@ class _AddTonerState extends State<AddToner> {
 
 
 class ReferenceInputTextField extends StatefulWidget {
-  const ReferenceInputTextField({Key? key}) : super(key: key);
+ final TextEditingController controller;
+   ReferenceInputTextField({Key? key, required this.controller}) : super(key: key);
 
   @override
   _ReferenceInputTextField createState() => _ReferenceInputTextField();
@@ -235,7 +373,7 @@ class _ReferenceInputTextField extends State<ReferenceInputTextField> {
   Widget build(BuildContext context) {
     return TextField(
       keyboardType: TextInputType.emailAddress,
-
+controller: widget.controller,
       decoration: InputDecoration(
         hintText: 'Reference (optional)',
 
@@ -261,19 +399,18 @@ class _ReferenceInputTextField extends State<ReferenceInputTextField> {
 }
 
 class DispatchReceiveRadioButton extends StatefulWidget {
-  const DispatchReceiveRadioButton({Key? key}) : super(key: key);
+  final ValueChanged<DispatchReceive?> onChanged;
+
+  const DispatchReceiveRadioButton({Key? key, required this.onChanged}) : super(key: key);
 
   @override
-  _DispatchReceiveRadioButtonState createState() =>
-      _DispatchReceiveRadioButtonState();
+  _DispatchReceiveRadioButtonState createState() => _DispatchReceiveRadioButtonState();
 }
 
 enum DispatchReceive { dispatch, receive }
 
-class _DispatchReceiveRadioButtonState
-    extends State<DispatchReceiveRadioButton> {
+class _DispatchReceiveRadioButtonState extends State<DispatchReceiveRadioButton> {
   DispatchReceive? _selectedOption = DispatchReceive.dispatch;
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -298,6 +435,7 @@ class _DispatchReceiveRadioButtonState
                   setState(() {
                     _selectedOption = value;
                   });
+                  widget.onChanged(value);
                 },
               ),
             ),
@@ -311,6 +449,7 @@ class _DispatchReceiveRadioButtonState
                   setState(() {
                     _selectedOption = value;
                   });
+                  widget.onChanged(value);
                 },
               ),
             ),
@@ -321,13 +460,16 @@ class _DispatchReceiveRadioButtonState
   }
 }
 
+
 class ClientNameSpinner extends StatelessWidget {
   final String? selectedValue;
   final ValueChanged<String?> onChanged;
+  final List<String> clientNames;
 
   const ClientNameSpinner({
     required this.selectedValue,
     required this.onChanged,
+    required this.clientNames,
     Key? key,
   }) : super(key: key);
 
@@ -336,8 +478,7 @@ class ClientNameSpinner extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text('Select an option'),
-      items: ['Jams Karter', 'Peter Parker', 'Ken Tino', 'Will Smith']
-          .map((String value) {
+      items: clientNames.map((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -366,10 +507,12 @@ class ClientNameSpinner extends StatelessWidget {
 class CityNameSpinner extends StatelessWidget {
   final String? selectedValue;
   final ValueChanged<String?> onChanged;
+  final List<String> clientCity;
 
   const CityNameSpinner({
     required this.selectedValue,
     required this.onChanged,
+    required this.clientCity,
     Key? key,
   }) : super(key: key);
 
@@ -378,7 +521,7 @@ class CityNameSpinner extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text('Select an option'),
-      items: ['Gurugram', 'Mumbai', 'Jaipur', 'Delhi'].map((String value) {
+      items: clientCity.map((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -404,27 +547,25 @@ class CityNameSpinner extends StatelessWidget {
   }
 }
 
-class TonerNameSpinner extends StatelessWidget {
+
+class ModelNoSpinner extends StatelessWidget {
   final String? selectedValue;
   final ValueChanged<String?> onChanged;
+  final List<String> modelLsit;
 
-  const TonerNameSpinner({
+  const ModelNoSpinner({
     required this.selectedValue,
     required this.onChanged,
-    super.key,
-  });
+    Key? key, required this.modelLsit,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final tonerNames = ['fvbdk9df6dxc46cxv', 'fvbdak9df6xdc46cxv', 'fvbdk9cdf6dxc46cxv', 'fvbdk9df6xc546cxv'];
-
-    // Log the toner names for debugging
-
 
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text('Select an option'),
-      items: tonerNames.map((String value) {
+      items: modelLsit.map((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -522,7 +663,7 @@ class _DateTimeInputFieldState extends State<DateTimeInputField> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: Colors.blue), // Change color as needed
+          borderSide: const BorderSide(color: colorMixGrad), // Change color as needed
         ),
         contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
