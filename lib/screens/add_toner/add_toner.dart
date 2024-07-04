@@ -11,17 +11,16 @@ import 'package:tonner_app/model/supply_fields_data.dart';
 import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
 
+import 'utils.dart';
+
+/*
+
+ *************
+-  Manage API calls on spinner value with loading.
+-  Don't forget to capture the location of user.
 
 
-
-
-
-// Don't forget to capture the location of user.
-
-
-
-
-
+*/
 
 
 class AddToner extends StatefulWidget {
@@ -36,7 +35,7 @@ class AddToner extends StatefulWidget {
 class _AddTonerState extends State<AddToner> {
   final ApiService _apiService = ApiService();
   DispatchReceive? _selectedDispatchReceive = DispatchReceive.dispatch;
-    List<String> scannedQrCodes= [];
+  List<String> scannedCodes = [];
   List<String> clientNames = [];
   List<String> clientCities = [];
   List<String> modelNos = [];
@@ -47,21 +46,57 @@ class _AddTonerState extends State<AddToner> {
   DateTime? _selectedDateTime= DateTime.now();
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    fetchSpinnerData();
+    scannedCodes = widget.qrData.isNotEmpty ? [widget.qrData] : [];
+
+  }
+
+  Future<void> fetchSpinnerData() async {
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      SupplySpinnerResponse spinnerResponse = await _apiService.getSpinnerDetails();
+      setState(() {
+        clientNames = spinnerResponse.data.clientNames;
+        clientCities = spinnerResponse.data.clientCities;
+        modelNos = spinnerResponse.data.modelNos;
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('Error fetching supply spinner details: $e');
+      setState(() {
+        _isLoading = false;
+      });
+      // Handle error as needed
+    }
+  }
+
+  Future<void> _scanQrCode() async {
+
+    final result = await Navigator.of(context).push(MaterialPageRoute(
+      builder: (context) => const QRViewTracesci(),
+    ));
+
+    if (result != null && result is String) {
+      setState(() {
+        scannedCodes.add(result);
+      });
+    }
+  }
 
   Future<void> submitToner() async {
-    // Validate phone nu
 
-    if (_selectedDispatchReceive == null) {
-      showSnackBar(context, "Please select Client Name");
-      return;
-    }
     if (selectedClientName == null) {
-      showSnackBar(context, "Please select Client Name");
+      showSnackBar(context, "Please select client name");
       return;
     }
 
     if (selectedCityName == null ) {
-      showSnackBar(context, "Please select Client City");
+      showSnackBar(context, "Please select client city");
       return;
     }
 
@@ -70,7 +105,7 @@ class _AddTonerState extends State<AddToner> {
       return;
     }
 
-    if (scannedQrCodes.isEmpty) {
+    if (scannedCodes.isEmpty) {
       showSnackBar(context, "Please add Toner code");
       return;
     }
@@ -91,7 +126,7 @@ class _AddTonerState extends State<AddToner> {
       late final Map<String, dynamic> addUserResponse;
 
       // Determine whether to use phone or email for login
-      String commaSeparatedString = scannedQrCodes.join(', ');
+      String commaSeparatedString = scannedCodes.join(', ');
 
       addUserResponse = await apiService.addSupply(
           dispatch_receive: _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
@@ -137,53 +172,9 @@ class _AddTonerState extends State<AddToner> {
     }
   }
 
-
-  @override
-  void initState() {
-    super.initState();
-    fetchData();
-    scannedQrCodes = widget.qrData.isNotEmpty ? [widget.qrData] : [];
-
-  }
-
-
-  Future<void> fetchData() async {
-    setState(() {
-      _isLoading = true;
-    });
-    try {
-      SupplySpinnerResponse spinnerResponse = await _apiService.getSpinnerDetails();
-      setState(() {
-        clientNames = spinnerResponse.data.clientNames;
-        clientCities = spinnerResponse.data.clientCities;
-        modelNos = spinnerResponse.data.modelNos;
-        _isLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching supply spinner details: $e');
-      setState(() {
-        _isLoading = false;
-      });
-      // Handle error as needed
-    }
-  }
-
-  Future<void> _scanQrCode() async {
-
-    final result = await Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => const QRViewTracesci(),
-    ));
-
-    if (result != null && result is String) {
-      setState(() {
-        scannedQrCodes.add(result);
-      });
-    }
-  }
-
   void _removeScannedCode(String code) {
     setState(() {
-      scannedQrCodes.remove(code);
+      scannedCodes.remove(code);
     });
   }
 
@@ -313,13 +304,13 @@ class _AddTonerState extends State<AddToner> {
               const SizedBox(height: 5),
               ListView.builder(
                 shrinkWrap: true,
-                itemCount: scannedQrCodes.length,
+                itemCount: scannedCodes.length,
                 itemBuilder: (context, index) {
                   return ListTile(
-                    title: Text(scannedQrCodes[index]),
+                    title: Text(scannedCodes[index]),
                     trailing: IconButton(
                       icon: const Icon(Icons.clear, color: Colors.red),
-                      onPressed: () => _removeScannedCode(scannedQrCodes[index]),
+                      onPressed: () => _removeScannedCode(scannedCodes[index]),
                     ),
                   );
                 },
@@ -359,318 +350,3 @@ class _AddTonerState extends State<AddToner> {
 
 }
 
-
-class ReferenceInputTextField extends StatefulWidget {
- final TextEditingController controller;
-   ReferenceInputTextField({Key? key, required this.controller}) : super(key: key);
-
-  @override
-  _ReferenceInputTextField createState() => _ReferenceInputTextField();
-}
-
-class _ReferenceInputTextField extends State<ReferenceInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      keyboardType: TextInputType.emailAddress,
-controller: widget.controller,
-      decoration: InputDecoration(
-        hintText: 'Reference (optional)',
-
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-          BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class DispatchReceiveRadioButton extends StatefulWidget {
-  final ValueChanged<DispatchReceive?> onChanged;
-
-  const DispatchReceiveRadioButton({Key? key, required this.onChanged}) : super(key: key);
-
-  @override
-  _DispatchReceiveRadioButtonState createState() => _DispatchReceiveRadioButtonState();
-}
-
-enum DispatchReceive { dispatch, receive }
-
-class _DispatchReceiveRadioButtonState extends State<DispatchReceiveRadioButton> {
-  DispatchReceive? _selectedOption = DispatchReceive.dispatch;
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Select an option:',
-          style: TextStyle(
-            fontSize: 16.0,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: RadioListTile<DispatchReceive>(
-                title: const Text('Dispatch'),
-                value: DispatchReceive.dispatch,
-                groupValue: _selectedOption,
-                activeColor: colorMixGrad,
-                onChanged: (DispatchReceive? value) {
-                  setState(() {
-                    _selectedOption = value;
-                  });
-                  widget.onChanged(value);
-                },
-              ),
-            ),
-            Expanded(
-              child: RadioListTile<DispatchReceive>(
-                title: const Text('Receive'),
-                value: DispatchReceive.receive,
-                groupValue: _selectedOption,
-                activeColor: colorMixGrad,
-                onChanged: (DispatchReceive? value) {
-                  setState(() {
-                    _selectedOption = value;
-                  });
-                  widget.onChanged(value);
-                },
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-
-class ClientNameSpinner extends StatelessWidget {
-  final String? selectedValue;
-  final ValueChanged<String?> onChanged;
-  final List<String> clientNames;
-
-  const ClientNameSpinner({
-    required this.selectedValue,
-    required this.onChanged,
-    required this.clientNames,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      hint: const Text('Select an option'),
-      items: clientNames.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintStyle: const TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: colorMixGrad),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: const TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class CityNameSpinner extends StatelessWidget {
-  final String? selectedValue;
-  final ValueChanged<String?> onChanged;
-  final List<String> clientCity;
-
-  const CityNameSpinner({
-    required this.selectedValue,
-    required this.onChanged,
-    required this.clientCity,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      hint: const Text('Select an option'),
-      items: clientCity.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintStyle: const TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: colorMixGrad),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: const TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-
-class ModelNoSpinner extends StatelessWidget {
-  final String? selectedValue;
-  final ValueChanged<String?> onChanged;
-  final List<String> modelLsit;
-
-  const ModelNoSpinner({
-    required this.selectedValue,
-    required this.onChanged,
-    Key? key, required this.modelLsit,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      hint: const Text('Select an option'),
-      items: modelLsit.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintStyle: const TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: colorMixGrad), // Adjust color as needed
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: const TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class DateTimeInputField extends StatefulWidget {
-  final DateTime initialDateTime;
-  final ValueChanged<DateTime> onDateTimeChanged;
-
-  const DateTimeInputField({
-    required this.initialDateTime,
-    required this.onDateTimeChanged,
-    Key? key,
-  }) : super(key: key);
-
-  @override
-  _DateTimeInputFieldState createState() => _DateTimeInputFieldState();
-}
-
-class _DateTimeInputFieldState extends State<DateTimeInputField> {
-  late DateTime selectedDateTime;
-  late TextEditingController _controller;
-  final DateFormat _dateFormat = DateFormat('yyyy-MM-dd | HH:mm');
-
-  @override
-  void initState() {
-    super.initState();
-    selectedDateTime = widget.initialDateTime;
-    _controller = TextEditingController(
-      text: _dateFormat.format(selectedDateTime),
-    );
-  }
-
-  Future<void> _pickDateTime() async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: selectedDateTime,
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2101),
-    );
-
-    if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(selectedDateTime),
-      );
-
-      if (pickedTime != null) {
-        setState(() {
-          selectedDateTime = DateTime(
-            pickedDate.year,
-            pickedDate.month,
-            pickedDate.day,
-            pickedTime.hour,
-            pickedTime.minute,
-          );
-          _controller.text = _dateFormat.format(selectedDateTime);
-          widget.onDateTimeChanged(selectedDateTime);
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      readOnly: true,
-      onTap: _pickDateTime,
-      decoration: InputDecoration(
-        hintText: 'Select Date and Time',
-        hintStyle: const TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: colorMixGrad), // Change color as needed
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: const TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
