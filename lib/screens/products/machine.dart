@@ -38,20 +38,24 @@ class _MachineModuleState extends State<MachineModule> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Machine",
-          style: TextStyle(
-            fontSize: 24.0,
-            color: colorMixGrad, // Replace with your colorSecondGrad
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
       body: Container(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.only(left:25.0,top: 10,bottom:10),
+              child: const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Machine",
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: colorMixGrad, // Replace with your colorSecondGrad
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+              ),
+            ),
 
             Padding(
               padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),

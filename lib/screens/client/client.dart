@@ -39,19 +39,24 @@ class _ClientModuleState extends State<ClientModule> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Client",
-          style: TextStyle(
-            fontSize: 24.0,
-            color: colorMixGrad,
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
       body: Column(
         children: [
+          const Padding(
+            padding: EdgeInsets.only(left:25.0,top: 10,bottom:10),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Client",
+                style: TextStyle(
+                  fontSize: 24.0,
+                  color: colorMixGrad, // Replace with your colorSecondGrad
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.start,
+              ),
+            ),
+          ),
+
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),

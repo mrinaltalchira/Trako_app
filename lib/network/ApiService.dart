@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:tonner_app/model/all_clients.dart';
 import 'package:tonner_app/model/all_machine.dart';
+import 'package:tonner_app/model/all_supply.dart';
 import 'package:tonner_app/model/all_user.dart';
 import 'package:tonner_app/model/supply_fields_data.dart';
 import 'package:tonner_app/pref_manager.dart';
@@ -352,6 +353,42 @@ class ApiService {
       throw Exception('Failed to connect to the server.');
     }
   }
+
+  Future<List<Supply>> getAllSupply(String? search) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before getAllClients
+
+      final response = await _dio.get(
+        '$baseUrl/all-supply',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final supplyJson = data['data']['supply'] as List;
+        List<Supply> supply = supplyJson.map((json) => Supply.fromJson(json)).toList();
+        return supply;
+      } else {
+        throw Exception('Failed to load supply');
+      }
+    } catch (e) {
+      print('Get All supply API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+
+
+
+
   }
 
 

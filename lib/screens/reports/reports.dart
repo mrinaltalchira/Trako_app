@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:tonner_app/color/colors.dart';
 
 class MyReportScreen extends StatelessWidget {
 
@@ -7,19 +8,27 @@ class MyReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('My Report'),
-      ),
+
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Report Section',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            Padding(
+              padding: const EdgeInsets.only(top: 10,bottom:20),
+              child: const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "My Report",
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: colorMixGrad, // Replace with your colorSecondGrad
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+              ),
             ),
-            SizedBox(height: 10),
             Text(
               'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '
                   'Suspendisse varius enim in eros elementum tristique. '

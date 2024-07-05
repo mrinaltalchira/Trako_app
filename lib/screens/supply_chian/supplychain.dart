@@ -6,50 +6,65 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:tonner_app/color/colors.dart';
+import 'package:tonner_app/model/all_supply.dart';
+import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/add_toner/add_toner.dart';
 
 
-class SupplyChain extends StatelessWidget{
-  final List<Map<String, dynamic>> items = [
-    {
-      'productName': 'Maple jet',
-      'scannedOn': 'gdf4g86fgv1cx3'
+class SupplyChain extends StatefulWidget{
 
-    },
-    {
-      'productName': 'Canon PIXMA E4570',
-      'scannedOn': 'gdf4g86fgv1cx3'
 
-    },
-    {
-      'productName': 'Epson EcoTank L3250',
-      'scannedOn': 'gdf4g86fgv1cx3'
+  @override
+  State<SupplyChain> createState() => _SupplyChainState();
+}
 
-    },
-    {
-      'productName': 'HP Smart Tank 529',
-      'scannedOn': '2024-03-15 11:45:20'
-    },
-  ];
+class _SupplyChainState extends State<SupplyChain> {
+  late Future<List<Supply>> supplyFuture;
+
+  final ApiService _apiService = ApiService();
+
+  @override
+  void initState() {
+    super.initState();
+    supplyFuture = getSupplyList(null);
+  }
+
+  Future<List<Supply>> getSupplyList(String? search) async {
+    try {
+      List<Supply> users = await _apiService.getAllSupply(search);
+      // Debug print to check the fetched clients
+      print('Fetched supply: $users');
+      return users;
+    } catch (e) {
+      // Handle error
+      print('Error fetching supply: $e');
+      return [];
+    }
+  }
 
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "Supply Chain",
-          style: TextStyle(
-            fontSize: 24.0,
-            color: colorMixGrad, // Replace with your colorSecondGrad
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      ),
       body: Container(
         child: Column(
           children: [
+            Padding(
+              padding: const EdgeInsets.only(left:25.0,top: 10,bottom:10),
+              child: const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Supply Chain",
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: colorMixGrad, // Replace with your colorSecondGrad
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+              ),
+            ),
+
 
             Padding(
               padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
@@ -122,7 +137,26 @@ class SupplyChain extends StatelessWidget{
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      SupplyChainList(items: items),
+                      FutureBuilder<List<Supply>>(
+                        future: supplyFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                                child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(
+                                child: Text('Error: ${snapshot.error}'));
+                          } else {
+                            List<Supply> clients = snapshot.data ??
+                                []; // Handle null case if necessary
+                            // Debug print to check the clients before passing to the widget
+                            print('Clients to display: $clients');
+
+                            return SupplyChainList(items: clients);
+                          }
+                        },
+                      )
                     ],
                   ),
                 ),
@@ -133,12 +167,10 @@ class SupplyChain extends StatelessWidget{
       ),
     );
   }
-
-
 }
 
 class SupplyChainList extends StatelessWidget {
-  final List<Map<String, dynamic>> items;
+  final List<Supply> items;
 
   const SupplyChainList({Key? key, required this.items}) : super(key: key);
 
@@ -171,7 +203,7 @@ class SupplyChainList extends StatelessWidget {
                         children: [
 
                           Text(
-                            items[index]['productName'],
+                            '${items[index].qrCode}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -197,7 +229,7 @@ class SupplyChainList extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text(items[index]['scannedOn'],style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(items[index].clientName,style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4.0),
               ],
             ),
@@ -210,13 +242,13 @@ class SupplyChainList extends StatelessWidget {
 
 
 
-  void _showEditDialog(BuildContext context, Map<String, dynamic> item) {
+  void _showEditDialog(BuildContext context, Supply item) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Edit Product'),
-          content: Text('Edit details of ${item['productName']}'),
+          content: Text('Edit details of ${item.qrCode}'),
           actions: <Widget>[
             TextButton(
               child: Text('Cancel'),
@@ -228,7 +260,7 @@ class SupplyChainList extends StatelessWidget {
               child: Text('Edit'),
               onPressed: () {
                 // Perform edit action
-                _editItem(item);
+                _editItem(item.id);
                 Navigator.of(context).pop(); // Close dialog
               },
             ),
@@ -238,9 +270,9 @@ class SupplyChainList extends StatelessWidget {
     );
   }
 
-  void _editItem(Map<String, dynamic> item) {
+  void _editItem(String id) {
     // Implement your edit logic here, such as updating item details
-    print('Editing item: ${item['productName']}');
+    print('Editing item: ${id}');
   }
 }
 
