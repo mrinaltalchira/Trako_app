@@ -22,7 +22,6 @@ import 'utils.dart';
 
 */
 
-
 class AddToner extends StatefulWidget {
   final String qrData;
 
@@ -42,8 +41,9 @@ class _AddTonerState extends State<AddToner> {
   String? selectedClientName;
   String? selectedCityName;
   String? selectedTonerName;
-  TextEditingController referenceController  = TextEditingController();
-  DateTime? _selectedDateTime= DateTime.now();
+  TextEditingController manualTonerCode = TextEditingController();
+  TextEditingController referenceController = TextEditingController();
+  DateTime? _selectedDateTime = DateTime.now();
   bool _isLoading = false;
 
   @override
@@ -51,7 +51,6 @@ class _AddTonerState extends State<AddToner> {
     super.initState();
     fetchSpinnerData();
     scannedCodes = widget.qrData.isNotEmpty ? [widget.qrData] : [];
-
   }
 
   Future<void> fetchSpinnerData() async {
@@ -59,7 +58,8 @@ class _AddTonerState extends State<AddToner> {
       _isLoading = true;
     });
     try {
-      SupplySpinnerResponse spinnerResponse = await _apiService.getSpinnerDetails();
+      SupplySpinnerResponse spinnerResponse =
+          await _apiService.getSpinnerDetails();
       setState(() {
         clientNames = spinnerResponse.data.clientNames;
         clientCities = spinnerResponse.data.clientCities;
@@ -76,26 +76,37 @@ class _AddTonerState extends State<AddToner> {
   }
 
   Future<void> _scanQrCode() async {
-
     final result = await Navigator.of(context).push(MaterialPageRoute(
       builder: (context) => const QRViewTracesci(),
     ));
 
     if (result != null && result is String) {
       setState(() {
-        scannedCodes.add(result);
+        if (!scannedCodes.contains(result)) {
+          scannedCodes.add(result);
+        } else {
+          showSnackBar(context, "Duplicate values are not allowed.");
+        }
       });
     }
   }
 
+  void addCodeManually(String result) {
+    if (!scannedCodes.contains(result)) {
+      setState(() {
+        scannedCodes.add(result);
+      });
+    } else {
+      showSnackBar(context, "Duplicate values are not allowed.");
+    }
+  }
   Future<void> submitToner() async {
-
     if (selectedClientName == null) {
       showSnackBar(context, "Please select client name");
       return;
     }
 
-    if (selectedCityName == null ) {
+    if (selectedCityName == null) {
       showSnackBar(context, "Please select client city");
       return;
     }
@@ -110,7 +121,6 @@ class _AddTonerState extends State<AddToner> {
       return;
     }
 
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -118,7 +128,6 @@ class _AddTonerState extends State<AddToner> {
         return Center(child: CircularProgressIndicator());
       },
     );
-
 
     // Call the login API
     try {
@@ -129,15 +138,14 @@ class _AddTonerState extends State<AddToner> {
       String commaSeparatedString = scannedCodes.join(', ');
 
       addUserResponse = await apiService.addSupply(
-          dispatch_receive: _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
-          client_name:selectedClientName.toString(),
-          client_city:selectedCityName.toString(),
+          dispatch_receive:
+              _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
+          client_name: selectedClientName.toString(),
+          client_city: selectedCityName.toString(),
           model_no: selectedTonerName.toString(),
-          date_time: _selectedDateTime.toString() ,
+          date_time: _selectedDateTime.toString(),
           qr_code: commaSeparatedString,
-          reference: referenceController.text
-
-      );
+          reference: referenceController.text);
 
       // Dismiss loading indicator
       Navigator.of(context).pop();
@@ -147,8 +155,13 @@ class _AddTonerState extends State<AddToner> {
           addUserResponse.containsKey('status')) {
         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
           if (addUserResponse['message'] == 'Success') {
-            Navigator.pop(context);
-            showSnackBar(context, "Toner Added successfully.");
+            showSnackBar(context, addUserResponse['data']['message']);
+            if (addUserResponse['data']['message'] ==
+                    'Supply created successfully' ||
+                addUserResponse['data']['message'] ==
+                    'Supply updated successfully') {
+              Navigator.pop(context);
+            }
           } else {
             showSnackBar(context, addUserResponse['message']);
           }
@@ -179,7 +192,7 @@ class _AddTonerState extends State<AddToner> {
   }
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -212,13 +225,13 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 10),
-            DispatchReceiveRadioButton(
-              onChanged: (DispatchReceive? value) {
-                setState(() {
-                  _selectedDispatchReceive = value;
-                });
-              },
-            ),
+              DispatchReceiveRadioButton(
+                onChanged: (DispatchReceive? value) {
+                  setState(() {
+                    _selectedDispatchReceive = value;
+                  });
+                },
+              ),
               const SizedBox(height: 15),
               const Text(
                 "Client Name",
@@ -228,15 +241,15 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 5),
-             ClientNameSpinner(
-              selectedValue: selectedClientName,
-              onChanged: (newValue) {
-                setState(() {
-                  selectedClientName = newValue;
-                });
-              },
-              clientNames: clientNames, // Pass the fetched client names
-            ),
+              ClientNameSpinner(
+                selectedValue: selectedClientName,
+                onChanged: (newValue) {
+                  setState(() {
+                    selectedClientName = newValue;
+                  });
+                },
+                clientNames: clientNames, // Pass the fetched client names
+              ),
               const SizedBox(height: 15),
               const Text(
                 "City Name",
@@ -251,9 +264,9 @@ class _AddTonerState extends State<AddToner> {
                 onChanged: (newValue) {
                   setState(() {
                     selectedCityName = newValue;
-                  }
-                  );
-                }, clientCity: clientCities,
+                  });
+                },
+                clientCity: clientCities,
               ),
               const SizedBox(height: 15),
               const Text(
@@ -270,8 +283,8 @@ class _AddTonerState extends State<AddToner> {
                   setState(() {
                     selectedTonerName = newValue;
                   });
-                }, modelLsit: modelNos,
-
+                },
+                modelLsit: modelNos,
               ),
               const SizedBox(height: 15),
               const Text(
@@ -289,9 +302,47 @@ class _AddTonerState extends State<AddToner> {
                 },
               ),
               const SizedBox(height: 15),
-              ElevatedButton(
-                onPressed: _scanQrCode,
-                child: const Text("Add Toner"),
+              Padding(
+                padding: const EdgeInsets.only(left: 30, right: 30),
+                child: GradientButton(
+                    gradientColors: const [colorFirstGrad, colorSecondGrad],
+                    height: 45.0,
+                    width: double.infinity,
+                    radius: 25.0,
+                    buttonText: "Scan code",
+                    onPressed: _scanQrCode),
+              ),
+              const SizedBox(height: 15),
+              const Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey,
+                      thickness: 1,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      "or add code manually",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: colorMixGrad,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey,
+                      thickness: 1,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              ManualCodeField(
+                controller: manualTonerCode,
+                onAddPressed: addCodeManually,
               ),
               const SizedBox(height: 15),
               const Text(
@@ -324,11 +375,13 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 5),
-              ReferenceInputTextField(controller: referenceController,),
-
+              ReferenceInputTextField(
+                controller: referenceController,
+              ),
               const SizedBox(height: 15),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
                 child: GradientButton(
                   gradientColors: const [colorFirstGrad, colorSecondGrad],
                   height: 45.0,
@@ -336,7 +389,16 @@ class _AddTonerState extends State<AddToner> {
                   radius: 25.0,
                   buttonText: "Submit",
                   onPressed: () {
-                    submitToner();
+                    showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return ConfirmSubmitDialog(
+                          onConfirm: () {
+                            submitToner(); // Call your submit function here
+                          },
+                        );
+                      },
+                    );
                   },
                 ),
               ),
@@ -349,4 +411,3 @@ class _AddTonerState extends State<AddToner> {
   }
 
 }
-

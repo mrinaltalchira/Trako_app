@@ -16,11 +16,11 @@ void showSnackBar(BuildContext context, String message) {
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 16,
-          color: Colors.black,
+          color: Colors.white,
         ),
       ),
       backgroundColor: colorMixGrad,
-      duration: Duration(seconds: 3),
+      duration: const Duration(seconds: 3),
       behavior: SnackBarBehavior.floating,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),

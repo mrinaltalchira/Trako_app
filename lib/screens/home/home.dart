@@ -81,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: IconButton(
             icon: Icon(Icons.person),
             onPressed: () {
-              showSnackBar(context, PrefManager().getToken().toString());
+              Navigator.pushNamed(context, '/profile');
               // Navigator.pushNamed(context, '/profile');
             },
           ),

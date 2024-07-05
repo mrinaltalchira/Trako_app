@@ -285,6 +285,12 @@ class _AuthProcessState extends State<AuthProcess> {
             if (token.isNotEmpty) {
 
               PrefManager().setToken(token.toString());
+              PrefManager().setUserName(user.name.toString());
+              PrefManager().setUserEmail(user.email.toString());
+              PrefManager().setUserPhone(user.phone.toString());
+              PrefManager().setUserRole(user.userRole.toString());
+              PrefManager().setUserStatus(user.isActive.toString());
+
 
               // Navigate to home screen
               Navigator.of(context).pushReplacement(

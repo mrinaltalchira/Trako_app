@@ -72,39 +72,12 @@ class _SupplyChainState extends State<SupplyChain> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [colorFirstGrad, colorSecondGrad],
-                        ),
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(10.0),
-                        ),
-                        padding: EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Row(
-                          children: [
-                            Icon(Icons.search, color: Colors.grey),
-                            SizedBox(width: 10.0),
-                            Expanded(
-                              child: TextField(
-                                decoration: InputDecoration(
-                                  hintText: 'Search',
-                                  hintStyle: TextStyle(color: Colors.grey),
-                                  border: InputBorder.none,
-                                ),
-                                style: TextStyle(
-                                  fontSize: 16.0,
-                                  color: Colors.black,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    child: CustomSearchField(
+                      onSearchChanged: (searchQuery) {
+                        setState(() {
+                          supplyFuture = getSupplyList(searchQuery);
+                        });
+                      },
                     ),
                   ),
                   const SizedBox(width: 20.0), // Spacer between search and add button
@@ -218,13 +191,18 @@ class SupplyChainList extends StatelessWidget {
                     // Edit and delete buttons
                     Row(
                       children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                            // Handle edit action
-                            _showEditDialog(context, items[index]);
-                          },
+                        Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: items[index].dispatchReceive == "0"
+                              ? createTextWidget("Dispatched", Colors.red)
+                              : createTextWidget("Received", Colors.green),
                         ),
+/*
+                        items[index].dispatchReceive == "0"
+                            ? Icon(Icons.arrow_forward,color: Colors.red,)
+                            : Icon(Icons.arrow_back,color: Colors.green,),
+*/
+
                       ],
                     ),
                   ],
@@ -240,7 +218,12 @@ class SupplyChainList extends StatelessWidget {
   }
 
 
-
+  Widget createTextWidget(String text, Color color) {
+    return Text(
+      text,
+      style: TextStyle(color: color,fontSize: 15,fontWeight: FontWeight.bold),
+    );
+  }
 
   void _showEditDialog(BuildContext context, Supply item) {
     showDialog(
@@ -400,5 +383,65 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
   void dispose() {
     controller?.dispose();
     super.dispose();
+  }
+}
+
+class CustomSearchField extends StatefulWidget {
+  final ValueChanged<String> onSearchChanged;
+  const CustomSearchField({Key? key, required this.onSearchChanged}) : super(key: key);
+
+  @override
+  _CustomSearchFieldState createState() => _CustomSearchFieldState();
+}
+
+class _CustomSearchFieldState extends State<CustomSearchField> {
+  TextEditingController _searchController = TextEditingController();
+
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Colors.blue, Colors.green], // Replace with your gradient colors
+        ),
+        borderRadius: BorderRadius.circular(25.0),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+        child: Row(
+          children: [
+            Icon(Icons.search, color: Colors.grey),
+            const SizedBox(width: 10.0),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                onChanged: widget.onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'Search',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  border: InputBorder.none,
+                ),
+                style: const TextStyle(
+                  fontSize: 16.0,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

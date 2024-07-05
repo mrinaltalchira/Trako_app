@@ -72,4 +72,71 @@ class PrefManager {
     await prefs.setString('token', token);
   }
 
+
+  // user Name
+
+  Future<String?> getUserName() async {
+    final prefs = await _prefs;
+    return prefs.getString('user_name');
+  }
+
+  Future<void> setUserName(String userName) async {
+    final prefs = await _prefs;
+    await prefs.setString('user_name', userName);
+  }
+
+
+
+  // user email
+
+  Future<String?> getUserEmail() async {
+    final prefs = await _prefs;
+    return prefs.getString('user_email');
+  }
+
+  Future<void> setUserEmail(String userEmail) async {
+    final prefs = await _prefs;
+    await prefs.setString('user_email', userEmail);
+  }
+
+
+  // user phone
+
+  Future<String?> getUserPhone() async {
+    final prefs = await _prefs;
+    return prefs.getString('user_phone');
+  }
+
+  Future<void> setUserPhone(String userPhone) async {
+    final prefs = await _prefs;
+    await prefs.setString('user_phone', userPhone);
+  }
+
+
+  // user role
+
+  Future<String?> getUserRole() async {
+    final prefs = await _prefs;
+    return prefs.getString('user_role');
+  }
+
+  Future<void> setUserRole(String userRole) async {
+    final prefs = await _prefs;
+    await prefs.setString('user_role', userRole);
+  }
+
+
+  // user role
+
+  Future<String?> getUserStatus() async {
+    final prefs = await _prefs;
+    return prefs.getString('user_status');
+  }
+
+  Future<void> setUserStatus(String userStatus) async {
+    final prefs = await _prefs;
+    await prefs.setString('user_status', userStatus);
+  }
+
+
 }

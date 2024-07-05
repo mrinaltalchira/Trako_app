@@ -5,6 +5,7 @@ import 'package:tonner_app/model/all_machine.dart';
 import 'package:tonner_app/model/all_supply.dart';
 import 'package:tonner_app/model/all_user.dart';
 import 'package:tonner_app/model/supply_fields_data.dart';
+import 'package:tonner_app/model/user_profie.dart';
 import 'package:tonner_app/pref_manager.dart';
 
 class ApiService {
@@ -33,6 +34,37 @@ class ApiService {
     }
   }
 
+
+  //////////////////////////////// AUTH
+
+  Future<UserResponse> getProfile(String? search) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before getAllClients
+
+      final response = await _dio.get(
+        '$baseUrl/get-profile',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        UserResponse userResponse = UserResponse.fromJson(data);
+        return userResponse;
+      } else {
+        throw Exception('Failed to load user profile');
+      }
+    } catch (e) {
+      print('Get User Profile API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
   Future<Map<String, dynamic>> login(String? email, String? phone, String password) async {
     try {
       await initializeApiService(); // Ensure token is initialized before login

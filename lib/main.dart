@@ -10,10 +10,9 @@ import 'package:tonner_app/screens/profile/profile.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
 import 'package:tonner_app/screens/users/accessibility.dart';
 import 'package:tonner_app/screens/users/add_user.dart';
-import 'package:tonner_app/screens/users/create_user.dart';
 import 'package:tonner_app/screens/users/machine_status.dart';
-import 'package:tonner_app/screens/users/users.dart';
 import 'package:tonner_app/screens/users/user_status.dart';
+import 'package:tonner_app/screens/users/users.dart';
 
 import 'ThemeNotifier.dart';
 
@@ -61,7 +60,7 @@ class MyApp extends StatelessWidget {
             theme: themeNotifier.currentTheme,
             home: const AuthProcess(),
             routes: {
-              '/profile': (context) => const Profile(),
+              '/profile': (context) => const ProfilePage(),
               '/home_screen': (context) => const HomeScreen(),
               '/add_client': (context) => AddClient(),
               '/add_machine': (context) =>  AddMachine(),
