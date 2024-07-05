@@ -1,6 +1,7 @@
 // Define your global variables here
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:tonner_app/color/colors.dart';
 
 const double radiusTextField = 21.0;
 const double radiusContainerTextField = 21.0;
@@ -8,19 +9,26 @@ const double heightEditText = 50.0;
 const double appBarIconHeight = 30.0;
 
 void showSnackBar(BuildContext context, String message) {
-  final snackBar = SnackBar(
-    content: Text(message),
-    duration: Duration(seconds: 3), // Adjust as needed
-    action: SnackBarAction(
-      label: 'Close',
-      onPressed: () {
-        // Code to execute when SnackBar action is pressed
-      },
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 16,
+          color: Colors.black,
+        ),
+      ),
+      backgroundColor: colorMixGrad,
+      duration: Duration(seconds: 3),
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
     ),
   );
-
-  ScaffoldMessenger.of(context).showSnackBar(snackBar);
 }
+
 
 class CustomImageWidget extends StatelessWidget {
   final String? imageUrl;
