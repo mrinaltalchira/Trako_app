@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/pref_manager.dart';
-import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/dasboard/dashboard.dart';
+import 'package:tonner_app/screens/home/client/client.dart';
 import 'package:tonner_app/screens/products/machine.dart';
 import 'package:tonner_app/screens/reports/reports.dart';
 import 'package:tonner_app/screens/supply_chian/supplychain.dart';
@@ -208,7 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-
+/*
 class CategoriesDashboard extends StatelessWidget {
   const CategoriesDashboard({Key? key}) : super(key: key);
 
@@ -316,4 +316,4 @@ class CategoriesDashboard extends StatelessWidget {
       ),
     );
   }
-}
+}*/

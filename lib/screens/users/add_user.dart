@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/home/home.dart';
 
 class AddUser extends StatefulWidget {
@@ -296,7 +295,16 @@ class _AddUserState extends State<AddUser> {
                     width: 10.0,
                     radius: 25.0,
                     buttonText: "Submit",
-                    onPressed: _handleSubmit,
+                    onPressed:(){  showDialog(
+                      context: context,
+                      builder: (BuildContext context) {
+                        return ConfirmSubmitDialog(
+                          onConfirm: () {
+                            _handleSubmit();
+                          },
+                        );
+                      },
+                    );}
                   ),
                 ),
               ),
@@ -304,6 +312,113 @@ class _AddUserState extends State<AddUser> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+class ConfirmSubmitDialog extends StatelessWidget {
+  final VoidCallback onConfirm;
+
+  const ConfirmSubmitDialog({Key? key, required this.onConfirm}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: contentBox(context),
+    );
+  }
+
+  Widget contentBox(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            offset: const Offset(0, 4),
+            blurRadius: 8.0,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.all(15.0),
+            child: Text(
+              'Confirm Submit',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: colorMixGrad,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const Divider(
+            color: Colors.grey,
+            height: 0.5,
+          ),
+          const SizedBox(height: 8.0),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              'Are you sure you want to submit?',
+              style: TextStyle(
+                fontSize: 16.0,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 14.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  onConfirm(); // Call the callback to submit
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorMixGrad,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                ),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16.0),
+        ],
       ),
     );
   }

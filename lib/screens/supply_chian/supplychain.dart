@@ -11,65 +11,68 @@ import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/add_toner/add_toner.dart';
 
 
-class SupplyChain extends StatefulWidget{
-
-
+class SupplyChain extends StatefulWidget {
   @override
   State<SupplyChain> createState() => _SupplyChainState();
 }
 
 class _SupplyChainState extends State<SupplyChain> {
   late Future<List<Supply>> supplyFuture;
-
   final ApiService _apiService = ApiService();
 
-  @override
-  void initState() {
-    super.initState();
-    supplyFuture = getSupplyList(null);
-  }
+    @override
+    void initState() {
+      super.initState();
+      // Initialize the supplyFuture with the initial data load
+      supplyFuture = getSupplyList(null);
+    }
 
   Future<List<Supply>> getSupplyList(String? search) async {
     try {
-      List<Supply> users = await _apiService.getAllSupply(search);
-      // Debug print to check the fetched clients
-      print('Fetched supply: $users');
-      return users;
+      List<Supply> supplies = await _apiService.getAllSupply(search);
+      // Debug print to check the fetched supplies
+      print('Fetched supplies: $supplies');
+      return supplies;
     } catch (e) {
       // Handle error
-      print('Error fetching supply: $e');
+      print('Error fetching supplies: $e');
       return [];
     }
   }
 
+  Future<void> refreshSupplyList() async {
+    // Update the supplyFuture with refreshed data
+    setState(() {
+      supplyFuture = getSupplyList(null);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
+      body: RefreshIndicator(
+        onRefresh: refreshSupplyList,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.only(left:25.0,top: 10,bottom:10),
-              child: const Align(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+              child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
                   "Supply Chain",
                   style: TextStyle(
                     fontSize: 24.0,
-                    color: colorMixGrad, // Replace with your colorSecondGrad
+                    color: colorMixGrad,
                     fontWeight: FontWeight.w600,
                   ),
-                  textAlign: TextAlign.start,
                 ),
               ),
             ),
-
-
             Padding(
-              padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
+              padding: const EdgeInsets.fromLTRB(25.0, 10, 25.0, 10),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: CustomSearchField(
@@ -80,17 +83,16 @@ class _SupplyChainState extends State<SupplyChain> {
                       },
                     ),
                   ),
-                  const SizedBox(width: 20.0), // Spacer between search and add button
+                  SizedBox(width: 20.0),
                   Container(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         colors: [colorFirstGrad, colorSecondGrad],
                       ),
                       borderRadius: BorderRadius.circular(25.0),
                     ),
                     child: IconButton(
                       onPressed: () {
-                        // Navigate to add client screen
                         Navigator.pushNamed(context, '/add_toner');
                       },
                       icon: Icon(
@@ -104,34 +106,23 @@ class _SupplyChainState extends State<SupplyChain> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      FutureBuilder<List<Supply>>(
-                        future: supplyFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState ==
-                              ConnectionState.waiting) {
-                            return const Center(
-                                child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Center(
-                                child: Text('Error: ${snapshot.error}'));
-                          } else {
-                            List<Supply> clients = snapshot.data ??
-                                []; // Handle null case if necessary
-                            // Debug print to check the clients before passing to the widget
-                            print('Clients to display: $clients');
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: FutureBuilder<List<Supply>>(
+                  future: supplyFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else {
+                      List<Supply> supplies = snapshot.data ?? [];
+                      // Debug print to check the supplies before passing to the widget
+                      print('Supplies to display: $supplies');
 
-                            return SupplyChainList(items: clients);
-                          }
-                        },
-                      )
-                    ],
-                  ),
+                      return SupplyChainList(items: supplies);
+                    }
+                  },
                 ),
               ),
             ),
@@ -141,6 +132,9 @@ class _SupplyChainState extends State<SupplyChain> {
     );
   }
 }
+
+
+
 
 class SupplyChainList extends StatelessWidget {
   final List<Supply> items;

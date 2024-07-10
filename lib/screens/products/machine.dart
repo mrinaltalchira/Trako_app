@@ -35,71 +35,81 @@ class _MachineModuleState extends State<MachineModule> {
   }
 
 
+  Future<void> refreshMachineList() async {
+    setState(() {
+      machineFuture = getMachineList(null);
+    });
+    await machineFuture; // Await the future to complete
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(left:25.0,top: 10,bottom:10),
-              child: const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Machine",
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    color: colorMixGrad, // Replace with your colorSecondGrad
-                    fontWeight: FontWeight.w600,
+      body: RefreshIndicator(
+        onRefresh: refreshMachineList,
+        child: Container(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left:25.0,top: 10,bottom:10),
+                child: const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Machine",
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      color: colorMixGrad, // Replace with your colorSecondGrad
+                      fontWeight: FontWeight.w600,
+                    ),
+                    textAlign: TextAlign.start,
                   ),
-                  textAlign: TextAlign.start,
                 ),
               ),
-            ),
 
-            Padding(
-              padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Expanded(
-                    child: CustomSearchField(
-                      onSearchChanged: (searchQuery) {
-                        setState(() {
-                          machineFuture = getMachineList(searchQuery);
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 20.0), // Spacer between search and add button
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
+              Padding(
+                padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: CustomSearchField(
+                        onSearchChanged: (searchQuery) {
+                          setState(() {
+                            machineFuture = getMachineList(searchQuery);
+                          });
+                        },
                       ),
-                      borderRadius: BorderRadius.circular(25.0),
                     ),
-                    child: IconButton(
-                      onPressed: () {
-                        // Navigate to add client screen
-                        Navigator.pushNamed(context, '/add_machine');
-                      },
-                      icon: Icon(
-                        Icons.add,
-                        color: Colors.white,
+                    const SizedBox(width: 20.0), // Spacer between search and add button
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [colorFirstGrad, colorSecondGrad],
+                        ),
+                        borderRadius: BorderRadius.circular(25.0),
                       ),
-                      iconSize: 30.0,
+                      child: IconButton(
+                        onPressed: () {
+                          // Navigate to add client screen
+                          Navigator.pushNamed(context, '/add_machine');
+                        },
+                        icon: Icon(
+                          Icons.add,
+                          color: Colors.white,
+                        ),
+                        iconSize: 30.0,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         FutureBuilder<List<Machine>>(
                           future: machineFuture,
@@ -122,11 +132,12 @@ class _MachineModuleState extends State<MachineModule> {
                           },
                         ),
                       ],
+                    ),
                   ),
                 ),
-              ),
-            )
-          ],
+              )
+            ],
+          ),
         ),
       ),
     );

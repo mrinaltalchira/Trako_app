@@ -35,16 +35,20 @@ class _AddTonerState extends State<AddToner> {
   final ApiService _apiService = ApiService();
   DispatchReceive? _selectedDispatchReceive = DispatchReceive.dispatch;
   List<String> scannedCodes = [];
-  List<String> clientNames = [];
-  List<String> clientCities = [];
   List<String> modelNos = [];
+  List<String> clientCities = [];
+  List<String> clientNames = [];
+  List<SupplyClient> clients = [];
   String? selectedClientName;
   String? selectedCityName;
   String? selectedTonerName;
+
   TextEditingController manualTonerCode = TextEditingController();
+  TextEditingController controllerCityName = TextEditingController();
   TextEditingController referenceController = TextEditingController();
   DateTime? _selectedDateTime = DateTime.now();
   bool _isLoading = false;
+  String? selectedClientId;
 
   @override
   void initState() {
@@ -61,9 +65,10 @@ class _AddTonerState extends State<AddToner> {
       SupplySpinnerResponse spinnerResponse =
           await _apiService.getSpinnerDetails();
       setState(() {
-        clientNames = spinnerResponse.data.clientNames;
-        clientCities = spinnerResponse.data.clientCities;
-        modelNos = spinnerResponse.data.modelNos;
+        modelNos = spinnerResponse.data.modelNo;
+        clients = spinnerResponse.data.clients;
+        clientNames = spinnerResponse.data.clientName;
+        clientCities = spinnerResponse.data.clientCity;
         _isLoading = false;
       });
     } catch (e) {
@@ -100,6 +105,7 @@ class _AddTonerState extends State<AddToner> {
       showSnackBar(context, "Duplicate values are not allowed.");
     }
   }
+
   Future<void> submitToner() async {
     if (selectedClientName == null) {
       showSnackBar(context, "Please select client name");
@@ -142,6 +148,7 @@ class _AddTonerState extends State<AddToner> {
               _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
           client_name: selectedClientName.toString(),
           client_city: selectedCityName.toString(),
+          client_id: selectedClientId.toString(),
           model_no: selectedTonerName.toString(),
           date_time: _selectedDateTime.toString(),
           qr_code: commaSeparatedString,
@@ -155,12 +162,14 @@ class _AddTonerState extends State<AddToner> {
           addUserResponse.containsKey('status')) {
         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
           if (addUserResponse['message'] == 'Success') {
-            showSnackBar(context, addUserResponse['data']['message']);
+
             if (addUserResponse['data']['message'] ==
-                    'Supply created successfully' ||
+                    'Supply created successfully.' ||
                 addUserResponse['data']['message'] ==
-                    'Supply updated successfully') {
-              Navigator.pop(context);
+                    'Supply updated successfully.') {
+                Navigator.of(context).pop(true);
+            } else {
+              showSnackBar(context, addUserResponse['message']);
             }
           } else {
             showSnackBar(context, addUserResponse['message']);
@@ -242,13 +251,15 @@ class _AddTonerState extends State<AddToner> {
               ),
               const SizedBox(height: 5),
               ClientNameSpinner(
-                selectedValue: selectedClientName,
-                onChanged: (newValue) {
+                onChanged: (SupplyClient? newClient) {
                   setState(() {
-                    selectedClientName = newValue;
+                    selectedClientName = newClient?.name;
+                    selectedCityName = newClient?.city;
+                    selectedClientId = newClient?.id.toString();
+                    controllerCityName.text = selectedCityName.toString();
                   });
                 },
-                clientNames: clientNames, // Pass the fetched client names
+                clients: clients,
               ),
               const SizedBox(height: 15),
               const Text(
@@ -259,14 +270,8 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 5),
-              CityNameSpinner(
-                selectedValue: selectedCityName,
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedCityName = newValue;
-                  });
-                },
-                clientCity: clientCities,
+              CityNameTextField(
+                controller: controllerCityName,
               ),
               const SizedBox(height: 15),
               const Text(
@@ -409,5 +414,4 @@ class _AddTonerState extends State<AddToner> {
       ),
     );
   }
-
 }

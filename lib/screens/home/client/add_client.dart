@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/home/home.dart';
 
 class AddClient extends StatefulWidget {
@@ -12,6 +11,7 @@ class AddClient extends StatefulWidget {
 }
 
 class _AddClientState extends State<AddClient> {
+  bool activeChecked = true;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
@@ -148,6 +148,17 @@ class _AddClientState extends State<AddClient> {
                     const SizedBox(
                       height: 20,
                     ),
+                    CheckBoxRow(
+                      activeChecked: activeChecked,
+                      onActiveChanged: (bool? value) {
+                        setState(() {
+                          activeChecked = value ?? false;
+                        });
+                      },
+                    ),
+                    const SizedBox(
+                      height: 20,
+                    ),
                     SizedBox(
                         child: Padding(
                       padding:
@@ -159,7 +170,16 @@ class _AddClientState extends State<AddClient> {
                         radius: 25.0,
                         buttonText: "Submit",
                         onPressed: () {
-                          validateAndSignIn();
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return ConfirmSubmitDialog(
+                                onConfirm: () {
+                                  validateAndCreateClient();
+                                },
+                              );
+                            },
+                          );
                         },
                       ),
                     )),
@@ -170,7 +190,8 @@ class _AddClientState extends State<AddClient> {
     );
   }
 
-  Future<void> validateAndSignIn() async {
+
+  Future<void> validateAndCreateClient() async {
     // Validate phone nu
 
     if (nameController.text.isEmpty) {
@@ -219,6 +240,7 @@ class _AddClientState extends State<AddClient> {
           email: emailController.text,
           phone: phoneController.text,
           address: addressController.text,
+          isActive: activeChecked ? '0' : '1',
           contactPerson: contactPersonController.text);
 
       // Dismiss loading indicator
@@ -229,13 +251,14 @@ class _AddClientState extends State<AddClient> {
           addClientResponse.containsKey('status')) {
         if (!addClientResponse['error'] && addClientResponse['status'] == 200) {
           if (addClientResponse['message'] == 'Success') {
-            nameController.text = "";
-            cityController.text = "";
-            emailController.text = "";
-            phoneController.text = "";
-            addressController.text = "";
-            contactPersonController.text = "";
+            nameController.clear();
+            cityController.clear();
+            emailController.clear();
+            phoneController.clear();
+            addressController.clear();
+            contactPersonController.clear();
             showSnackBar(context, "Client created successfully.");
+            Navigator.of(context).pop(true);
           } else {
             showSnackBar(context, addClientResponse['message']);
           }
@@ -258,6 +281,116 @@ class _AddClientState extends State<AddClient> {
       print("Login API Error: $e");
     }
   }
+
+}
+
+
+class ConfirmSubmitDialog extends StatelessWidget {
+  final VoidCallback onConfirm;
+
+  const ConfirmSubmitDialog({Key? key, required this.onConfirm}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: contentBox(context),
+    );
+  }
+
+  Widget contentBox(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            offset: const Offset(0, 4),
+            blurRadius: 8.0,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.all(15.0),
+            child: Text(
+              'Confirm Submit',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: colorMixGrad,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const Divider(
+            color: Colors.grey,
+            height: 0.5,
+          ),
+          const SizedBox(height: 8.0),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              'Are you sure you want to submit?',
+              style: TextStyle(
+                fontSize: 16.0,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 14.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  onConfirm(); // Call the callback to submit
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorMixGrad,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                ),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16.0),
+        ],
+      ),
+    );
+  }
 }
 
 class NameInputTextField extends StatefulWidget {
@@ -279,7 +412,7 @@ class _NameInputTextFieldState extends State<NameInputTextField> {
       controller: widget.controller,
       decoration: InputDecoration(
         hintText: 'Name',
-          counterText: '',
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -317,10 +450,10 @@ class _CityInputTextFieldState extends State<CityInputTextField> {
     return TextField(
       controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
-      maxLength: 25 ,
+      maxLength: 25,
       decoration: InputDecoration(
         hintText: 'City',
-          counterText: '',
+        counterText: '',
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -505,6 +638,80 @@ class _ContactPersonInputTextFieldState
         fontSize: 16.0,
         color: Colors.black,
       ),
+    );
+  }
+}
+
+class CheckBoxRow extends StatelessWidget {
+  final bool activeChecked;
+  final ValueChanged<bool?> onActiveChanged;
+
+  const CheckBoxRow({
+    required this.activeChecked,
+    required this.onActiveChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(height: 10),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Active Status:',
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CustomRadio(
+                value: true,
+                groupValue: activeChecked,
+                onChanged: onActiveChanged,
+                activeColor: colorMixGrad,
+              ),
+              const Text('Active'),
+              SizedBox(width: 20),
+              CustomRadio(
+                value: false,
+                groupValue: activeChecked,
+                onChanged: onActiveChanged,
+                activeColor: colorMixGrad,
+              ),
+              const Text('Inactive'),
+            ],
+          ),
+        ],
+      ),
+
+    ]);
+  }
+}
+
+
+class CustomRadio extends StatelessWidget {
+  final bool value;
+  final bool? groupValue;
+  final ValueChanged<bool?>? onChanged;
+  final Color activeColor;
+
+  const CustomRadio({
+    required this.value,
+    required this.groupValue,
+    required this.onChanged,
+    required this.activeColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Radio(
+      value: value,
+      groupValue: groupValue,
+      onChanged: onChanged,
+      activeColor: activeColor,
     );
   }
 }

@@ -4,12 +4,44 @@ import 'package:tonner_app/model/all_clients.dart';
 import 'package:tonner_app/model/all_machine.dart';
 import 'package:tonner_app/model/all_supply.dart';
 import 'package:tonner_app/model/all_user.dart';
+import 'package:tonner_app/model/client_report.dart';
+import 'package:tonner_app/model/dashboard.dart';
 import 'package:tonner_app/model/supply_fields_data.dart';
 import 'package:tonner_app/model/user_profie.dart';
 import 'package:tonner_app/pref_manager.dart';
 
+
+class LoggerInterceptor extends Interceptor {
+  @override
+  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    print("Request to: ${options.uri}");
+    print("Request Headers: ${options.headers}");
+    print("Request Data: ${options.data}");
+    return super.onRequest(options, handler);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    print("Response from: ${response.requestOptions.uri}");
+    print("Response Status: ${response.statusCode}");
+    print("Response Headers: ${response.headers}");
+    print("Response Data: ${response.data}");
+    return super.onResponse(response, handler);
+  }
+
+  @override
+  void onError(DioError err, ErrorInterceptorHandler handler) {
+    print("Error from: ${err.requestOptions.uri}");
+    print("Error Message: ${err.message}");
+    if (err.response != null) {
+      print("Error Data: ${err.response?.data}");
+    }
+    return super.onError(err, handler);
+  }
+}
+
 class ApiService {
-  final String baseUrl = 'http://192.168.1.29:8000/api';
+  final String baseUrl = 'http://192.168.1.30:8000/api';
   late Dio _dio;
   late String? token;
 
@@ -100,6 +132,7 @@ class ApiService {
     required String phone,
     required String address,
     required String contactPerson,
+    required String isActive,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -118,6 +151,7 @@ class ApiService {
           'city': city,
           'email': email,
           'phone': phone,
+          "isActive": isActive,
           'address': address,
           'contact_person': contactPerson,
         }),
@@ -322,6 +356,7 @@ class ApiService {
     required String client_name,
     required String client_city,
     required String model_no,
+    required String client_id,
     required String date_time,
     required String qr_code,
     String? reference,
@@ -343,6 +378,7 @@ class ApiService {
           "client_name": client_name,
           "client_city": client_city, // Add this
           "model_no": model_no,
+          "client_id": client_id,
           "date_time": date_time,
           "qr_code": qr_code,
           if (reference!= null && reference.isNotEmpty) 'reference': reference,
@@ -417,38 +453,80 @@ class ApiService {
   }
 
 
+///////////////////////////////// Client Report
 
+  Future<ClientReportResponse> getReport({
+    required String client_id,
+    required String to_date,
+    required String from_date,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addClient
 
+      final url = '/get-report'; // Adjust endpoint as per your API
+      final response = await _dio.get(
+        baseUrl + url,
+        queryParameters: {
+          'client_id': client_id,
+          'from_date': from_date,
+          'to_date': to_date,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
 
-
-  }
-
-
-class LoggerInterceptor extends Interceptor {
-  @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    print("Request to: ${options.uri}");
-    print("Request Headers: ${options.headers}");
-    print("Request Data: ${options.data}");
-    return super.onRequest(options, handler);
-  }
-
-  @override
-  void onResponse(Response response, ResponseInterceptorHandler handler) {
-    print("Response from: ${response.requestOptions.uri}");
-    print("Response Status: ${response.statusCode}");
-    print("Response Headers: ${response.headers}");
-    print("Response Data: ${response.data}");
-    return super.onResponse(response, handler);
-  }
-
-  @override
-  void onError(DioError err, ErrorInterceptorHandler handler) {
-    print("Error from: ${err.requestOptions.uri}");
-    print("Error Message: ${err.message}");
-    if (err.response != null) {
-      print("Error Data: ${err.response?.data}");
+      if (response.statusCode == 200) {
+        // Parse the response data into ClientReportResponse
+        var responseData = response.data;
+        var clientReportResponse = ClientReportResponse.fromJson(responseData);
+        return clientReportResponse;
+      } else {
+        throw Exception('Failed to get report');
+      }
+    } catch (e) {
+      print('GET REPORT API error: $e');
+      throw Exception('Failed to connect to the server.');
     }
-    return super.onError(err, handler);
   }
+
+
+///////////////////////////////// Dashboard
+
+  Future<DashboardResponse> getDashboard() async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before making API calls
+
+      final url = '/get-dashboard'; // Adjust endpoint as per your API
+      final response = await _dio.get(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        // Parse the response data into DashboardResponse
+        var responseData = response.data;
+        var dashboardResponse = DashboardResponse.fromJson(responseData);
+        return dashboardResponse;
+      } else {
+        throw Exception('Failed to fetch dashboard details');
+      }
+    } catch (e) {
+      print('GET Dashboard API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
 }
+
+
+

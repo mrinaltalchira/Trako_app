@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter/widgets.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
@@ -179,26 +180,25 @@ class _DispatchReceiveRadioButtonState
 }
 
 class ClientNameSpinner extends StatelessWidget {
-  final String? selectedValue;
-  final ValueChanged<String?> onChanged;
-  final List<String> clientNames;
+  final ValueChanged<SupplyClient?> onChanged;
+  final List<SupplyClient> clients;
 
   const ClientNameSpinner({
-    required this.selectedValue,
     required this.onChanged,
-    required this.clientNames,
+    required this.clients,
     Key? key,
   }) : super(key: key);
 
+
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      hint: const Text('Select an option'),
-      items: clientNames.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
+
+    return DropdownButtonFormField<SupplyClient>(
+      hint: const Text('Select a client'),
+      items: clients.map((SupplyClient client) {
+        return DropdownMenuItem<SupplyClient>(
+          value: client,
+          child: Text(client.name),
         );
       }).toList(),
       onChanged: onChanged,
@@ -209,10 +209,11 @@ class ClientNameSpinner extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: colorMixGrad),
+          borderSide:
+          const BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding:
-            const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
       style: const TextStyle(
         fontSize: 16.0,
@@ -222,41 +223,31 @@ class ClientNameSpinner extends StatelessWidget {
   }
 }
 
-class CityNameSpinner extends StatelessWidget {
-  final String? selectedValue;
-  final ValueChanged<String?> onChanged;
-  final List<String> clientCity;
 
-  const CityNameSpinner({
-    required this.selectedValue,
-    required this.onChanged,
-    required this.clientCity,
-    Key? key,
-  }) : super(key: key);
+class CityNameTextField extends StatelessWidget {
+  final TextEditingController controller;
+
+  const CityNameTextField({super.key,required this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      hint: const Text('Select an option'),
-      items: clientCity.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged,
+    return TextFormField(
+      controller: controller,
+      readOnly: true,
       decoration: InputDecoration(
+        hintText: 'Selected City',
         hintStyle: const TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
-          borderSide: const BorderSide(color: colorMixGrad),
+          borderSide:
+          const BorderSide(color: colorMixGrad), // Border color when focused
         ),
         contentPadding:
-            const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+        const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
       style: const TextStyle(
         fontSize: 16.0,
@@ -397,113 +388,4 @@ class _DateTimeInputFieldState extends State<DateTimeInputField> {
   }
 }
 
-class ConfirmSubmitDialog extends StatelessWidget {
-  final VoidCallback onConfirm;
 
-  const ConfirmSubmitDialog({Key? key, required this.onConfirm})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      child: contentBox(context),
-    );
-  }
-
-  Widget contentBox(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            offset: const Offset(0, 4),
-            blurRadius: 8.0,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Confirm Submit',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: colorMixGrad, // Use colorMixGrad as the primary color
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const Divider(
-            color: Colors.grey,
-            height: 0.5,
-          ),
-          const SizedBox(height: 8.0),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.0),
-            child: Text(
-              'Are you sure you want to submit?',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          SizedBox(height: 14.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                },
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16.0,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                  onConfirm(); // Call the callback to submit
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorMixGrad,
-                  // Use colorMixGrad as the primary color
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  padding:
-                      EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
-                ),
-                child: const Text(
-                  'Confirm',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16.0),
-        ],
-      ),
-    );
-  }
-}

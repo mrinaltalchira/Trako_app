@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/client/client.dart';
 import 'package:tonner_app/screens/home/home.dart';
 
 class AddMachine extends StatefulWidget {
@@ -103,12 +102,7 @@ class _AddMachineState extends State<AddMachine> {
                             width: 10.0,
                             radius: 25.0,
                             buttonText: "Submit",
-                            onPressed: () {
-                              /*Navigator.of(context).push(MaterialPageRoute(
-                        builder: (context) => const QRViewTracesci(),
-                      ));*/  validateAndSignIn();
-
-                            },
+                            onPressed: validateAndSignIn,
                           ),
                         )),
                     const SizedBox(
@@ -120,18 +114,30 @@ class _AddMachineState extends State<AddMachine> {
     );
   }
 
-   Future<void> validateAndSignIn() async {
 
+   Future<void> validateAndSignIn() async {
      if (machine_name_Controller.text.isEmpty) {
-        showSnackBar(context, "Model Name is required.");
-        return;
+       showSnackBar(context, "Model Name is required.");
+       return;
      }
 
      if (machine_code_Controller.text.isEmpty) {
-        showSnackBar(context, "Model Code is required.");
-        return;
+       showSnackBar(context, "Model Code is required.");
+       return;
      }
 
+     showDialog(
+       context: context,
+       barrierDismissible: false,
+       builder: (BuildContext context) {
+         return ConfirmSubmitDialog(
+           onConfirm: () => addMachine(),
+         );
+       },
+     );
+   }
+
+   Future<void> addMachine() async {
      showDialog(
        context: context,
        barrierDismissible: false,
@@ -140,51 +146,41 @@ class _AddMachineState extends State<AddMachine> {
        },
      );
 
-     // Call the login API
      try {
-
        final ApiService apiService = ApiService();
-       late final Map<String, dynamic> addMachineResponse;
-
-
-       addMachineResponse = await apiService.addMachine(
-           model_name: machine_name_Controller.text,
-           model_code: machine_code_Controller.text
+       final addMachineResponse = await apiService.addMachine(
+         model_name: machine_name_Controller.text,
+         model_code: machine_code_Controller.text,
        );
 
-       Navigator.of(context).pop();
+       Navigator.of(context).pop(); // Dismiss loading indicator
 
-       // Check if the login was successful based on the response structure
        if (addMachineResponse.containsKey('error') &&
            addMachineResponse.containsKey('status')) {
-         if (!addMachineResponse['error'] && addMachineResponse['status'] == 200) {
+         if (!addMachineResponse['error'] &&
+             addMachineResponse['status'] == 200) {
            if (addMachineResponse['message'] == 'Success') {
-             machine_name_Controller.text = "";
-             machine_code_Controller.text = "";
-             showSnackBar(context, "Client created successfully.");
+             machine_name_Controller.clear();
+             machine_code_Controller.clear();
+             showSnackBar(context, "Machine added successfully.");
            } else {
              showSnackBar(context, addMachineResponse['message']);
            }
          } else {
-           // Login failed
-           showSnackBar(context, "Login failed. Please check your credentials.");
+           showSnackBar(
+               context, "Failed to add machine. Please check your details.");
          }
        } else {
-         // Unexpected response structure
          showSnackBar(context,
              "Unexpected response from server. Please try again later.");
        }
      } catch (e) {
-       // Dismiss loading indicator
-       Navigator.of(context).pop();
-
-       // Handle API errors
-       showSnackBar(
-           context, "Failed to connect to the server. Please try again later.");
-       print("Login API Error: $e");
+       Navigator.of(context).pop(); // Dismiss loading indicator
+       showSnackBar(context,
+           "Failed to connect to the server. Please try again later.");
+       print("Add Machine API Error: $e");
      }
    }
-
 }
 
 class MachineNameInputTextField extends StatefulWidget {
@@ -261,6 +257,114 @@ class _MachineCodeInputTextFieldState extends State<MachineCodeInputTextField> {
       style: TextStyle(
         fontSize: 16.0,
         color: Colors.black,
+      ),
+    );
+  }
+}
+
+class ConfirmSubmitDialog extends StatelessWidget {
+  final VoidCallback onConfirm;
+
+  const ConfirmSubmitDialog({Key? key, required this.onConfirm}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: contentBox(context),
+    );
+  }
+
+  Widget contentBox(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            offset: const Offset(0, 4),
+            blurRadius: 8.0,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.all(15.0),
+            child: Text(
+              'Confirm Submit',
+              style: TextStyle(
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: colorMixGrad,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const Divider(
+            color: Colors.grey,
+            height: 0.5,
+          ),
+          const SizedBox(height: 8.0),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.0),
+            child: Text(
+              'Are you sure you want to submit?',
+              style: TextStyle(
+                fontSize: 16.0,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 14.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16.0,
+                  ),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  onConfirm(); // Call the callback to submit
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorMixGrad,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                ),
+                child: const Text(
+                  'Confirm',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16.0),
+        ],
       ),
     );
   }

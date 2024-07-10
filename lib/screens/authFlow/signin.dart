@@ -210,7 +210,6 @@ class _AuthProcessState extends State<AuthProcess> {
                       buttonText: isPhoneInput ? "Email" : "Phone number",
                       // Dynamic text, removed const
                       onPressed: () {
-                        showSnackBar(context, isPhoneInput.toString());
                         toggleInputType(); // Toggle between phone and email input
                       }),
                 ),
