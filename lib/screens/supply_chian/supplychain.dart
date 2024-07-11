@@ -6,9 +6,12 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:tonner_app/color/colors.dart';
+import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/model/all_supply.dart';
 import 'package:tonner_app/network/ApiService.dart';
 import 'package:tonner_app/screens/add_toner/add_toner.dart';
+
+
 
 
 class SupplyChain extends StatefulWidget {
@@ -20,12 +23,12 @@ class _SupplyChainState extends State<SupplyChain> {
   late Future<List<Supply>> supplyFuture;
   final ApiService _apiService = ApiService();
 
-    @override
-    void initState() {
-      super.initState();
-      // Initialize the supplyFuture with the initial data load
-      supplyFuture = getSupplyList(null);
-    }
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the supplyFuture with the initial data load
+    supplyFuture = getSupplyList(null);
+  }
 
   Future<List<Supply>> getSupplyList(String? search) async {
     try {
@@ -52,8 +55,8 @@ class _SupplyChainState extends State<SupplyChain> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: refreshSupplyList,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+        child: ListView(
+          physics: AlwaysScrollableScrollPhysics(),
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
@@ -105,25 +108,29 @@ class _SupplyChainState extends State<SupplyChain> {
                 ],
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: FutureBuilder<List<Supply>>(
-                  future: supplyFuture,
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return Center(child: CircularProgressIndicator());
-                    } else if (snapshot.hasError) {
-                      return Center(child: Text('Error: ${snapshot.error}'));
-                    } else {
-                      List<Supply> supplies = snapshot.data ?? [];
-                      // Debug print to check the supplies before passing to the widget
-                      print('Supplies to display: $supplies');
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: FutureBuilder<List<Supply>>(
+                future: supplyFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else {
+                    List<Supply> supplies = snapshot.data ?? [];
+                    // Debug print to check the supplies before passing to the widget
+                    print('Supplies to display: $supplies');
 
+                    if (supplies.isEmpty) {
+                      return NoDataFoundWidget(
+                        onRefresh: refreshSupplyList,
+                      );
+                    } else {
                       return SupplyChainList(items: supplies);
                     }
-                  },
-                ),
+                  }
+                },
               ),
             ),
           ],
@@ -132,6 +139,7 @@ class _SupplyChainState extends State<SupplyChain> {
     );
   }
 }
+
 
 
 

@@ -106,26 +106,43 @@ class _AddTonerState extends State<AddToner> {
     }
   }
 
-  Future<void> submitToner() async {
-    if (selectedClientName == null) {
-      showSnackBar(context, "Please select client name");
-      return;
+  void validate(){
+
+    if( _selectedDispatchReceive == DispatchReceive.dispatch){
+      if (selectedClientName == null) {
+        showSnackBar(context, "Please select client name");
+        return;
+      }
+
+      if (selectedCityName == null) {
+        showSnackBar(context, "Please select client city");
+        return;
+      }
+
+      if (selectedTonerName == null) {
+        showSnackBar(context, "Please select Model no.");
+        return;
+      }
     }
 
-    if (selectedCityName == null) {
-      showSnackBar(context, "Please select client city");
-      return;
-    }
 
-    if (selectedTonerName == null) {
-      showSnackBar(context, "Please select Model no.");
-      return;
-    }
 
     if (scannedCodes.isEmpty) {
       showSnackBar(context, "Please add Toner code");
       return;
     }
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return ConfirmSubmitDialog(
+          onConfirm: () {
+            submitToner(); // Call your submit function here
+          },
+        );
+      },
+    );
+  }
+  Future<void> submitToner() async {
 
     showDialog(
       context: context,
@@ -180,8 +197,7 @@ class _AddTonerState extends State<AddToner> {
         }
       } else {
         // Unexpected response structure
-        showSnackBar(context,
-            "Unexpected response from server. Please try again later.");
+        showSnackBar(context, "Unexpected response from server. Please try again later.");
       }
     } catch (e) {
       // Dismiss loading indicator
@@ -242,56 +258,65 @@ class _AddTonerState extends State<AddToner> {
                 },
               ),
               const SizedBox(height: 15),
-              const Text(
-                "Client Name",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              ClientNameSpinner(
-                onChanged: (SupplyClient? newClient) {
-                  setState(() {
-                    selectedClientName = newClient?.name;
-                    selectedCityName = newClient?.city;
-                    selectedClientId = newClient?.id.toString();
-                    controllerCityName.text = selectedCityName.toString();
-                  });
-                },
-                clients: clients,
-              ),
-              const SizedBox(height: 15),
-              const Text(
-                "City Name",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              CityNameTextField(
-                controller: controllerCityName,
-              ),
-              const SizedBox(height: 15),
-              const Text(
-                "Model no.",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              ModelNoSpinner(
-                selectedValue: selectedTonerName,
-                onChanged: (newValue) {
-                  setState(() {
-                    selectedTonerName = newValue;
-                  });
-                },
-                modelLsit: modelNos,
-              ),
-              const SizedBox(height: 15),
+
+              _selectedDispatchReceive == DispatchReceive.dispatch ?   Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Client Name",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ClientNameSpinner(
+                      onChanged: (SupplyClient? newClient) {
+                        setState(() {
+                          selectedClientName = newClient?.name;
+                          selectedCityName = newClient?.city;
+                          selectedClientId = newClient?.id.toString();
+                          controllerCityName.text = selectedCityName.toString();
+                        });
+                      },
+                      clients: clients,
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      "City Name",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    CityNameTextField(
+                      controller: controllerCityName,
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      "Model no.",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ModelNoSpinner(
+                      selectedValue: selectedTonerName,
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedTonerName = newValue;
+                        });
+                      },
+                      modelLsit: modelNos,
+                    ),
+                    const SizedBox(height: 15),
+                  ])
+                  :
+
+
+
               const Text(
                 "Selected DateTime",
                 style: TextStyle(
@@ -394,16 +419,7 @@ class _AddTonerState extends State<AddToner> {
                   radius: 25.0,
                   buttonText: "Submit",
                   onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return ConfirmSubmitDialog(
-                          onConfirm: () {
-                            submitToner(); // Call your submit function here
-                          },
-                        );
-                      },
-                    );
+                   validate();
                   },
                 ),
               ),

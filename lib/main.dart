@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tonner_app/app_data.dart';
+import 'package:tonner_app/pref_manager.dart';
 import 'package:tonner_app/screens/add_toner/add_toner.dart';
 import 'package:tonner_app/screens/authFlow/signin.dart';
 import 'package:tonner_app/screens/home/client/add_client.dart';
@@ -17,7 +18,6 @@ import 'package:tonner_app/screens/users/users.dart';
 import 'ThemeNotifier.dart';
 
 void main() {
-
   runApp(
     MultiProvider(
       providers: [
@@ -42,45 +42,54 @@ void main() {
             ),
           ),
         ),
-
         ChangeNotifierProvider<AppData>(
           create: (context) => AppData(),
         ),
       ],
       child: MyApp(),
-
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
   final RouteObserver<PageRoute> routeObserver = RouteObserver<PageRoute>();
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeNotifier>(
       builder: (context, themeNotifier, child) {
         return MaterialApp(
-            navigatorObservers: [routeObserver],
-            debugShowCheckedModeBanner: true,
-            theme: themeNotifier.currentTheme,
-            home: const AuthProcess(),
-            routes: {
-              '/profile': (context) => const ProfilePage(),
-              '/home_screen': (context) => const HomeScreen(),
-              '/add_client': (context) => AddClient(),
-              '/add_machine': (context) =>  AddMachine(),
-              '/rq_view_tracesci': (context) => const QRViewTracesci(),
-              '/add_toner': (context) => const AddToner(),
-              '/users': (context) => const UsersModule(),
-              '/add_user': (context) => const AddUser(),
-              '/user_status': (context) => UserStatus(),
-              '/machine_status': (context) => const MachineStatus(),
-              '/accessibility': (context) => Accessibility(),
-            }
-            /* routes: {
-            '/report': (context) => const Report(),
-          }, */
-            );
+          navigatorObservers: [routeObserver],
+          debugShowCheckedModeBanner: true,
+          theme: themeNotifier.currentTheme,
+          home: FutureBuilder<bool?>(
+            future: PrefManager().getIsLoggedIn(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator()); // Show loading indicator while waiting for the future
+              } else if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}')); // Handle error state
+              } else if (snapshot.hasData && snapshot.data == true) {
+                return const HomeScreen(); // User is logged in
+              } else {
+                return const AuthProcess(); // User is not logged in
+              }
+            },
+          ),
+          routes: {
+            '/profile': (context) => const ProfilePage(),
+            '/home_screen': (context) => const HomeScreen(),
+            '/add_client': (context) => AddClient(),
+            '/add_machine': (context) => AddMachine(),
+            '/rq_view_tracesci': (context) => const QRViewTracesci(),
+            '/add_toner': (context) => const AddToner(),
+            '/users': (context) => const UsersModule(),
+            '/add_user': (context) => const AddUser(),
+            '/user_status': (context) => UserStatus(),
+            '/machine_status': (context) => const MachineStatus(),
+            '/accessibility': (context) => Accessibility(),
+          },
+        );
       },
     );
   }

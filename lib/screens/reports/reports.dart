@@ -323,22 +323,7 @@ class TonerDetails extends StatelessWidget {
                 color: colorMixGrad, // Use colorMixGrad here
               ),
             ),
-            SizedBox(height: 12),
-            Text(
-              'Toner Received:',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorMixGrad, // Use colorMixGrad here
-              ),
-            ),
-            Text(
-              tonerReceived,
-              style: TextStyle(
-                fontSize: 16,
-                color: colorMixGrad, // Use colorMixGrad here
-              ),
-            ),
+
             SizedBox(height: 12),
             Text(
               'Toner Distributed:',
@@ -357,7 +342,7 @@ class TonerDetails extends StatelessWidget {
             ),
             SizedBox(height: 12),
             Text(
-              'Total Toner:',
+              'Toner Received:',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -365,12 +350,13 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              machine,
+              tonerReceived,
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
               ),
             ),
+
           ],
         ),
       ),
@@ -420,7 +406,7 @@ class _DatePickerRowState extends State<DatePickerRow> {
                     widget.onFromDateChanged(date);
                   });
                 },
-                labelText: 'Select From Date',
+                labelText: '',
               ),
             ],
           ),
@@ -446,7 +432,7 @@ class _DatePickerRowState extends State<DatePickerRow> {
                     widget.onToDateChanged(date);
                   });
                 },
-                labelText: 'Select To Date',
+                labelText: '',
               ),
             ],
           ),

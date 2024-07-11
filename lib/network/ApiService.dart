@@ -41,7 +41,8 @@ class LoggerInterceptor extends Interceptor {
 }
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.30:8000/api';
+
+  final String baseUrl = 'http://192.168.1.15:8000/api';
   late Dio _dio;
   late String? token;
 

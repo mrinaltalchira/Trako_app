@@ -21,27 +21,23 @@ class _MachineModuleState extends State<MachineModule> {
   }
 
   Future<List<Machine>> getMachineList(String? search) async {
-
     try {
-      List<Machine> clients = await _apiService.getAllMachines(search);
-      // Debug print to check the fetched clients
-      print('Fetched clients: $clients');
-      return clients;
+      List<Machine> machines = await _apiService.getAllMachines(search);
+      // Debug print to check the fetched machines
+      print('Fetched machines: $machines');
+      return machines;
     } catch (e) {
       // Handle error
-      print('Error fetching clients: $e');
+      print('Error fetching machines: $e');
       return [];
     }
   }
-
 
   Future<void> refreshMachineList() async {
     setState(() {
       machineFuture = getMachineList(null);
     });
-    await machineFuture; // Await the future to complete
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +48,8 @@ class _MachineModuleState extends State<MachineModule> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.only(left:25.0,top: 10,bottom:10),
-                child: const Align(
+                padding: const EdgeInsets.only(left: 25.0, top: 10, bottom: 10),
+                child: Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
                     "Machine",
@@ -66,9 +62,8 @@ class _MachineModuleState extends State<MachineModule> {
                   ),
                 ),
               ),
-
               Padding(
-                padding: const EdgeInsets.only(left: 25.0,right: 25.0, top: 10, bottom: 10),
+                padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
@@ -85,13 +80,13 @@ class _MachineModuleState extends State<MachineModule> {
                     Container(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [colorFirstGrad, colorSecondGrad],
+                          colors: [colorFirstGrad,colorMixGrad], // Adjust gradient colors
                         ),
                         borderRadius: BorderRadius.circular(25.0),
                       ),
                       child: IconButton(
                         onPressed: () {
-                          // Navigate to add client screen
+                          // Navigate to add machine screen
                           Navigator.pushNamed(context, '/add_machine');
                         },
                         icon: Icon(
@@ -106,6 +101,7 @@ class _MachineModuleState extends State<MachineModule> {
               ),
               Expanded(
                 child: SingleChildScrollView(
+                  physics: AlwaysScrollableScrollPhysics(),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
@@ -114,20 +110,22 @@ class _MachineModuleState extends State<MachineModule> {
                         FutureBuilder<List<Machine>>(
                           future: machineFuture,
                           builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Center(child: CircularProgressIndicator());
                             } else if (snapshot.hasError) {
-                              return Center(
-                                  child: Text('Error: ${snapshot.error}'));
+                              return Center(child: Text('Error: ${snapshot.error}'));
                             } else {
-                              List<Machine> machines = snapshot.data ??
-                                  []; // Handle null case if necessary
-                              // Debug print to check the clients before passing to the widget
-                              print('Clients to display: $machines');
+                              List<Machine> machines = snapshot.data ?? [];
+                              // Debug print to check the machines before passing to the widget
+                              print('Machines to display: $machines');
 
-                              return ScannedHistoryList(items: machines);
+                              if (machines.isEmpty) {
+                                return NoDataFoundWidget(
+                                  onRefresh: refreshMachineList,
+                                );
+                              } else {
+                                return ScannedHistoryList(items: machines);
+                              }
                             }
                           },
                         ),
@@ -135,7 +133,7 @@ class _MachineModuleState extends State<MachineModule> {
                     ),
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),
@@ -143,6 +141,7 @@ class _MachineModuleState extends State<MachineModule> {
     );
   }
 }
+
 
 class NameInputTextField extends StatelessWidget {
   const NameInputTextField({Key? key}) : super(key: key);

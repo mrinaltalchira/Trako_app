@@ -6,134 +6,142 @@ import 'package:tonner_app/model/all_user.dart';
 import 'package:tonner_app/network/ApiService.dart';
 
 class UsersModule extends StatefulWidget {
-  const UsersModule({super.key});
+  const UsersModule({Key? key}) : super(key: key);
 
   @override
   _UsersModuleState createState() => _UsersModuleState();
 }
 
 class _UsersModuleState extends State<UsersModule> {
-  late Future<List<User>> clientsFuture;
+  late Future<List<User>> usersFuture;
   final ApiService _apiService = ApiService(); // Initialize your ApiService
 
   @override
   void initState() {
     super.initState();
-    clientsFuture = getClientsList(null);
+    usersFuture = getUsersList(null);
   }
 
-  Future<List<User>> getClientsList(String? search) async {
+  Future<List<User>> getUsersList(String? search) async {
     try {
       List<User> users = await _apiService.getAllUsers(search);
-      // Debug print to check the fetched clients
-      print('Fetched clients: $users');
+      // Debug print to check the fetched users
+      print('Fetched users: $users');
       return users;
     } catch (e) {
       // Handle error
-      print('Error fetching clients: $e');
+      print('Error fetching users: $e');
       return [];
     }
   }
 
+  Future<void> refreshUsersList() async {
+    setState(() {
+      usersFuture = getUsersList(null);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left:25.0,top: 10,bottom:10),
-            child: const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                "Users",
-                style: TextStyle(
-                  fontSize: 24.0,
-                  color: colorMixGrad, // Replace with your colorSecondGrad
-                  fontWeight: FontWeight.w600,
+      body: RefreshIndicator(
+        onRefresh: refreshUsersList,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 25.0, top: 10, bottom: 10),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Users",
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: colorMixGrad, // Replace with your colorSecondGrad
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.start,
                 ),
-                textAlign: TextAlign.start,
               ),
             ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.only(
-                left: 25.0, right: 25.0, top: 10, bottom: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Expanded(
-                  child: CustomSearchField(
-                    onSearchChanged: (searchQuery) {
-                      setState(() {
-                        clientsFuture = getClientsList(searchQuery);
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(width: 20.0),
-                // Spacer between search and add button
-                Container(
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [colorFirstGrad, colorSecondGrad],
-                    ),
-                    borderRadius: BorderRadius.circular(25.0),
-                  ),
-                  child: IconButton(
-                    onPressed: () {
-                      // Navigate to add client screen
-                      Navigator.pushNamed(context, '/add_user');
-                    },
-                    icon: const Icon(
-                      Icons.add,
-                      color: Colors.white,
-                    ),
-                    iconSize: 30.0,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    FutureBuilder<List<User>>(
-                      future: clientsFuture,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                              child: CircularProgressIndicator());
-                        } else if (snapshot.hasError) {
-                          return Center(
-                              child: Text('Error: ${snapshot.error}'));
-                        } else {
-                          List<User> users = snapshot.data ??
-                              []; // Handle null case if necessary
-                          // Debug print to check the clients before passing to the widget
-                          print('Clients to display: $users');
-
-                          return ScannedHistoryList(items: users);
-                        }
+            Padding(
+              padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: CustomSearchField(
+                      onSearchChanged: (searchQuery) {
+                        setState(() {
+                          usersFuture = getUsersList(searchQuery);
+                        });
                       },
                     ),
-                  ],
+                  ),
+                  const SizedBox(width: 20.0), // Spacer between search and add button
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [colorFirstGrad,colorMixGrad], // Adjust gradient colors
+                      ),
+                      borderRadius: BorderRadius.circular(25.0),
+                    ),
+                    child: IconButton(
+                      onPressed: () {
+                        // Navigate to add user screen
+                        Navigator.pushNamed(context, '/add_user');
+                      },
+                      icon: Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                      iconSize: 30.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      FutureBuilder<List<User>>(
+                        future: usersFuture,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState == ConnectionState.waiting) {
+                            return Center(child: CircularProgressIndicator());
+                          } else if (snapshot.hasError) {
+                            return Center(child: Text('Error: ${snapshot.error}'));
+                          } else {
+                            List<User> users = snapshot.data ?? [];
+                            // Debug print to check the users before passing to the widget
+                            print('Users to display: $users');
+
+                            if (users.isEmpty) {
+                              return NoDataFoundWidget(
+                                onRefresh: refreshUsersList,
+                              );
+                            } else {
+                              return ScannedHistoryList(items: users);
+                            }
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
+
 
 class NameInputTextField extends StatelessWidget {
   const NameInputTextField({super.key});

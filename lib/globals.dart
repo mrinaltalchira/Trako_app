@@ -29,9 +29,7 @@ void showSnackBar(BuildContext context, String message) {
   );
 }
 
-
-class CustomImageWidget extends StatelessWidget
-{
+class CustomImageWidget extends StatelessWidget {
   final String? imageUrl;
   final IconData? iconData;
   final double? width;
@@ -98,6 +96,139 @@ class CustomImageWidget extends StatelessWidget
     }
   }
 }
+
+class NoDataWidget extends StatelessWidget {
+  final String message;
+  final String imagePath;
+
+  const NoDataWidget({
+    Key? key,
+    this.message = "No data found",
+    this.imagePath = "assets/no_data.png", // Example image path
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              imagePath,
+              height: 150.0,
+              fit: BoxFit.cover,
+            ),
+            SizedBox(height: 24.0),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              "Please try again later.",
+              style: TextStyle(
+                fontSize: 16.0,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NoDataFoundWidget extends StatefulWidget {
+  final Future<void> Function() onRefresh;
+
+  const NoDataFoundWidget({required this.onRefresh, Key? key}) : super(key: key);
+
+  @override
+  _NoDataFoundWidgetState createState() => _NoDataFoundWidgetState();
+}
+
+class _NoDataFoundWidgetState extends State<NoDataFoundWidget> {
+  bool _isLoading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 100),
+          // Image
+          Image.asset(
+            'assets/images/ic_no_data.jpg', // Replace with your image asset
+            width: 120,
+            height: 120,
+          ),
+          // Text
+          Text(
+            'No Data Found',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
+          ),
+          // Subtext
+          Text(
+            'It looks like there is no data available for this request.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[500],
+            ),
+          ),
+          // Button (optional)
+          const SizedBox(height: 20),
+          _isLoading
+              ? const CircularProgressIndicator()
+              : SizedBox(
+            width: 120,
+            child: GradientButton(
+              gradientColors: const [colorMixGrad, colorMixGrad],
+              height: 45.0,
+              width: 10.0,
+              radius: 25.0,
+              buttonText: "Try Again",
+              onPressed: _handleRefresh,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleRefresh() async {
+    setState(() {
+      _isLoading = true;
+    });
+    print("Loading started");
+    try {
+      await widget.onRefresh();
+      print("API called");
+    } catch (e) {
+      print("Error: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        print("Loading finished");
+      }
+    }
+  }
+}
+
 
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -190,8 +321,7 @@ class ConfirmSubmitDialog extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
-                  padding:
-                  EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                  padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
                 ),
                 child: const Text(
                   'Confirm',

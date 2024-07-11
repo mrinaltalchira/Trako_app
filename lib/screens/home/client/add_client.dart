@@ -1,9 +1,8 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/home/home.dart';
 
 class AddClient extends StatefulWidget {
   @override
@@ -43,157 +42,111 @@ class _AddClientState extends State<AddClient> {
         ],
       ),
       body: SingleChildScrollView(
-          child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 36.0),
-              child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    const Center(
-                      child: Text(
-                        "Add New :",
-                        textAlign: TextAlign.center,
-                        // Align text center horizontally
-                        style: TextStyle(
-                          fontSize: 24.0,
-                          color: colorMixGrad,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Name",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5), // Removed const from SizedBox
-                    NameInputTextField(
-                      controller: nameController,
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "City",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    CityInputTextField(controller: cityController),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Email",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    EmailInputTextField(controller: emailController),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Phone",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    PhoneInputTextField(controller: phoneController),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Address",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    AddressInputTextField(controller: addressController),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    Text(
-                      "Contact name",
-                      // Dynamic text, removed const
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    SizedBox(height: 5),
-                    ContactPersonInputTextField(
-                        controller: contactPersonController),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    CheckBoxRow(
-                      activeChecked: activeChecked,
-                      onActiveChanged: (bool? value) {
-                        setState(() {
-                          activeChecked = value ?? false;
-                        });
-                      },
-                    ),
-                    const SizedBox(
-                      height: 20,
-                    ),
-                    SizedBox(
-                        child: Padding(
-                      padding:
-                          const EdgeInsets.only(left: 50, right: 50, top: 50),
-                      child: GradientButton(
-                        gradientColors: const [colorFirstGrad, colorSecondGrad],
-                        height: 45.0,
-                        width: 10.0,
-                        radius: 25.0,
-                        buttonText: "Submit",
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (BuildContext context) {
-                              return ConfirmSubmitDialog(
-                                onConfirm: () {
-                                  validateAndCreateClient();
-                                },
-                              );
-                            },
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 36.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(height: 20),
+              Center(
+                child: Text(
+                  "Add New :",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: colorMixGrad,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              buildFieldTitle("Name"),
+              SizedBox(height: 5),
+              NameInputTextField(controller: nameController),
+              SizedBox(height: 20),
+              buildFieldTitle("City"),
+              SizedBox(height: 5),
+              CityInputTextField(controller: cityController),
+              SizedBox(height: 20),
+              buildFieldTitle("Email"),
+              SizedBox(height: 5),
+              EmailInputTextField(controller: emailController),
+              SizedBox(height: 20),
+              buildFieldTitle("Phone"),
+              SizedBox(height: 5),
+              PhoneInputTextField(controller: phoneController),
+              SizedBox(height: 20),
+              buildFieldTitle("Address"),
+              SizedBox(height: 5),
+              AddressInputTextField(controller: addressController),
+              SizedBox(height: 20),
+              buildFieldTitle("Contact Name"),
+              SizedBox(height: 5),
+              ContactPersonInputTextField(controller: contactPersonController),
+              SizedBox(height: 20),
+              CheckBoxRow(
+                activeChecked: activeChecked,
+                onActiveChanged: (bool? value) {
+                  setState(() {
+                    activeChecked = value ?? false;
+                  });
+                },
+              ),
+              SizedBox(height: 20),
+              SizedBox(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
+                  child: GradientButton(
+                    gradientColors: [colorFirstGrad, colorSecondGrad],
+                    height: 45.0,
+                    width: 10.0,
+                    radius: 25.0,
+                    buttonText: "Submit",
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return ConfirmSubmitDialog(
+                            onConfirm: validateAndCreateClient,
                           );
                         },
-                      ),
-                    )),
-                    SizedBox(
-                      height: 100,
-                    )
-                  ]))),
+                      );
+                    },
+                  ),
+                ),
+              ),
+              SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
+  Widget buildFieldTitle(String title) {
+    return Text(
+      title,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+  }
+
+  bool isValidEmail(String email) {
+    final emailRegExp = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegExp.hasMatch(email);
+  }
+
+  bool isValidPhoneNumber(String phone) {
+    final phoneRegExp = RegExp(r'^[0-9]{7,15}$'); // Example: valid phone numbers with 7 to 15 digits
+    return phoneRegExp.hasMatch(phone);
+  }
 
   Future<void> validateAndCreateClient() async {
-    // Validate phone nu
-
     if (nameController.text.isEmpty) {
       showSnackBar(context, "Full name is required.");
       return;
@@ -205,12 +158,22 @@ class _AddClientState extends State<AddClient> {
     }
 
     if (emailController.text.isEmpty) {
-      showSnackBar(context, "Email is required & must be unique.");
+      showSnackBar(context, "Email is required.");
+      return;
+    }
+
+    if (!isValidEmail(emailController.text)) {
+      showSnackBar(context, "Please enter a valid email address.");
       return;
     }
 
     if (phoneController.text.isEmpty) {
-      showSnackBar(context, "Phone is required & must be unique.");
+      showSnackBar(context, "Phone is required.");
+      return;
+    }
+
+    if (!isValidPhoneNumber(phoneController.text)) {
+      showSnackBar(context, "Please enter a valid phone number.");
       return;
     }
 
@@ -227,28 +190,21 @@ class _AddClientState extends State<AddClient> {
       },
     );
 
-    // Call the login API
     try {
       final ApiService apiService = ApiService();
-      late final Map<String, dynamic> addClientResponse;
+      final addClientResponse = await apiService.addClient(
+        name: nameController.text,
+        city: cityController.text,
+        email: emailController.text,
+        phone: phoneController.text,
+        address: addressController.text,
+        isActive: activeChecked ? '0' : '1',
+        contactPerson: contactPersonController.text,
+      );
 
-      // Determine whether to use phone or email for login
-
-      addClientResponse = await apiService.addClient(
-          name: nameController.text,
-          city: cityController.text,
-          email: emailController.text,
-          phone: phoneController.text,
-          address: addressController.text,
-          isActive: activeChecked ? '0' : '1',
-          contactPerson: contactPersonController.text);
-
-      // Dismiss loading indicator
       Navigator.of(context).pop();
 
-      // Check if the login was successful based on the response structure
-      if (addClientResponse.containsKey('error') &&
-          addClientResponse.containsKey('status')) {
+      if (addClientResponse.containsKey('error') && addClientResponse.containsKey('status')) {
         if (!addClientResponse['error'] && addClientResponse['status'] == 200) {
           if (addClientResponse['message'] == 'Success') {
             nameController.clear();
@@ -263,25 +219,17 @@ class _AddClientState extends State<AddClient> {
             showSnackBar(context, addClientResponse['message']);
           }
         } else {
-          // Login failed
-          showSnackBar(context, "Login failed. Please check your credentials.");
+          showSnackBar(context, "Failed to create client: ${addClientResponse['message']}");
         }
       } else {
-        // Unexpected response structure
-        showSnackBar(context,
-            "Unexpected response from server. Please try again later.");
+        showSnackBar(context, "Unexpected response from server. Please try again later.");
       }
     } catch (e) {
-      // Dismiss loading indicator
       Navigator.of(context).pop();
-
-      // Handle API errors
-      showSnackBar(
-          context, "Failed to connect to the server. Please try again later.");
-      print("Login API Error: $e");
+      showSnackBar(context, "Failed to connect to the server. Please try again later.");
+      print("Error creating client: $e");
     }
   }
-
 }
 
 
@@ -410,6 +358,9 @@ class _NameInputTextFieldState extends State<NameInputTextField> {
       maxLength: 30,
       keyboardType: TextInputType.text,
       controller: widget.controller,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')), // Allow only letters
+      ],
       decoration: InputDecoration(
         hintText: 'Name',
         counterText: '',
@@ -451,9 +402,13 @@ class _CityInputTextFieldState extends State<CityInputTextField> {
       controller: widget.controller,
       keyboardType: TextInputType.emailAddress,
       maxLength: 25,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')), // Allow only letters
+      ],
       decoration: InputDecoration(
         hintText: 'City',
         counterText: '',
+
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -492,6 +447,9 @@ class _EmailInputTextFieldState extends State<EmailInputTextField> {
       controller: widget.controller,
       maxLength: 50,
       keyboardType: TextInputType.emailAddress,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // Allow only email characters
+      ],
       decoration: InputDecoration(
         hintText: 'Email',
         counterText: '',

@@ -16,11 +16,19 @@ class AuthProcess extends StatefulWidget {
 }
 
 class _AuthProcessState extends State<AuthProcess> {
+
   bool isPhoneInput = true; // Flag to track whether to show phone input or email input
   final ApiService apiService = ApiService();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  String? fullPhoneNumber;
+
+  void _handlePhoneNumberChanged(String phoneNumber) {
+    setState(() {
+      fullPhoneNumber = phoneNumber;
+    });
+  }
 
   @override
   void dispose() {
@@ -95,6 +103,7 @@ class _AuthProcessState extends State<AuthProcess> {
                 isPhoneInput
                     ? IntlPhoneInputTextField(
                         controller: phoneController,
+                  onPhoneNumberChanged: _handlePhoneNumberChanged,
                       )
                     : EmailInputTextField(
                         controller: emailController,
@@ -169,21 +178,11 @@ class _AuthProcessState extends State<AuthProcess> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        // Add your navigation or action here
-                        // For example, navigate to another screen
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => const HomeScreen(),
-                          ),
-                        );
-                      },
                       child: Text(
                         "or sign in with",
                         style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey,
-                            decoration: TextDecoration.underline),
+                            color: Colors.grey,),
                       ),
                     ),
                     Expanded(
@@ -228,6 +227,10 @@ class _AuthProcessState extends State<AuthProcess> {
         showSnackBar(context, "Phone number is required.");
         return;
       }
+      if (phoneController.text.length < 7) {
+        showSnackBar(context, "Phone number is invalid.");
+        return;
+      }
       // Additional phone number validation can be added here
     } else {
       // Validate email
@@ -260,7 +263,7 @@ class _AuthProcessState extends State<AuthProcess> {
       // Determine whether to use phone or email for login
       if (isPhoneInput) {
         loginResponse = await apiService.login(
-            null, phoneController.text, passwordController.text);
+            null, fullPhoneNumber.toString(), passwordController.text);
       } else {
         loginResponse = await apiService.login(
             emailController.text, null, passwordController.text);
@@ -289,6 +292,7 @@ class _AuthProcessState extends State<AuthProcess> {
               PrefManager().setUserPhone(user.phone.toString());
               PrefManager().setUserRole(user.userRole.toString());
               PrefManager().setUserStatus(user.isActive.toString());
+              PrefManager().setIsLoggedIn(true);
 
 
               // Navigate to home screen

@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/network/ApiService.dart';
@@ -29,6 +30,28 @@ class _AddUserState extends State<AddUser> {
   bool activeChecked = true; // Assuming Active is initially checked
 
 
+
+  bool isValidPassword(String password) {
+    final passwordRegExp = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
+    );
+    return passwordRegExp.hasMatch(password);
+  }
+
+  bool isValidEmail(String email) {
+    final emailRegExp = RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    );
+    return emailRegExp.hasMatch(email);
+  }
+
+  bool isValidPhoneNumber(String phone) {
+    final phoneRegExp = RegExp(r'^[0-9]{7,15}$'); // Example: valid phone numbers with 10 to 15 digits
+    return phoneRegExp.hasMatch(phone);
+  }
+
+
+
   Future<void> submitUser() async {
     // Validate phone nu
 
@@ -47,13 +70,27 @@ class _AddUserState extends State<AddUser> {
       return;
     }
 
+    if (!isValidEmail(emailController.text)) {
+      showSnackBar(context, "Please enter a valid email address.");
+      return;
+    }
     if (phoneController.text.isEmpty) {
       showSnackBar(context, "Phone is required & must be unique.");
       return;
     }
 
+    if (!isValidPhoneNumber(phoneController.text)) {
+      showSnackBar(context, "Please enter a valid phone number.");
+      return;
+    }
+
     if (passwordController.text.isEmpty) {
       showSnackBar(context, "Password is required.");
+      return;
+    }
+
+    if (!isValidPassword(passwordController.text)) {
+      showSnackBar(context, "Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character.");
       return;
     }
 
@@ -63,7 +100,7 @@ class _AddUserState extends State<AddUser> {
     }
 
   if (confirmPasswordController.text != passwordController.text) {
-      showSnackBar(context, "Password not matched! Please check.");
+      showSnackBar(context, "Confirm password not matched! Please check.");
       return;
     }
 
@@ -477,10 +514,14 @@ class NameInputTextField extends StatelessWidget {
     return TextField(
       maxLength: 30,
       controller: controller,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')), // Allow only letters
+      ],
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         hintText: 'Name',
         counterText: '',
+
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -513,6 +554,9 @@ class EmailInputTextField extends StatelessWidget {
     return TextField(
       controller: controller,
       maxLength: 50,
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // Allow only email characters
+      ],
       keyboardType: TextInputType.text,
       decoration: InputDecoration(
         hintText: 'Email',

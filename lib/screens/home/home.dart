@@ -161,14 +161,26 @@ class _HomeScreenState extends State<HomeScreen> {
               leading: const Icon(Icons.exit_to_app, color: Colors.white),
               title: const Text('Logout', style: TextStyle(color: Colors.white)),
               onTap: () {
-                showToast("Logout button pressed");
-                WidgetsBinding.instance.addPostFrameCallback((_) {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AuthProcess()),
-                        (Route<dynamic> route) => false,
-                  );
-                });
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return ConfirmLogoutDialog(
+                      onConfirm: () {
+
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          PrefManager().clear();
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (context) => const AuthProcess()),
+                                (Route<dynamic> route) => false,
+                          );
+                        });
+
+                      },
+                    );
+                  },
+                );
+
               },
             ),
           ],
@@ -208,112 +220,101 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/*
-class CategoriesDashboard extends StatelessWidget {
-  const CategoriesDashboard({Key? key}) : super(key: key);
+class ConfirmLogoutDialog extends StatelessWidget {
+  final VoidCallback onConfirm;
+
+  const ConfirmLogoutDialog({Key? key, required this.onConfirm})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              "Dashboard",
+    return Dialog(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: contentBox(context),
+    );
+  }
+
+  Widget contentBox(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10.0),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            offset: const Offset(0, 4),
+            blurRadius: 8.0,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          const Padding(
+            padding: EdgeInsets.all(15.0),
+            child: Text(
+              'Confirm Logout',
               style: TextStyle(
-                fontSize: 24.0,
-                color: colorFirstGrad,
-                fontWeight: FontWeight.w600,
+                fontSize: 18.0,
+                fontWeight: FontWeight.bold,
+                color: colorMixGrad, // Use colorMixGrad as the primary color
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 16.0),
-            GridView.builder(
-              physics: NeverScrollableScrollPhysics(),
-              shrinkWrap: true,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                mainAxisSpacing: 16.0,
-                crossAxisSpacing: 16.0,
-                childAspectRatio: 1.2,
-              ),
-              itemBuilder: (BuildContext context, int index) {
-                return GestureDetector(
-                  onTap: () {
-                    // Handle onTap for each category item
-                    int categoryId = StaticData.categories[index]["id"];
-                    showSnackBar(context, "Clicked on - id_${categoryId}");
+          ),
+          const Divider(
+            color: Colors.grey,
+            height: 0.5,
+          ),
 
-                    // You can navigate to another screen or perform any action here
-                  },
-                  child: Card(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18.0),
-                    ),
-                    elevation: 3.0,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset(
-                          StaticData.categories[index]["icon"],
-                          width: 80,
-                          height: 40,
-                          fit: BoxFit.contain,
-                        ),
-                        SizedBox(height: 8.0),
-                        Text(
-                          StaticData.categories[index]["title"],
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ),
+          SizedBox(height: 14.0),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                },
+                child: const Text(
+                  'Cancel',
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 16.0,
                   ),
-                );
-              },
-              itemCount: StaticData.categories.length,
-            ),
-            SizedBox(height: 24.0),
-            AspectRatio(
-              aspectRatio: 1.8, // Adjusted aspect ratio for LineChart
-              child: LineChart(
-                LineChartData(
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: [
-                        FlSpot(0, 0),
-                        FlSpot(2, 5),
-                        FlSpot(3, 10),
-                        FlSpot(4, 5),
-                        FlSpot(5, 2),
-                        FlSpot(6, 14),
-                      ],
-                      gradient: const LinearGradient(
-                        colors: [colorFirstGrad, colorMixGrad, colorSecondGrad],
-                      ),
-                      isCurved: true,
-                      curveSmoothness: 0.6,
-                      isStrokeCapRound: true,
-                      belowBarData: BarAreaData(show: true),
-                    ),
-                  ],
                 ),
               ),
-            ),
-            SizedBox(height: 24.0),
-          ],
-        ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // Close the dialog
+                  onConfirm(); // Call the callback to submit
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: colorMixGrad,
+                  // Use colorMixGrad as the primary color
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8.0),
+                  ),
+                  padding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                ),
+                child: const Text(
+                  'Logout',
+                  style: TextStyle(
+                    fontSize: 16.0,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16.0),
+        ],
       ),
     );
   }
-
-  void showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        duration: Duration(seconds: 1),
-      ),
-    );
-  }
-}*/
+}
