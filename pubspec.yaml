@@ -76,6 +76,7 @@ flutter:
     - assets/images/icsearch.png
     - assets/images/ic_profile.png
     - assets/images/next.png
+    - assets/images/ic_no_data.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:

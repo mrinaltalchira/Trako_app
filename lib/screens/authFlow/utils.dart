@@ -6,14 +6,21 @@ import '../../color/colors.dart';
 
 class IntlPhoneInputTextField extends StatelessWidget {
   final TextEditingController controller;
+  final Function(String) onPhoneNumberChanged;
 
-  const IntlPhoneInputTextField({super.key, required this.controller});
+  const IntlPhoneInputTextField({
+    super.key,
+    required this.controller,
+    required this.onPhoneNumberChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     return IntlPhoneField(
       controller: controller,
+
       decoration: InputDecoration(
+        counterText: "",
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
           borderSide: const BorderSide(
@@ -26,12 +33,15 @@ class IntlPhoneInputTextField extends StatelessWidget {
         hintText: '|  Phone number',
         hintStyle: const TextStyle(color: Colors.grey),
         contentPadding: const EdgeInsets.symmetric(
-            vertical: 15.0, horizontal: 20.0), // Removed const from EdgeInsets
+          vertical: 15.0,
+          horizontal: 20.0,
+        ),
       ),
-      initialCountryCode: 'IN',
-      // Example initial country code
+      initialCountryCode: 'IN', // Example initial country code
       onChanged: (phone) {
-        // Handle country code and number
+        // Get the full phone number with country code
+        final fullPhoneNumber = '${phone.countryCode}${phone.number}';
+        onPhoneNumberChanged(fullPhoneNumber);
       },
       showCountryFlag: true,
       showDropdownIcon: false,
@@ -39,6 +49,7 @@ class IntlPhoneInputTextField extends StatelessWidget {
         fontSize: 16.0,
         color: Colors.black,
       ),
+
       dropdownTextStyle: const TextStyle(
         fontSize: 16.0,
         color: Colors.black,

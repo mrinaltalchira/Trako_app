@@ -58,7 +58,18 @@ class PrefManager {
   }
 
 
+  // is_login
 
+  Future<void> setIsLoggedIn(bool value) async {
+    final prefs = await _prefs;
+    prefs.setBool("is_login", value);
+  }
+
+  // Get a boolean
+  Future<bool?> getIsLoggedIn() async {
+    final prefs = await _prefs;
+    return prefs.getBool("is_login");
+  }
 
   // auth token
 

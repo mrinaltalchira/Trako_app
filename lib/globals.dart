@@ -99,6 +99,55 @@ class CustomImageWidget extends StatelessWidget
   }
 }
 
+class NoDataWidget extends StatelessWidget {
+  final String message;
+  final String imagePath;
+
+  const NoDataWidget({
+    Key? key,
+    this.message = "No data found",
+    this.imagePath = "assets/no_data.png", // Example image path
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              imagePath,
+              height: 150.0,
+              fit: BoxFit.cover,
+            ),
+            SizedBox(height: 24.0),
+            Text(
+              message,
+              style: TextStyle(
+                fontSize: 20.0,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).primaryColor,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 8.0),
+            Text(
+              "Please try again later.",
+              style: TextStyle(
+                fontSize: 16.0,
+                color: Colors.grey,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
 

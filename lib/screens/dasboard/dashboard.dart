@@ -44,15 +44,23 @@ class _CategoriesDashboardState extends State<CategoriesDashboard> {
         return "";
     }
   }
+  Future<void> _refreshData() async {
+    setState(() {
+      dashboardFuture = getDashboard();
+    });
+    await dashboardFuture;
+  }
+
+  DashboardData defaultData = DashboardData(
+    totalDistribute: "0",
+    totalReturn: "0",
+    todayDistribute: "0",
+    todayReturn: "0",
+  );
+
 
   @override
   Widget build(BuildContext context) {
-    DashboardData defaultData = DashboardData(
-      totalDistribute: "0",
-      totalReturn: "0",
-      todayDistribute: "0",
-      todayReturn: "0",
-    );
 
     return Scaffold(
       body: FutureBuilder<DashboardResponse>(
@@ -68,95 +76,100 @@ class _CategoriesDashboardState extends State<CategoriesDashboard> {
             data = snapshot.data!.data;
           }
 
-          return SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    "Dashboard",
-                    style: TextStyle(
-                      fontSize: 24.0,
-                      color: colorFirstGrad,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  SizedBox(height: 16.0),
-                  GridView.builder(
-                    physics: NeverScrollableScrollPhysics(),
-                    shrinkWrap: true,
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 16.0,
-                      crossAxisSpacing: 16.0,
-                      childAspectRatio: 1.2,
-                    ),
-                    itemBuilder: (BuildContext context, int index) {
-                      return GestureDetector(
-                        onTap: () {
-                          // Handle onTap for each category item
-                          // You can navigate to another screen or perform any action here
-                        },
-                        child: Card(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                          elevation: 3.0,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Image.asset(
-                                'assets/images/app_name_logo.png',
-                                width: 80,
-                                height: 40,
-                                fit: BoxFit.contain,
+          return RefreshIndicator(onRefresh: _refreshData, child: ListView(
+            physics: AlwaysScrollableScrollPhysics(),
+            children: [
+              SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Text(
+                        "Dashboard",
+                        style: TextStyle(
+                          fontSize: 24.0,
+                          color: colorFirstGrad,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      SizedBox(height: 16.0),
+                      GridView.builder(
+                        physics: NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 16.0,
+                          crossAxisSpacing: 16.0,
+                          childAspectRatio: 1.2,
+                        ),
+                        itemBuilder: (BuildContext context, int index) {
+                          return GestureDetector(
+                            onTap: () {
+                              // Handle onTap for each category item
+                              // You can navigate to another screen or perform any action here
+                            },
+                            child: Card(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18.0),
                               ),
-                              SizedBox(height: 8.0),
-                              Text(
-                                snapshot.hasError ? "" : getCategoryTitle(index, data),
-                                textAlign: TextAlign.center,
+                              elevation: 3.0,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Image.asset(
+                                    'assets/images/app_name_logo.png',
+                                    width: 80,
+                                    height: 40,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  SizedBox(height: 8.0),
+                                  Text(
+                                    snapshot.hasError ? "" : getCategoryTitle(index, data),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                        itemCount: 4,
+                      ),
+                      SizedBox(height: 24.0),
+                      AspectRatio(
+                        aspectRatio: 1.8, // Adjusted aspect ratio for LineChart
+                        child: LineChart(
+                          LineChartData(
+                            lineBarsData: [
+                              LineChartBarData(
+                                spots: [
+                                  FlSpot(0, 0),
+                                  FlSpot(2, 5),
+                                  FlSpot(3, 10),
+                                  FlSpot(4, 5),
+                                  FlSpot(5, 2),
+                                  FlSpot(6, 14),
+                                ],
+                                gradient: LinearGradient(
+                                  colors: [colorFirstGrad, colorMixGrad, colorSecondGrad],
+                                ),
+                                isCurved: true,
+                                curveSmoothness: 0.6,
+                                isStrokeCapRound: true,
+                                belowBarData: BarAreaData(show: true),
                               ),
                             ],
                           ),
                         ),
-                      );
-                    },
-                    itemCount: 4,
-                  ),
-                  SizedBox(height: 24.0),
-                  AspectRatio(
-                    aspectRatio: 1.8, // Adjusted aspect ratio for LineChart
-                    child: LineChart(
-                      LineChartData(
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: [
-                              FlSpot(0, 0),
-                              FlSpot(2, 5),
-                              FlSpot(3, 10),
-                              FlSpot(4, 5),
-                              FlSpot(5, 2),
-                              FlSpot(6, 14),
-                            ],
-                            gradient: LinearGradient(
-                              colors: [colorFirstGrad, colorMixGrad, colorSecondGrad],
-                            ),
-                            isCurved: true,
-                            curveSmoothness: 0.6,
-                            isStrokeCapRound: true,
-                            belowBarData: BarAreaData(show: true),
-                          ),
-                        ],
                       ),
-                    ),
+                      SizedBox(height: 24.0),
+                    ],
                   ),
-                  SizedBox(height: 24.0),
-                ],
-              ),
-            ),
-          );
+                ),
+              )
+            ],
+          ));
         },
       ),
     );
