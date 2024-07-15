@@ -3,6 +3,7 @@ import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
 import 'package:tonner_app/model/all_clients.dart';
 import 'package:tonner_app/network/ApiService.dart';
+import 'package:tonner_app/screens/home/client/add_client.dart';
 import 'dart:async';
 
 import 'package:tonner_app/screens/home/client/client.dart';
@@ -369,8 +370,13 @@ class ClientList extends StatelessWidget {
             TextButton(
               child: const Text('Edit'),
               onPressed: () {
-                _editClient(context, client);
-                Navigator.of(context).pop();
+                Navigator.of(context).pop();  // Close the dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddClient(client: client),
+                  ),
+                );
               },
             ),
           ],
@@ -381,7 +387,7 @@ class ClientList extends StatelessWidget {
 
   void _editClient(BuildContext context, Client client) {
     // Implement your logic to edit the client
-    print('Editing client: ${client.name}');
+    print('Editing client: ${client.id}');
     // Add your logic here to update client data
   }
 }

@@ -334,7 +334,8 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              tonerDistributed,
+              tonerReceived
+              ,
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
@@ -350,7 +351,7 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              tonerReceived,
+              tonerDistributed,
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
@@ -404,9 +405,15 @@ class _DatePickerRowState extends State<DatePickerRow> {
                   setState(() {
                     _fromDate = date;
                     widget.onFromDateChanged(date);
+                    // Ensure the toDate is not before fromDate
+                    if (_toDate.isBefore(_fromDate)) {
+                      _toDate = _fromDate;
+                      widget.onToDateChanged(_toDate);
+                    }
                   });
                 },
                 labelText: '',
+                firstDate: DateTime(2000), // Set the initial from date range
               ),
             ],
           ),
@@ -433,6 +440,7 @@ class _DatePickerRowState extends State<DatePickerRow> {
                   });
                 },
                 labelText: '',
+                firstDate: _fromDate, // Use fromDate as the first date for toDate
               ),
             ],
           ),
@@ -446,18 +454,20 @@ class DateInputField extends StatelessWidget {
   final DateTime initialDate;
   final ValueChanged<DateTime> onDateChanged;
   final String labelText;
+  final DateTime firstDate;
 
   DateInputField({
     required this.initialDate,
     required this.onDateChanged,
     required this.labelText,
+    required this.firstDate,
   });
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: initialDate,
-      firstDate: DateTime(2000),
+      firstDate: firstDate,
       lastDate: DateTime(2101),
     );
     if (picked != null && picked != initialDate) {

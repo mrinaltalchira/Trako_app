@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:tonner_app/color/colors.dart';
 import 'package:tonner_app/globals.dart';
+import 'package:tonner_app/model/all_clients.dart';
 import 'package:tonner_app/network/ApiService.dart';
 
+
 class AddClient extends StatefulWidget {
+  final Client? client;
+
+  const AddClient({super.key, this.client});
+
   @override
   State<AddClient> createState() => _AddClientState();
 }
@@ -17,6 +23,20 @@ class _AddClientState extends State<AddClient> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController contactPersonController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.client != null) {
+      nameController.text = widget.client!.name;
+      cityController.text = widget.client!.city;
+      emailController.text = widget.client!.email;
+      phoneController.text = widget.client!.phone;
+      addressController.text = widget.client!.address;
+      contactPersonController.text = widget.client!.contactPerson ?? '';
+      activeChecked = widget.client!.isActive == "0";
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +71,7 @@ class _AddClientState extends State<AddClient> {
               SizedBox(height: 20),
               Center(
                 child: Text(
-                  "Add New :",
+                  widget.client != null ? "Edit Client :" : "Add New :",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24.0,
@@ -192,42 +212,74 @@ class _AddClientState extends State<AddClient> {
 
     try {
       final ApiService apiService = ApiService();
-      final addClientResponse = await apiService.addClient(
-        name: nameController.text,
-        city: cityController.text,
-        email: emailController.text,
-        phone: phoneController.text,
-        address: addressController.text,
-        isActive: activeChecked ? '0' : '1',
-        contactPerson: contactPersonController.text,
-      );
 
-      Navigator.of(context).pop();
+      if (widget.client != null) {
+        // Update existing client
+        final updateClientResponse = await apiService.updateClient(
+          id: widget.client!.id,
+          name: nameController.text,
+          city: cityController.text,
+          email: emailController.text,
+          phone: phoneController.text,
+          address: addressController.text,
+          isActive: activeChecked ? '0' : '1',
+          contactPerson: contactPersonController.text,
+        );
 
-      if (addClientResponse.containsKey('error') && addClientResponse.containsKey('status')) {
-        if (!addClientResponse['error'] && addClientResponse['status'] == 200) {
-          if (addClientResponse['message'] == 'Success') {
-            nameController.clear();
-            cityController.clear();
-            emailController.clear();
-            phoneController.clear();
-            addressController.clear();
-            contactPersonController.clear();
-            showSnackBar(context, "Client created successfully.");
-            Navigator.of(context).pop(true);
+        Navigator.of(context).pop();
+
+        if (updateClientResponse.containsKey('error') && updateClientResponse.containsKey('status')) {
+          if (!updateClientResponse['error'] && updateClientResponse['status'] == 200) {
+            if (updateClientResponse['message'] == 'Success') {
+              showSnackBar(context, "Client updated successfully.");
+              Navigator.of(context).pop(true);
+            } else {
+              showSnackBar(context, updateClientResponse['message']);
+            }
           } else {
-            showSnackBar(context, addClientResponse['message']);
+            showSnackBar(context, "Failed to update client: ${updateClientResponse['message']}");
           }
         } else {
-          showSnackBar(context, "Failed to create client: ${addClientResponse['message']}");
+          showSnackBar(context, "Unexpected response from server. Please try again later.");
         }
       } else {
-        showSnackBar(context, "Unexpected response from server. Please try again later.");
+        // Create new client
+        final addClientResponse = await apiService.addClient(
+          name: nameController.text,
+          city: cityController.text,
+          email: emailController.text,
+          phone: phoneController.text,
+          address: addressController.text,
+          isActive: activeChecked ? '0' : '1',
+          contactPerson: contactPersonController.text,
+        );
+
+        Navigator.of(context).pop();
+
+        if (addClientResponse.containsKey('error') && addClientResponse.containsKey('status')) {
+          if (!addClientResponse['error'] && addClientResponse['status'] == 200) {
+            if (addClientResponse['message'] == 'Success') {
+              nameController.clear();
+              cityController.clear();
+              emailController.clear();
+              phoneController.clear();
+              addressController.clear();
+              contactPersonController.clear();
+              showSnackBar(context, "Client created successfully.");
+              Navigator.of(context).pop(true);
+            } else {
+              showSnackBar(context, addClientResponse['message']);
+            }
+          } else {
+            showSnackBar(context, "Failed to create client: ${addClientResponse['message']}");
+          }
+        } else {
+          showSnackBar(context, "Unexpected response from server. Please try again later.");
+        }
       }
     } catch (e) {
       Navigator.of(context).pop();
-      showSnackBar(context, "Failed to connect to the server. Please try again later.");
-      print("Error creating client: $e");
+      showSnackBar(context, "An error occurred. Please try again later.");
     }
   }
 }

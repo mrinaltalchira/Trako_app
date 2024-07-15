@@ -42,7 +42,7 @@ class LoggerInterceptor extends Interceptor {
 
 class ApiService {
 
-  final String baseUrl = 'http://192.168.1.15:8000/api';
+  final String baseUrl = 'http://192.168.2.169:8000/api';
   late Dio _dio;
   late String? token;
 
@@ -139,6 +139,51 @@ class ApiService {
       await initializeApiService(); // Ensure token is initialized before addClient
 
       final url = '/add-client'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          'name': name,
+          'city': city,
+          'email': email,
+          'phone': phone,
+          "isActive": isActive,
+          'address': address,
+          'contact_person': contactPerson,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to add client');
+      }
+    } catch (e) {
+      print('Add Client API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+  Future<Map<String, dynamic>> updateClient({
+    required String id,
+    required String name,
+    required String city,
+    required String email,
+    required String phone,
+    required String address,
+    required String contactPerson,
+    required String isActive,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addClient
+
+      final url = '/update-client'; // Adjust endpoint as per your API
       final response = await _dio.post(
         baseUrl + url,
         options: Options(

@@ -158,7 +158,7 @@ class _AddTonerState extends State<AddToner> {
       late final Map<String, dynamic> addUserResponse;
 
       // Determine whether to use phone or email for login
-      String commaSeparatedString = scannedCodes.join(', ');
+      String commaSeparatedString = scannedCodes.join(',');
 
       addUserResponse = await apiService.addSupply(
           dispatch_receive:
