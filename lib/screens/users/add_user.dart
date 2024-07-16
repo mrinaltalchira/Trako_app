@@ -1,13 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
-import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/home/home.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/globals.dart';
+import 'package:Trako/model/all_user.dart';
+import 'package:Trako/network/ApiService.dart';
+import 'package:Trako/screens/home/home.dart';
+import 'package:intl_phone_field/intl_phone_field.dart';
 
 class AddUser extends StatefulWidget {
-  const AddUser({super.key});
+  final User? user;
+  const AddUser({super.key, this.user});
 
   @override
   State<StatefulWidget> createState() => _AddUserState();
@@ -28,6 +31,27 @@ class _AddUserState extends State<AddUser> {
   bool clientModuleChecked = false;
   bool userPrivilegeChecked = false;
   bool activeChecked = true; // Assuming Active is initially checked
+  String? fullPhoneNumber;
+
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.user != null) {
+      nameController.text = widget.user!.name;
+      emailController.text = widget.user!.email;
+      mobileController.text = widget.user!.phone;
+      phoneController.text = widget.user!.phone;
+      authorityController.text = widget.user!.userRole;
+      activeStatusController.text = widget.user!.isActive;
+
+      machineModuleChecked = widget.user!.machineModule == '1';
+      clientModuleChecked = widget.user!.clientModule == '1';
+      userPrivilegeChecked = widget.user!.userModule == '1';
+      activeChecked = widget.user!.isActive == '0';
+    }
+  }
+
 
 
 
@@ -52,8 +76,7 @@ class _AddUserState extends State<AddUser> {
 
 
 
-  Future<void> submitUser() async {
-    // Validate phone nu
+  void validate(){
 
     if (selectedUserRole == null) {
       showSnackBar(context, "Please select User Role.");
@@ -94,15 +117,33 @@ class _AddUserState extends State<AddUser> {
       return;
     }
 
-  if (confirmPasswordController.text.isEmpty) {
+    if (confirmPasswordController.text.isEmpty) {
       showSnackBar(context, "Confirm Password is required.");
       return;
     }
 
-  if (confirmPasswordController.text != passwordController.text) {
+    if (confirmPasswordController.text != passwordController.text) {
       showSnackBar(context, "Confirm password not matched! Please check.");
       return;
     }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return ConfirmSubmitDialog(
+          onConfirm: () {
+            submitUser();
+          },
+        );
+      },
+    );
+
+  }
+
+  Future<void> submitUser() async {
+    // Validate phone nu
+
+
 
     showDialog(
       context: context,
@@ -122,7 +163,7 @@ class _AddUserState extends State<AddUser> {
       addUserResponse = await apiService.addUser(
         name: nameController.text,
         email: emailController.text,
-        phone: phoneController.text,
+        phone: fullPhoneNumber.toString(),
         isActive: activeChecked ? '0' : '1',
         userRole: selectedUserRole ?? 'user', // Default to 'user' if not selected
         password: passwordController.text,
@@ -167,8 +208,10 @@ class _AddUserState extends State<AddUser> {
     }
   }
 
-  void _handleSubmit() {
-    submitUser();
+  void _handlePhoneNumberChanged(String phoneNumber) {
+    setState(() {
+      fullPhoneNumber = phoneNumber;
+    });
   }
 
   @override
@@ -259,7 +302,8 @@ class _AddUserState extends State<AddUser> {
                 ),
               ),
               SizedBox(height: 5),
-              PhoneInputTextField(controller: phoneController),
+              IntlPhoneInputTextField(controller: phoneController,
+                onPhoneNumberChanged: _handlePhoneNumberChanged,),
               const SizedBox(height: 20),
               Text(
                 "Password",
@@ -332,16 +376,9 @@ class _AddUserState extends State<AddUser> {
                     width: 10.0,
                     radius: 25.0,
                     buttonText: "Submit",
-                    onPressed:(){  showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
-                        return ConfirmSubmitDialog(
-                          onConfirm: () {
-                            _handleSubmit();
-                          },
-                        );
-                      },
-                    );}
+                    onPressed:(){
+                      validate();
+                    }
                   ),
                 ),
               ),
@@ -582,35 +619,53 @@ class EmailInputTextField extends StatelessWidget {
   }
 }
 
-class PhoneInputTextField extends StatelessWidget {
+class IntlPhoneInputTextField extends StatelessWidget {
   final TextEditingController controller;
+  final Function(String) onPhoneNumberChanged;
 
-  const PhoneInputTextField({Key? key, required this.controller})
-      : super(key: key);
+  const IntlPhoneInputTextField({
+    super.key,
+    required this.controller,
+    required this.onPhoneNumberChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      maxLength: 15,
+    return IntlPhoneField(
       controller: controller,
-      keyboardType: TextInputType.number,
+
       decoration: InputDecoration(
-        hintText: 'Phone',
-        counterText: '',
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
+        counterText: "",
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: const BorderSide(
+            color: colorMixGrad, // Example focused border color
+          ),
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10.0),
         ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
+        hintText: '|  Phone number',
+        hintStyle: const TextStyle(color: Colors.grey),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 15.0,
+          horizontal: 20.0,
         ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
       ),
-      style: TextStyle(
+      initialCountryCode: 'IN', // Example initial country code
+      onChanged: (phone) {
+        // Get the full phone number with country code
+        final fullPhoneNumber = '${phone.countryCode}${phone.number}';
+        onPhoneNumberChanged(fullPhoneNumber);
+      },
+      showCountryFlag: true,
+      showDropdownIcon: false,
+      style: const TextStyle(
+        fontSize: 16.0,
+        color: Colors.black,
+      ),
+
+      dropdownTextStyle: const TextStyle(
         fontSize: 16.0,
         color: Colors.black,
       ),

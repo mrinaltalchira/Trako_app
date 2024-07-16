@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
-import 'package:tonner_app/model/all_clients.dart';
-import 'package:tonner_app/network/ApiService.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/globals.dart';
+import 'package:Trako/model/all_clients.dart';
+import 'package:Trako/network/ApiService.dart';
 
 
 class AddClient extends StatefulWidget {
@@ -124,14 +124,7 @@ class _AddClientState extends State<AddClient> {
                     radius: 25.0,
                     buttonText: "Submit",
                     onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext context) {
-                          return ConfirmSubmitDialog(
-                            onConfirm: validateAndCreateClient,
-                          );
-                        },
-                      );
+                      validate();
                     },
                   ),
                 ),
@@ -166,7 +159,7 @@ class _AddClientState extends State<AddClient> {
     return phoneRegExp.hasMatch(phone);
   }
 
-  Future<void> validateAndCreateClient() async {
+  void validate(){
     if (nameController.text.isEmpty) {
       showSnackBar(context, "Full name is required.");
       return;
@@ -201,6 +194,18 @@ class _AddClientState extends State<AddClient> {
       showSnackBar(context, "Address is required.");
       return;
     }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return ConfirmSubmitDialog(
+          onConfirm: validateAndCreateClient,
+        );
+      },
+    );
+
+  }
+  Future<void> validateAndCreateClient() async {
 
     showDialog(
       context: context,

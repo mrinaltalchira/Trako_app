@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:tonner_app/model/login_model.dart';
-import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/pref_manager.dart';
-import 'package:tonner_app/screens/authFlow/utils.dart';
-
+import 'package:Trako/model/login_model.dart';
+import 'package:Trako/network/ApiService.dart';
+import 'package:Trako/pref_manager.dart';
+import 'package:Trako/screens/authFlow/utils.dart';
 import '../../color/colors.dart';
 import '../../globals.dart';
 import '../home/home.dart';
@@ -124,7 +123,7 @@ class _AuthProcessState extends State<AuthProcess> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            // Implement forgot password functionality
+                            Navigator.pushNamed(context, '/forgot_pass');
                           },
                           child: Text(
                             "Forgot password",
@@ -283,9 +282,7 @@ class _AuthProcessState extends State<AuthProcess> {
             // Extract token and handle it
             User user = User.fromJson(loginResponse['data']['user']);
             String token = user.token;
-            // final token = loginResponse['data']['user'][['token']];
             if (token.isNotEmpty) {
-
               PrefManager().setToken(token.toString());
               PrefManager().setUserName(user.name.toString());
               PrefManager().setUserEmail(user.email.toString());
@@ -293,8 +290,6 @@ class _AuthProcessState extends State<AuthProcess> {
               PrefManager().setUserRole(user.userRole.toString());
               PrefManager().setUserStatus(user.isActive.toString());
               PrefManager().setIsLoggedIn(true);
-
-
               // Navigate to home screen
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
@@ -328,3 +323,4 @@ class _AuthProcessState extends State<AuthProcess> {
   }
 
   }
+

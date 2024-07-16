@@ -1,12 +1,11 @@
-import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
-import 'package:tonner_app/model/all_clients.dart';
-import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/home/client/add_client.dart';
 import 'dart:async';
 
-import 'package:tonner_app/screens/home/client/client.dart';
+import 'package:flutter/material.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/globals.dart';
+import 'package:Trako/model/all_clients.dart';
+import 'package:Trako/network/ApiService.dart';
+import 'package:Trako/screens/home/client/add_client.dart';
 
 class ClientModule extends StatefulWidget {
   const ClientModule({super.key});

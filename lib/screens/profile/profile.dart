@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/pref_manager.dart';
-import 'package:tonner_app/screens/home/home.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/pref_manager.dart';
+import 'package:Trako/screens/home/home.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});

@@ -1,4 +1,4 @@
-name: tonner_app
+name: Trako
 description: "Application to manage tonner distribution and plastic management stystem"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.

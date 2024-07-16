@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:tonner_app/model/all_clients.dart';
-import 'package:tonner_app/model/all_machine.dart';
-import 'package:tonner_app/model/all_supply.dart';
-import 'package:tonner_app/model/all_user.dart';
-import 'package:tonner_app/model/client_report.dart';
-import 'package:tonner_app/model/dashboard.dart';
-import 'package:tonner_app/model/supply_fields_data.dart';
-import 'package:tonner_app/model/user_profie.dart';
-import 'package:tonner_app/pref_manager.dart';
+import 'package:Trako/model/all_clients.dart';
+import 'package:Trako/model/all_machine.dart';
+import 'package:Trako/model/all_supply.dart';
+import 'package:Trako/model/all_user.dart';
+import 'package:Trako/model/client_report.dart';
+import 'package:Trako/model/dashboard.dart';
+import 'package:Trako/model/supply_fields_data.dart';
+import 'package:Trako/model/user_profie.dart';
+import 'package:Trako/pref_manager.dart';
 
 
 class LoggerInterceptor extends Interceptor {
@@ -42,7 +42,7 @@ class LoggerInterceptor extends Interceptor {
 
 class ApiService {
 
-  final String baseUrl = 'http://192.168.2.169:8000/api';
+  final String baseUrl = 'http://192.168.1.28:8000/api';
   late Dio _dio;
   late String? token;
 
@@ -200,6 +200,7 @@ class ApiService {
           "isActive": isActive,
           'address': address,
           'contact_person': contactPerson,
+          'id':id
         }),
       );
 
@@ -265,6 +266,43 @@ class ApiService {
           },
         ),
         data: json.encode({
+          'model_name': model_name,
+          'model_code': model_code,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to add machine');
+      }
+    } catch (e) {
+      print('Add machine API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+
+  Future<Map<String, dynamic>> updateMachine({
+    required String id,
+    required String model_name,
+    required String model_code,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addClient
+
+      final url = '/update-machine'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          'id':id,
           'model_name': model_name,
           'model_code': model_code,
         }),

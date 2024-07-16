@@ -5,11 +5,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
-import 'package:tonner_app/model/all_supply.dart';
-import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/add_toner/add_toner.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/globals.dart';
+import 'package:Trako/model/all_supply.dart';
+import 'package:Trako/network/ApiService.dart';
+import 'package:Trako/screens/add_toner/add_toner.dart';
 
 
 

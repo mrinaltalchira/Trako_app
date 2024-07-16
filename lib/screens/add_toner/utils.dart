@@ -1,16 +1,7 @@
-import 'dart:convert';
-
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/physics.dart';
-import 'package:flutter/widgets.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
 import 'package:intl/intl.dart';
-import 'package:tonner_app/model/supply_fields_data.dart';
-import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/supply_chian/supplychain.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/model/supply_fields_data.dart';
 
 class ManualCodeField extends StatefulWidget {
   final TextEditingController controller;

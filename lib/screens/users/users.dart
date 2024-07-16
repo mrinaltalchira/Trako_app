@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
-import 'package:tonner_app/model/all_user.dart';
-import 'package:tonner_app/network/ApiService.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/globals.dart';
+import 'package:Trako/model/all_user.dart';
+import 'package:Trako/network/ApiService.dart';
+import 'package:Trako/screens/users/add_user.dart';
 
 class UsersModule extends StatefulWidget {
   const UsersModule({Key? key}) : super(key: key);
@@ -495,15 +496,15 @@ class ScannedHistoryList extends StatelessWidget {
                     // Edit and delete buttons
                     Row(
                       children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            // Handle edit action
-                            _showEditDialog(context, items[index]);
-                          },
+                        Opacity(
+                          opacity: 0,
+                          child: IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: null, // Set onPressed to null to disable the button
+                          ),
                         ),
                       ],
-                    ),
+                    )
                   ],
                 ),
                 Text(
@@ -535,9 +536,13 @@ class ScannedHistoryList extends StatelessWidget {
             ),
             TextButton(
               child: const Text('Edit'),
-              onPressed: () {
-                _editClient(context, client);
-                Navigator.of(context).pop();
+              onPressed: () {  Navigator.of(context).pop();  // Close the dialog
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AddUser(user: client),
+                ),
+              );
               },
             ),
           ],

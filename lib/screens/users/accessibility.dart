@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
+import 'package:Trako/color/colors.dart';
 
 class Accessibility extends StatelessWidget {
   @override

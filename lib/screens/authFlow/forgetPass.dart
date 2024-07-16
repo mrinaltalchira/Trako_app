@@ -1,254 +1,214 @@
 import 'package:flutter/material.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+import '../../color/colors.dart';
+import '../../globals.dart';
+import '../home/client/add_client.dart';
+
+class ForgotPass extends StatefulWidget {
+  const ForgotPass({Key? key}) : super(key: key);
+
   @override
-  State<HomePage> createState() => _HomePageState();
+  _ForgotPassState createState() => _ForgotPassState();
 }
-class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
-  late TabController tabController;
-  @override
-  void initState() {
-    tabController = TabController(length: 4, vsync: this);
-    tabController.addListener(() {
-      setState(() {});
+
+class _ForgotPassState extends State<ForgotPass> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController otpController = TextEditingController();
+  final TextEditingController newPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
+
+  bool showEmailInput = true;
+  bool showOtpInput = false;
+  bool showPasswordInput = false;
+
+  void showOtpInputField() {
+    setState(() {
+      showEmailInput = false;
+      showOtpInput = true;
     });
-    super.initState();
   }
+
+  void showPasswordInputFields() {
+    setState(() {
+      showOtpInput = false;
+      showPasswordInput = true;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          //tabcontroller.index can be used to get the name of current index value of the tabview.
-          title: Text(tabController.index == 0
-              ? "TextConstants.titleTab_1"
-              : tabController.index == 1
-              ? "TextConstants.titleTab_2"
-              : tabController.index == 2
-              ? "TextConstants.titleTab_3"
-              : "TextConstants.titleTab_4"),
-          bottom: TabBar(controller: tabController, tabs: [
-            Tab(
-              text: "TextConstants.titleTab_1",
-              icon: Icon(
-                Icons.home,
-                color: Colors.indigo.shade500,
-              ),
+        appBar: AppBar(),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 50.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 30),
+                Container(
+                  height: 100,
+                  alignment: Alignment.center,
+                  child: Image.asset(
+                    'assets/images/ic_tracesci.png',
+                    fit: BoxFit.contain,
+                    height: 70,
+                  ),
+                ),
+                SizedBox(height: 50),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      "Reset Password",
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      "Enter your email to receive OTP",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    SizedBox(height: 70),
+                    if (showEmailInput)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          EmailInputTextField(controller: emailController),
+                          SizedBox(height: 20),
+                          SizedBox(
+                            child: GradientButton(
+                              gradientColors: [colorFirstGrad, colorSecondGrad],
+                              // Removed const from gradientColors
+                              height: 45.0,
+                              width: 10.0,
+                              radius: 25.0,
+                              buttonText: "Get OTP",
+                              // Dynamic text, removed const
+                              onPressed: () {
+                                showOtpInputField();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (showOtpInput)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            "Enter OTP received on your email",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: otpController,
+                            decoration: InputDecoration(
+                              labelText: 'OTP',
+                            ),
+                          ),
+                          SizedBox(height: 20),
+                          SizedBox(
+                            child: GradientButton(
+                              gradientColors: [colorFirstGrad, colorSecondGrad],
+                              // Removed const from gradientColors
+                              height: 45.0,
+                              width: 10.0,
+                              radius: 25.0,
+                              buttonText: "Submit OTP",
+                              // Dynamic text, removed const
+                              onPressed: () {
+                                showPasswordInputFields();
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    if (showPasswordInput)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            "Enter new password",
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: newPasswordController,
+                            decoration: InputDecoration(
+                              labelText: 'New Password',
+                            ),
+                            obscureText: true,
+                          ),
+                          SizedBox(height: 10),
+                          TextField(
+                            controller: confirmPasswordController,
+                            decoration: InputDecoration(
+                              labelText: 'Confirm New Password',
+                            ),
+                            obscureText: true,
+                          ),
+                          SizedBox(height: 20),
+                            SizedBox(
+                              child: GradientButton(
+                                gradientColors: [colorFirstGrad, colorSecondGrad],
+                                // Removed const from gradientColors
+                                height: 45.0,
+                                width: 10.0,
+                                radius: 25.0,
+                                buttonText: "Submit Password",
+                                // Dynamic text, removed const
+                                onPressed:(){
+
+                                  // Validate new password and confirm password
+                                  if (newPasswordController.text !=
+                                      confirmPasswordController.text) {
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text("Password mismatch"),
+                                          content: Text(
+                                              "New password and confirm password do not match."),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                              child: Text("OK"),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                    return;
+                                  }
+                                  // Passwords match, proceed with your logic to update the password
+                                  // For demo purposes, just navigate back to previous screen
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ),
+
+                        ],
+                      ),
+                  ],
+                ),
+              ],
             ),
-            Tab(
-                text: "TextConstants.titleTab_2",
-                icon: Icon(
-                  Icons.email,
-                  color: Colors.indigo.shade500,
-                )),
-            Tab(
-                text: "TextConstants.titleTab_3",
-                icon: Icon(
-                  Icons.star,
-                  color: Colors.indigo.shade500,
-                )),
-            Tab(
-                text: "TextConstants.titleTab_4",
-                icon: Icon(
-                  Icons.person,
-                  color: Colors.indigo.shade500,
-                ))
-          ]),
-        ),
-        body: TabBarView(controller: tabController, children: [
-          FirstScreen(
-            tabController: tabController,
-          ),
-          SecondScreen(
-            tabController: tabController,
-          ),
-          ThirdScreen(
-            tabController: tabController,
-          ),
-          FourthScreen(
-            tabController: tabController,
-          )
-        ]));
-  }
-}
-
-class SecondScreen extends StatelessWidget {
-  final TabController tabController;
-  const SecondScreen({Key? key, required this.tabController}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ScreenBody(
-        tabBarTitle: "TextConstants.titleTab_2",
-        tabController: tabController,
-        tabIcon: Icons.mail);
-  }
-}
-
-
-class ThirdScreen extends StatelessWidget {
-  final TabController tabController;
-  const ThirdScreen({Key? key, required this.tabController}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ScreenBody(
-        tabBarTitle: "TextConstants.titleTab_3",
-        tabController: tabController,
-        tabIcon: Icons.star);
-  }
-}
-
-
-class FourthScreen extends StatelessWidget {
-  final TabController tabController;
-  const FourthScreen({Key? key, required this.tabController}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ScreenBody(
-        tabBarTitle: "TextConstants.titleTab_4",
-        tabController: tabController,
-        tabIcon: Icons.person);
-  }
-}
-
-class FirstScreen extends StatelessWidget {
-  final TabController tabController;
-  const FirstScreen({Key? key, required this.tabController}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ScreenBody(
-        tabBarTitle: "TextConstants.titleTab_1",
-        tabController: tabController,
-        tabIcon: Icons.home);
-  }
-}
-
-class ScreenBody extends StatefulWidget {
-  final String tabBarTitle;
-  final TabController tabController;
-  final IconData tabIcon;
-
-  const ScreenBody(
-      {Key? key,
-        required this.tabBarTitle,
-        required this.tabController,
-        required this.tabIcon})
-      : super(key: key);
-
-  @override
-  State<ScreenBody> createState() => _ScreenBodyState();
-}
-
-class _ScreenBodyState extends State<ScreenBody> {
-  bool isExpanded = false;
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: Colors.indigo.shade400,
-        body: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-          ),
-          height: MediaQuery.of(context).size.height * 0.8,
-          width: MediaQuery.of(context).size.width,
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                height: 150,
-                width: 150,
-                decoration: BoxDecoration(
-                    color: Colors.orange.shade200, shape: BoxShape.circle),
-                child: Icon(
-                  widget.tabIcon,
-                  color: Colors.orange.shade900,
-                  size: 100,
-                ),
-              ),
-              Text(
-                widget.tabBarTitle,
-                style: const TextStyle(
-                    color: Colors.indigo,
-                    fontSize: 25,
-                    fontWeight: FontWeight.bold),
-              )
-            ],
-          ),
-        ),
-        floatingActionButton: isExpanded == false
-            ? FloatingActionButton(
-          backgroundColor: Colors.indigo,
-          child: const Icon(
-            Icons.add,
-            color: Colors.orange,
-          ),
-          onPressed: () {
-            setState(() {
-              isExpanded = true;
-            });
-          },
-        )
-            : InkWell(
-          hoverColor: Colors.indigo.shade200,
-          onTap: () {
-            setState(() {
-              isExpanded = false;
-            });
-          },
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              FloatingActionButton(
-                backgroundColor: Colors.indigo,
-                child: const Icon(
-                  Icons.home,
-                  color: Colors.orange,
-                ),
-                onPressed: () {
-                  // to navigate to any other page by using tabcontroller.
-                  widget.tabController.animateTo(0);
-                },
-              ),
-              FloatingActionButton(
-                backgroundColor: Colors.indigo,
-                child: const Icon(
-                  Icons.mail,
-                  color: Colors.orange,
-                ),
-                onPressed: () {
-                  // to navigate to any other page by using tabcontroller.
-                  widget.tabController.animateTo(1);
-                },
-              ),
-              FloatingActionButton(
-                backgroundColor: Colors.indigo,
-                child: const Icon(
-                  Icons.star,
-                  color: Colors.orange,
-                ),
-                onPressed: () {
-                  // to navigate to any other page by using tabcontroller.
-                  widget.tabController.animateTo(2);
-                },
-              ),
-              FloatingActionButton(
-                backgroundColor: Colors.indigo,
-                child: const Icon(
-                  Icons.person,
-                  color: Colors.orange,
-                ),
-                onPressed: () {
-                  // to navigate to any other page by using tabcontroller.
-                  widget.tabController.animateTo(3);
-                },
-              ),
-            ],
           ),
         ));
   }

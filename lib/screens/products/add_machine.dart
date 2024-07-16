@@ -1,12 +1,14 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
-import 'package:tonner_app/network/ApiService.dart';
-import 'package:tonner_app/screens/home/home.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/globals.dart';
+import 'package:Trako/model/all_machine.dart';
+import 'package:Trako/network/ApiService.dart';
+import 'package:Trako/screens/home/home.dart';
 
 class AddMachine extends StatefulWidget {
-   AddMachine({super.key});
+  final Machine? machine;
+   const AddMachine({super.key, this.machine});
 
   @override
   State<AddMachine> createState() => _AddMachineState();
@@ -18,7 +20,17 @@ class _AddMachineState extends State<AddMachine> {
 
    final TextEditingController machine_code_Controller = TextEditingController();
 
-  @override
+   @override
+   void initState() {
+     super.initState();
+     if (widget.machine != null) {
+       machine_name_Controller.text = widget.machine!.modelName;
+       machine_code_Controller.text = widget.machine!.modelCode;
+     }
+   }
+
+
+   @override
   Widget build(BuildContext context){
     return Scaffold(
       appBar: AppBar(
@@ -51,9 +63,9 @@ class _AddMachineState extends State<AddMachine> {
                     const SizedBox(
                       height: 20,
                     ),
-                    const Center(
-                      child: Text(
-                        "Add New Machine:",
+                     Center(
+                      child:  Text(
+                        widget.machine != null ? "Update Machine:" : "Add New Machine:",
                         textAlign: TextAlign.center,
                         // Align text center horizontally
                         style: TextStyle(
@@ -146,42 +158,83 @@ class _AddMachineState extends State<AddMachine> {
        },
      );
 
-     try {
-       final ApiService apiService = ApiService();
-       final addMachineResponse = await apiService.addMachine(
-         model_name: machine_name_Controller.text,
-         model_code: machine_code_Controller.text,
-       );
+     if(widget.machine != null){
+       try {
+         final ApiService apiService = ApiService();
 
-       Navigator.of(context).pop(); // Dismiss loading indicator
+         final addMachineResponse = await apiService.updateMachine(
+           id:widget.machine!.id.toString(),
+           model_name: machine_name_Controller.text,
+           model_code: machine_code_Controller.text,
+         );
 
-       if (addMachineResponse.containsKey('error') &&
-           addMachineResponse.containsKey('status')) {
-         if (!addMachineResponse['error'] &&
-             addMachineResponse['status'] == 200) {
-           if (addMachineResponse['message'] == 'Success') {
-             machine_name_Controller.clear();
-             machine_code_Controller.clear();
-             showSnackBar(context, "Machine added successfully.");
+         Navigator.of(context).pop(); // Dismiss loading indicator
+
+         if (addMachineResponse.containsKey('error') &&
+             addMachineResponse.containsKey('status')) {
+           if (!addMachineResponse['error'] &&
+               addMachineResponse['status'] == 200) {
+             if (addMachineResponse['message'] == 'Success') {
+               machine_name_Controller.clear();
+               machine_code_Controller.clear();
+               showSnackBar(context, addMachineResponse['message']);
+             } else {
+               showSnackBar(context, addMachineResponse['message']);
+             }
            } else {
-             showSnackBar(context, addMachineResponse['message']);
+             showSnackBar(
+                 context, addMachineResponse['message']);
            }
          } else {
-           showSnackBar(
-               context, "Failed to add machine. Please check your details.");
+           showSnackBar(context,
+               "Unexpected response from server. Please try again later.");
          }
-       } else {
+       } catch (e) {
+         Navigator.of(context).pop(); // Dismiss loading indicator
          showSnackBar(context,
-             "Unexpected response from server. Please try again later.");
+             "Failed to connect to the server. Please try again later.");
+         print("Add Machine API Error: $e");
        }
-     } catch (e) {
-       Navigator.of(context).pop(); // Dismiss loading indicator
-       showSnackBar(context,
-           "Failed to connect to the server. Please try again later.");
-       print("Add Machine API Error: $e");
+     }else{
+       try {
+         final ApiService apiService = ApiService();
+
+         final addMachineResponse = await apiService.addMachine(
+           model_name: machine_name_Controller.text,
+           model_code: machine_code_Controller.text,
+         );
+
+         Navigator.of(context).pop(); // Dismiss loading indicator
+
+         if (addMachineResponse.containsKey('error') &&
+             addMachineResponse.containsKey('status')) {
+           if (!addMachineResponse['error'] &&
+               addMachineResponse['status'] == 200) {
+             if (addMachineResponse['message'] == 'Success') {
+               machine_name_Controller.clear();
+               machine_code_Controller.clear();
+               showSnackBar(context, "Machine added successfully.");
+             } else {
+               showSnackBar(context, addMachineResponse['message']);
+             }
+           } else {
+             showSnackBar(
+                 context, "Failed to add machine. Please check your details.");
+           }
+         } else {
+           showSnackBar(context,
+               "Unexpected response from server. Please try again later.");
+         }
+       } catch (e) {
+         Navigator.of(context).pop(); // Dismiss loading indicator
+         showSnackBar(context, "Failed to connect to the server. Please try again later.");
+         print("Add Machine API Error: $e");
+       }
      }
    }
 }
+
+
 
 class MachineNameInputTextField extends StatefulWidget {
   final TextEditingController controller;

@@ -1,8 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/model/dashboard.dart';
-import 'package:tonner_app/network/ApiService.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/model/dashboard.dart';
+import 'package:Trako/network/ApiService.dart';
 
 class CategoriesDashboard extends StatefulWidget {
   const CategoriesDashboard({Key? key}) : super(key: key);
@@ -137,30 +137,91 @@ class _CategoriesDashboardState extends State<CategoriesDashboard> {
                         itemCount: 4,
                       ),
                       SizedBox(height: 24.0),
-                      AspectRatio(
-                        aspectRatio: 1.8, // Adjusted aspect ratio for LineChart
-                        child: LineChart(
-                          LineChartData(
-                            lineBarsData: [
-                              LineChartBarData(
-                                spots: [
-                                  FlSpot(0, 0),
-                                  FlSpot(2, 5),
-                                  FlSpot(3, 10),
-                                  FlSpot(4, 5),
-                                  FlSpot(5, 2),
-                                  FlSpot(6, 14),
-                                ],
-                                gradient: LinearGradient(
-                                  colors: [colorFirstGrad, colorMixGrad, colorSecondGrad],
+                      Padding(
+                        padding: const EdgeInsets.all(18.0),
+                        child: AspectRatio(
+                          aspectRatio: 1.8, // Adjusted aspect ratio for LineChart
+                          child: LineChart(
+                            LineChartData(
+                              lineBarsData: [
+                                LineChartBarData(
+                                  spots: [
+                                    FlSpot(0, 0),
+                                    FlSpot(2, 5),
+                                    FlSpot(3, 10),
+                                    FlSpot(4, 5),
+                                    FlSpot(5, 2),
+                                    FlSpot(6, 14),
+                                  ],
+                                  gradient: const LinearGradient(
+                                    colors: [colorFirstGrad, colorMixGrad, colorSecondGrad],
+                                  ),
+                                  isCurved: true,
+                                  curveSmoothness: 0.6,
+                                  isStrokeCapRound: true,
+                                  belowBarData: BarAreaData(show: true),
                                 ),
-                                isCurved: true,
-                                curveSmoothness: 0.6,
-                                isStrokeCapRound: true,
-                                belowBarData: BarAreaData(show: true),
+                              ],
+                              titlesData: FlTitlesData(
+                                show: true,
+                                bottomTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    reservedSize: 22,
+                                    getTitlesWidget: (value, meta) {
+                                      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+                                      // calculate the month index based on the x-axis value
+                                      int monthIndex = value.toInt() % 12; // assume x-axis values range from 0 to 11*numberOfYears
+
+                                      // return the SideTitleWidget with the correct month label
+                                      return SideTitleWidget(
+                                        axisSide: meta.axisSide,
+                                        child: Text(
+
+                                        months[monthIndex], // use the calculated month index to get the correct month label
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                leftTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: true,
+                                    getTitlesWidget: (value, meta) {
+                                      final maxValue = 500; // maximum value on the y-axis
+                                      final interval = maxValue / 5; // interval between titles
+                                      final titleValue = value * interval;
+                                      return SideTitleWidget(
+                                        axisSide: meta.axisSide,
+                                        child: Text(
+                                          titleValue.toInt().toString(),
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                                topTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: false,
+                                  ),
+                                ),
+                                rightTitles: AxisTitles(
+                                  sideTitles: SideTitles(
+                                    showTitles: false,
+                                  ),
+                                ),
                               ),
-                            ],
-                          ),
+                            ),
+                          )
                         ),
                       ),
                       SizedBox(height: 24.0),

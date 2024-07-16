@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
-import 'package:tonner_app/globals.dart';
-import 'package:tonner_app/model/all_machine.dart';
-import 'package:tonner_app/network/ApiService.dart';
+import 'package:Trako/color/colors.dart';
+import 'package:Trako/globals.dart';
+import 'package:Trako/model/all_machine.dart';
+import 'package:Trako/network/ApiService.dart';
+import 'package:Trako/screens/products/add_machine.dart';
 
 class MachineModule extends StatefulWidget {
   @override
@@ -574,9 +575,13 @@ class ScannedHistoryList extends StatelessWidget {
             TextButton(
               child: Text('Edit'),
               onPressed: () {
-                // Perform edit action
-                _editItem(item.id);
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();  // Close the dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddMachine(machine: item),
+                  ),
+                );
               },
             ),
           ],
@@ -585,10 +590,7 @@ class ScannedHistoryList extends StatelessWidget {
     );
   }
 
-  void _editItem(String id) {
-    // Implement your edit logic here, such as updating item details
-    print('Editing item: ${id}');
-  }
+
 }
 
 class CustomSearchField extends StatefulWidget {

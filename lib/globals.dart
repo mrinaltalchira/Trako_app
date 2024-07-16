@@ -1,7 +1,7 @@
 // Define your global variables here
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
+import 'package:Trako/color/colors.dart';
 
 const double radiusTextField = 21.0;
 const double radiusContainerTextField = 21.0;

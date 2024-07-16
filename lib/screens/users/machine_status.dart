@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:tonner_app/color/colors.dart';
+import 'package:Trako/color/colors.dart';
 
 class MachineStatus extends StatelessWidget {
   const MachineStatus({super.key});
