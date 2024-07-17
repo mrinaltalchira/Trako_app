@@ -46,17 +46,18 @@ class _ForgotPassState extends State<ForgotPass> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SizedBox(height: 30),
+                SizedBox(height: 50),
                 Container(
-                  height: 100,
+                  height: 200,
                   alignment: Alignment.center,
                   child: Image.asset(
-                    'assets/images/ic_tracesci.png',
+                    'assets/images/ic_trako.png',
                     fit: BoxFit.contain,
-                    height: 70,
+                    height: 200,
                   ),
                 ),
-                SizedBox(height: 50),
+
+                SizedBox(height: 30),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -203,10 +204,22 @@ class _ForgotPassState extends State<ForgotPass> {
                               ),
                             ),
 
+                              
                         ],
                       ),
                   ],
                 ),
+                SizedBox(height: 30,),
+                Center(
+                  child: Text(
+                    'Powered by Tracesci.in',
+                    style: TextStyle(
+                      fontSize: 14.0, // Adjust the font size as needed
+                      color: Colors.grey, // Adjust the color to match your app's theme
+                      fontStyle: FontStyle.italic, // Optionally italicize the text
+                    ),
+                  ),
+                )
               ],
             ),
           ),

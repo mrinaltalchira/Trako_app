@@ -137,7 +137,7 @@ class PrefManager {
   }
 
 
-  // user role
+  // user active inactive
 
   Future<String?> getUserStatus() async {
     final prefs = await _prefs;
@@ -147,6 +147,44 @@ class PrefManager {
   Future<void> setUserStatus(String userStatus) async {
     final prefs = await _prefs;
     await prefs.setString('user_status', userStatus);
+  }
+
+  // machine module
+
+  Future<String?> getMachineModule() async {
+    final prefs = await _prefs;
+    return prefs.getString('machine_module');
+  }
+
+  Future<void> setMachineModule(String machineModule) async {
+    final prefs = await _prefs;
+    await prefs.setString('machine_module', machineModule);
+  }
+
+
+  // user module
+
+  Future<String?> getUserModule() async {
+    final prefs = await _prefs;
+    return prefs.getString('user_module');
+  }
+
+  Future<void> setUserModule(String userModule) async {
+    final prefs = await _prefs;
+    await prefs.setString('user_module', userModule);
+  }
+
+
+  // client module
+
+  Future<String?> getClientModule() async {
+    final prefs = await _prefs;
+    return prefs.getString('client_module');
+  }
+
+  Future<void> setClientModule(String clientModule) async {
+    final prefs = await _prefs;
+    await prefs.setString('client_module', clientModule);
   }
 
 

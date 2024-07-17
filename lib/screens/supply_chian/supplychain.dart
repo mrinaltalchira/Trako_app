@@ -296,7 +296,7 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
                 margin: const EdgeInsets.only(right: 50),
                 alignment: Alignment.center,
                 child: Image.asset(
-                  'assets/images/app_name_logo.png',
+                  'assets/images/ic_trako.png',
                   fit: BoxFit.contain,
                   height: 30,
                 ),

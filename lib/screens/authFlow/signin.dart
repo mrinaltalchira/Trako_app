@@ -55,18 +55,17 @@ class _AuthProcessState extends State<AuthProcess> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(height: 30),
+                SizedBox(height: 70),
                 // Removed const from SizedBox
                 Container(
-                  height: 100,
+                  height: 200,
                   alignment: Alignment.center,
                   child: Image.asset(
-                    'assets/images/ic_tracesci.png',
+                    'assets/images/ic_trako.png',
                     fit: BoxFit.contain,
-                    height: 70, // Adjust height as needed
+                    height: 200, // Adjust height as needed
                   ),
                 ),
-                SizedBox(height: 50),
                 // Removed const from SizedBox
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -211,6 +210,15 @@ class _AuthProcessState extends State<AuthProcess> {
                         toggleInputType(); // Toggle between phone and email input
                       }),
                 ),
+                SizedBox(height: 30,),
+                Text(
+                  'Powered by Tracesci.in',
+                  style: TextStyle(
+                    fontSize: 14.0, // Adjust the font size as needed
+                    color: Colors.grey, // Adjust the color to match your app's theme
+                    fontStyle: FontStyle.italic, // Optionally italicize the text
+                  ),
+                )
               ],
             ),
           ),
@@ -289,6 +297,16 @@ class _AuthProcessState extends State<AuthProcess> {
               PrefManager().setUserPhone(user.phone.toString());
               PrefManager().setUserRole(user.userRole.toString());
               PrefManager().setUserStatus(user.isActive.toString());
+
+              PrefManager().setUserModule(user.userModule.toString());
+              PrefManager().setClientModule(user.clientModule.toString());
+              PrefManager().setMachineModule(user.machineModule.toString());
+
+
+              print('showMachinesItem: ${user.userModule.toString()}');
+              print('showClientItem: ${user.clientModule.toString()}');
+              print('showUserItem: ${user.machineModule.toString()}');
+
               PrefManager().setIsLoggedIn(true);
               // Navigate to home screen
               Navigator.of(context).pushReplacement(

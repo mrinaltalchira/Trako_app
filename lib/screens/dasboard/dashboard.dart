@@ -119,7 +119,7 @@ class _CategoriesDashboardState extends State<CategoriesDashboard> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Image.asset(
-                                    'assets/images/app_name_logo.png',
+                                    'assets/images/ic_trako.png',
                                     width: 80,
                                     height: 40,
                                     fit: BoxFit.contain,
@@ -138,7 +138,7 @@ class _CategoriesDashboardState extends State<CategoriesDashboard> {
                       ),
                       SizedBox(height: 24.0),
                       Padding(
-                        padding: const EdgeInsets.all(18.0),
+                        padding: const EdgeInsets.all(1.0),
                         child: AspectRatio(
                           aspectRatio: 1.8, // Adjusted aspect ratio for LineChart
                           child: LineChart(
@@ -164,31 +164,28 @@ class _CategoriesDashboardState extends State<CategoriesDashboard> {
                               ],
                               titlesData: FlTitlesData(
                                 show: true,
-                                bottomTitles: AxisTitles(
-                                  sideTitles: SideTitles(
-                                    showTitles: true,
-                                    reservedSize: 22,
-                                    getTitlesWidget: (value, meta) {
-                                      final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-                                      // calculate the month index based on the x-axis value
-                                      int monthIndex = value.toInt() % 12; // assume x-axis values range from 0 to 11*numberOfYears
-
-                                      // return the SideTitleWidget with the correct month label
-                                      return SideTitleWidget(
-                                        axisSide: meta.axisSide,
-                                        child: Text(
-
-                                        months[monthIndex], // use the calculated month index to get the correct month label
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.black,
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 22,
+                                      getTitlesWidget: (value, meta) {
+                                        final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                        final interval = 1; // interval between x-axis values
+                                        final monthIndex = (value.toInt() / interval).toInt() % months.length; // use the divided value as the index
+                                        // return the SideTitleWidget with the correct month label
+                                        return SideTitleWidget(
+                                          axisSide: meta.axisSide,
+                                          child: Text(
+                                            months[monthIndex],
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.black,
+                                            ),
                                           ),
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
                                 leftTitles: AxisTitles(
                                   sideTitles: SideTitles(
                                     showTitles: true,

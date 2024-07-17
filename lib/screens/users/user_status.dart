@@ -63,7 +63,7 @@ class UserStatus extends StatelessWidget {
     return AppBar(
       centerTitle: true,
       title: Image.asset(
-        "assets/images/app_name_logo.png",
+        "assets/images/ic_trako.png",
         width: 120,
         height: 40,
       ),

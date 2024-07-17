@@ -63,13 +63,13 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  AppBar buildAppBar(BuildContext context) {
+  AppBar buildAppBar(BuildContext context){
     return AppBar(
       centerTitle: true,
       title: Image.asset(
-        "assets/images/app_name_logo.png",
-        width: 120,
-        height: 40,
+        "assets/images/ic_trako.png",
+        width: 200,
+        height: 60,
         errorBuilder: (context, error, stackTrace) {
           print('Error loading app logo: $error');
           return Text('Error loading logo');
@@ -92,6 +92,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
+
+
   Drawer buildDrawer(BuildContext context) {
     return Drawer(
       child: Container(
@@ -102,88 +104,119 @@ class _HomeScreenState extends State<HomeScreen> {
             end: Alignment.bottomRight,
           ),
         ),
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            SizedBox(
-              height: 100,
-              child: DrawerHeader(
-                decoration: BoxDecoration(
-                  color: Colors.transparent,
-                ),
-                child: ShaderMask(
-                  shaderCallback: (Rect bounds) {
-                    return const LinearGradient(
-                      colors: [Colors.white, Colors.white],
-                      tileMode: TileMode.mirror,
-                    ).createShader(bounds);
-                  },
-                  blendMode: BlendMode.srcATop,
-                  child: Image.asset(
-                    "assets/images/app_name_logo.png",
-                    width: 100,
-                    height: 40,
+        child: FutureBuilder(
+          future: Future.wait([
+            PrefManager().getMachineModule(),
+            PrefManager().getClientModule(),
+            PrefManager().getUserModule(),
+          ]),
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              String? machineModule = snapshot.data![0];
+              String? clientModule = snapshot.data![1];
+              String? userModule = snapshot.data![2];
+
+              bool showMachinesItem = machineModule != "0";
+              bool showClientItem = clientModule != "0";
+              bool showUserItem = userModule != "0";
+
+
+              return ListView(
+                padding: EdgeInsets.zero,
+                children: <Widget>[
+                  SizedBox(
+                    height: 100,
+                    child: DrawerHeader(
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                      child: ShaderMask(
+                        shaderCallback: (Rect bounds) {
+                          return const LinearGradient(
+                            colors: [Colors.white, Colors.white],
+                            tileMode: TileMode.mirror,
+                          ).createShader(bounds);
+                        },
+                        blendMode: BlendMode.srcATop,
+                        child: Center(child: Text("Trako",style: TextStyle(fontSize: 25),)),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            ),
-            _buildDrawerItem(
-              icon: Icons.dashboard,
-              text: 'Dashboard',
-              index: 0,
-            ),
-            _buildDrawerItem(
-              icon: Icons.person,
-              text: 'Clients',
-              index: 1,
-            ),
-            _buildDrawerItem(
-              icon: Icons.account_tree_outlined,
-              text: 'Supply Chain',
-              index: 2,
-            ),
-            _buildDrawerItem(
-              icon: Icons.add_business,
-              text: 'Machines',
-              index: 3,
-            ),
-            _buildDrawerItem(
-              icon: Icons.report,
-              text: 'Reports',
-              index: 4,
-            ),
-            _buildDrawerItem(
-              icon: Icons.add,
-              text: 'Users',
-              index: 5,
-            ),
-            ListTile(
-              leading: const Icon(Icons.exit_to_app, color: Colors.white),
-              title: const Text('Logout', style: TextStyle(color: Colors.white)),
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return ConfirmLogoutDialog(
-                      onConfirm: () {
-
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          PrefManager().clear();
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (context) => const AuthProcess()),
-                                (Route<dynamic> route) => false,
+                  _buildDrawerItem(
+                    icon: Icons.dashboard,
+                    text: 'Dashboard',
+                    index: 0,
+                  ),
+                  if (showClientItem)
+                    _buildDrawerItem(
+                      icon: Icons.person,
+                      text: 'Clients',
+                      index: 1,
+                    ),
+                  _buildDrawerItem(
+                    icon: Icons.account_tree_outlined,
+                    text: 'Supply Chain',
+                    index: 2,
+                  ),
+                  if (showMachinesItem)
+                    _buildDrawerItem(
+                      icon: Icons.add_business,
+                      text: 'Machines',
+                      index: 3,
+                    ),
+                  _buildDrawerItem(
+                    icon: Icons.report,
+                    text: 'Reports',
+                    index: 4,
+                  ),
+                  if (showUserItem)
+                    _buildDrawerItem(
+                      icon: Icons.add,
+                      text: 'Users',
+                      index: 5,
+                    ),
+                  ListTile(
+                    leading: const Icon(Icons.exit_to_app, color: Colors.white),
+                    title: const Text('Logout', style: TextStyle(color: Colors.white)),
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return ConfirmLogoutDialog(
+                            onConfirm: () {
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                PrefManager().clear();
+                                Navigator.pushAndRemoveUntil(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const AuthProcess()),
+                                      (Route<dynamic> route) => false,
+                                );
+                              });
+                            },
                           );
-                        });
-
-                      },
-                    );
-                  },
-                );
-
-              },
-            ),
-          ],
+                        },
+                      );
+                    },
+                  ),
+                  SizedBox(height: 30,),
+                  const Center(
+                    child: Text(
+                      'Powered by Tracesci.in',
+                      style: TextStyle(
+                        fontSize: 12.0, // Adjust the font size as needed
+                        color: Colors.white, // Adjust the color to match your app's theme
+                        fontStyle: FontStyle.italic, // Optionally italicize the text
+                      ),
+                    ),
+                  )
+                ],
+              );
+            } else if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            } else {
+              return Center(child: CircularProgressIndicator());
+            }
+          },
         ),
       ),
     );

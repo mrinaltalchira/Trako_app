@@ -72,11 +72,18 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/app_name_logo.png
-    - assets/images/ic_tracesci.png
+    - assets/images/ic_trako.png
     - assets/images/icsearch.png
     - assets/images/ic_profile.png
     - assets/images/next.png
     - assets/images/ic_no_data.jpg
+    - android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+    - android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+    - android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+    - android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+    - android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+    - ios/Runner/Assets.xcassets/AppIcon.appiconset/
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
