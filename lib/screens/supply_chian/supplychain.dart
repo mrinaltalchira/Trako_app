@@ -118,6 +118,7 @@ class _SupplyChainState extends State<SupplyChain> {
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else {
+
                     List<Supply> supplies = snapshot.data ?? [];
                     // Debug print to check the supplies before passing to the widget
                     print('Supplies to display: $supplies');
@@ -196,8 +197,8 @@ class SupplyChainList extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.all(12.0),
                           child: items[index].dispatchReceive == "0"
-                              ? createTextWidget("Dispatched", Colors.red)
-                              : createTextWidget("Received", Colors.green),
+                              ? createTextWidget("Dispatched", Colors.pink)
+                              : createTextWidget("Received", Colors.blue),
                         ),
 /*
                         items[index].dispatchReceive == "0"

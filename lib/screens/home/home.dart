@@ -36,7 +36,7 @@ class _HomeScreenState extends State<HomeScreen> {
       drawer: buildDrawer(context),
       body: WillPopScope(
         onWillPop: () async {
-          if (_selectedIndex != 0) {
+          if (_selectedIndex != 0){
             _onItemTapped(0); // Navigate to Dashboard if not already there
             return false; // Do not pop the current route
           }
@@ -51,12 +51,12 @@ class _HomeScreenState extends State<HomeScreen> {
             });
           },
           children: <Widget>[
-            CategoriesDashboard(),
-            ClientModule(),
+            const CategoriesDashboard(),
+            const ClientModule(),
             SupplyChain(),
             MachineModule(),
             MyReportScreen(),
-            UsersModule(),
+            const UsersModule(),
           ],
         ),
       ),

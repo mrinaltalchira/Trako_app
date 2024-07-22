@@ -500,7 +500,9 @@ class ScannedHistoryList extends StatelessWidget {
                           opacity: 0,
                           child: IconButton(
                             icon: const Icon(Icons.edit),
-                            onPressed: null, // Set onPressed to null to disable the button
+                            onPressed: (){
+                              _showEditDialog(context,items[index]);
+                            }, // Set onPressed to null to disable the button
                           ),
                         ),
                       ],

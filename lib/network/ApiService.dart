@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:Trako/model/all_clients.dart';
 import 'package:Trako/model/all_machine.dart';
@@ -9,6 +10,7 @@ import 'package:Trako/model/dashboard.dart';
 import 'package:Trako/model/supply_fields_data.dart';
 import 'package:Trako/model/user_profie.dart';
 import 'package:Trako/pref_manager.dart';
+import 'package:dio/io.dart';
 
 
 class LoggerInterceptor extends Interceptor {
@@ -40,9 +42,11 @@ class LoggerInterceptor extends Interceptor {
   }
 }
 
+
 class ApiService {
 
-  final String baseUrl = 'http://192.168.1.28:8000/api';
+  // final String baseUrl = 'https://trako.tracesci.in/api';
+  final String baseUrl = 'http://192.168.1.46:8000/api';
   late Dio _dio;
   late String? token;
 
@@ -59,7 +63,17 @@ class ApiService {
         connectTimeout: const Duration(seconds: 15),
         receiveTimeout: const Duration(seconds: 15),
       );
+
+      // Create a custom HttpClientAdapter that disables SSL verification
+      final httpClientAdapter = DefaultHttpClientAdapter();
+      httpClientAdapter.onHttpClientCreate = (client){
+        client.badCertificateCallback =
+            (X509Certificate cert, String host, int port) => true;
+        return null;
+      };
+
       _dio = Dio(options);
+      _dio.httpClientAdapter = httpClientAdapter;
       _dio.interceptors.add(LoggerInterceptor());
     } catch (e) {
       print('Failed to initialize ApiService: $e');
@@ -80,6 +94,7 @@ class ApiService {
           if (search != null && search.isNotEmpty) 'search': search,
         },
         options: Options(
+
           headers: {
             'Authorization': 'Bearer $token',
           },
@@ -108,6 +123,7 @@ class ApiService {
           headers: {
             'Content-Type': 'application/json',
           },
+
         ),
         data: jsonEncode({
           if (email != null && email.isNotEmpty) 'email': email,
@@ -252,6 +268,7 @@ class ApiService {
   Future<Map<String, dynamic>> addMachine({
     required String model_name,
     required String model_code,
+    required String isActive,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -268,6 +285,7 @@ class ApiService {
         data: json.encode({
           'model_name': model_name,
           'model_code': model_code,
+          'isActive': isActive,
         }),
       );
 
@@ -288,6 +306,9 @@ class ApiService {
     required String id,
     required String model_name,
     required String model_code,
+    required String isActive,
+
+
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -305,6 +326,7 @@ class ApiService {
           'id':id,
           'model_name': model_name,
           'model_code': model_code,
+          'isActive': isActive,
         }),
       );
 
@@ -370,6 +392,53 @@ class ApiService {
       await initializeApiService(); // Ensure token is initialized before addUser
 
       final url = '/add-user'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          "name": name,
+          "email": email,
+          "phone": phone,
+          "is_active": isActive,
+          "user_role": userRole,
+          "password": password,
+          "machine_module": machineModule,
+          "client_module": clientModule,
+          "user_module": userModule,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to add user');
+      }
+    } catch (e) {
+      print('Add user API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<Map<String, dynamic>> updateUser({
+    required String name,
+    required String email,
+    required String phone,
+    required String isActive,
+    required String userRole,
+    required String password,
+    required String machineModule,
+    required String clientModule,
+    required String userModule,
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addUser
+
+      final url = '/update-user'; // Adjust endpoint as per your API
       final response = await _dio.post(
         baseUrl + url,
         options: Options(
@@ -600,7 +669,9 @@ class ApiService {
         var responseData = response.data;
         var dashboardResponse = DashboardResponse.fromJson(responseData);
         return dashboardResponse;
-      } else {
+      } else if(response.statusCode == 401){
+        throw Exception('Failed to fetch dashboard details');
+      }else {
         throw Exception('Failed to fetch dashboard details');
       }
     } catch (e) {

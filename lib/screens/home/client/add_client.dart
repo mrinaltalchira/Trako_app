@@ -705,8 +705,6 @@ class CheckBoxRow extends StatelessWidget {
     ]);
   }
 }
-
-
 class CustomRadio extends StatelessWidget {
   final bool value;
   final bool? groupValue;

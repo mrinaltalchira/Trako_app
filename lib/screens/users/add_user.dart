@@ -52,9 +52,6 @@ class _AddUserState extends State<AddUser> {
     }
   }
 
-
-
-
   bool isValidPassword(String password) {
     final passwordRegExp = RegExp(
       r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
@@ -73,8 +70,6 @@ class _AddUserState extends State<AddUser> {
     final phoneRegExp = RegExp(r'^[0-9]{7,15}$'); // Example: valid phone numbers with 10 to 15 digits
     return phoneRegExp.hasMatch(phone);
   }
-
-
 
   void validate(){
 
@@ -153,59 +148,115 @@ class _AddUserState extends State<AddUser> {
       },
     );
 
-    // Call the login API
-    try {
-      final ApiService apiService = ApiService();
-      late final Map<String, dynamic> addUserResponse;
+   if(widget.user != null){
+     // Call the login API
+     try {
+       final ApiService apiService = ApiService();
+       late final Map<String, dynamic> addUserResponse;
 
-      // Determine whether to use phone or email for login
+       // Determine whether to use phone or email for login
 
-      addUserResponse = await apiService.addUser(
-        name: nameController.text,
-        email: emailController.text,
-        phone: fullPhoneNumber.toString(),
-        isActive: activeChecked ? '0' : '1',
-        userRole: selectedUserRole ?? 'user', // Default to 'user' if not selected
-        password: passwordController.text,
-        machineModule: machineModuleChecked ? '0' : '1',
-        clientModule: clientModuleChecked ? '0' : '1',
-        userModule: userPrivilegeChecked ? '0' : '1');
+       addUserResponse = await apiService.updateUser(
+           name: nameController.text,
+           email: emailController.text,
+           phone: fullPhoneNumber.toString(),
+           isActive: activeChecked ? '0' : '1',
+           userRole: selectedUserRole ?? 'user', // Default to 'user' if not selected
+           password: passwordController.text,
+           machineModule: machineModuleChecked ? '0' : '1',
+           clientModule: clientModuleChecked ? '0' : '1',
+           userModule: userPrivilegeChecked ? '0' : '1');
 
-      // Dismiss loading indicator
-      Navigator.of(context).pop();
+       // Dismiss loading indicator
+       Navigator.of(context).pop();
 
-      // Check if the login was successful based on the response structure
-      if (addUserResponse.containsKey('error') &&
-          addUserResponse.containsKey('status')) {
-        if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
-          if (addUserResponse['message'] == 'Success') {
-            nameController.text = "";
-            emailController.text = "";
-            phoneController.text = "";
-            passwordController.text = "";
-            confirmPasswordController.text = "";
-            showSnackBar(context, "Client created successfully.");
-          } else {
-            showSnackBar(context, addUserResponse['message']);
-          }
-        } else {
-          // Login failed
-          showSnackBar(context, "Login failed. Please check your credentials.");
-        }
-      } else {
-        // Unexpected response structure
-        showSnackBar(context,
-            "Unexpected response from server. Please try again later.");
-      }
-    } catch (e) {
-      // Dismiss loading indicator
-      Navigator.of(context).pop();
+       // Check if the login was successful based on the response structure
+       if (addUserResponse.containsKey('error') &&
+           addUserResponse.containsKey('status')) {
+         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
+           if (addUserResponse['message'] == 'Success') {
+             nameController.text = "";
+             emailController.text = "";
+             phoneController.text = "";
+             passwordController.text = "";
+             confirmPasswordController.text = "";
+             showSnackBar(context, "Client created successfully.");
+           } else {
+             showSnackBar(context, addUserResponse['message']);
+           }
+         } else {
+           // Login failed
+           showSnackBar(context, "Login failed. Please check your credentials.");
+         }
+       } else {
+         // Unexpected response structure
+         showSnackBar(context,
+             "Unexpected response from server. Please try again later.");
+       }
+     } catch (e) {
+       // Dismiss loading indicator
+       Navigator.of(context).pop();
 
-      // Handle API errors
-      showSnackBar(
-          context, "Failed to connect to the server. Please try again later.");
-      print("Login API Error: $e");
-    }
+       // Handle API errors
+       showSnackBar(
+           context, "Failed to connect to the server. Please try again later.");
+       print("Login API Error: $e");
+     }
+   }else{
+     // Call the login API
+     try {
+       final ApiService apiService = ApiService();
+       late final Map<String, dynamic> addUserResponse;
+
+       // Determine whether to use phone or email for login
+
+       addUserResponse = await apiService.addUser(
+           name: nameController.text,
+           email: emailController.text,
+           phone: fullPhoneNumber.toString(),
+           isActive: activeChecked ? '0' : '1',
+           userRole: selectedUserRole ?? 'user', // Default to 'user' if not selected
+           password: passwordController.text,
+           machineModule: machineModuleChecked ? '0' : '1',
+           clientModule: clientModuleChecked ? '0' : '1',
+           userModule: userPrivilegeChecked ? '0' : '1');
+
+       // Dismiss loading indicator
+       Navigator.of(context).pop();
+
+       // Check if the login was successful based on the response structure
+       if (addUserResponse.containsKey('error') &&
+           addUserResponse.containsKey('status')) {
+         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
+           if (addUserResponse['message'] == 'Success') {
+             nameController.text = "";
+             emailController.text = "";
+             phoneController.text = "";
+             passwordController.text = "";
+             confirmPasswordController.text = "";
+             showSnackBar(context, "Client created successfully.");
+           } else {
+             showSnackBar(context, addUserResponse['message']);
+           }
+         } else {
+           // Login failed
+           showSnackBar(context, "Login failed. Please check your credentials.");
+         }
+       } else {
+         // Unexpected response structure
+         showSnackBar(context,
+             "Unexpected response from server. Please try again later.");
+       }
+     } catch (e) {
+       // Dismiss loading indicator
+       Navigator.of(context).pop();
+
+       // Handle API errors
+       showSnackBar(
+           context, "Failed to connect to the server. Please try again later.");
+       print("Login API Error: $e");
+     }
+   }
   }
 
   void _handlePhoneNumberChanged(String phoneNumber) {
@@ -245,9 +296,9 @@ class _AddUserState extends State<AddUser> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              const Center(
+               Center(
                 child: Text(
-                  "Add New ",
+                  widget.user != null ? "Update User:" : "Add New:",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24.0,
@@ -389,7 +440,10 @@ class _AddUserState extends State<AddUser> {
       ),
     );
   }
+
 }
+
+
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
 

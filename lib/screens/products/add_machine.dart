@@ -17,8 +17,8 @@ class AddMachine extends StatefulWidget {
 
 class _AddMachineState extends State<AddMachine> {
    final TextEditingController machine_name_Controller = TextEditingController();
-
    final TextEditingController machine_code_Controller = TextEditingController();
+   bool activeChecked = true;
 
    @override
    void initState() {
@@ -26,6 +26,7 @@ class _AddMachineState extends State<AddMachine> {
      if (widget.machine != null) {
        machine_name_Controller.text = widget.machine!.modelName;
        machine_code_Controller.text = widget.machine!.modelCode;
+       activeChecked = widget.machine!.isActive == "0";
      }
    }
 
@@ -104,6 +105,21 @@ class _AddMachineState extends State<AddMachine> {
                     const SizedBox(
                       height: 20,
                     ),
+                    SizedBox(height: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CheckBoxRow(
+                          activeChecked: activeChecked,
+                          onActiveChanged: (bool? value) {
+                            setState(() {
+                              activeChecked = value ?? false;
+                            });
+                          },
+                        )
+                      ],
+                    ),
                     SizedBox(
                         child: Padding(
                           padding:
@@ -166,6 +182,7 @@ class _AddMachineState extends State<AddMachine> {
            id:widget.machine!.id.toString(),
            model_name: machine_name_Controller.text,
            model_code: machine_code_Controller.text,
+           isActive: activeChecked ? '0' : '1',
          );
 
          Navigator.of(context).pop(); // Dismiss loading indicator
@@ -202,6 +219,7 @@ class _AddMachineState extends State<AddMachine> {
          final addMachineResponse = await apiService.addMachine(
            model_name: machine_name_Controller.text,
            model_code: machine_code_Controller.text,
+           isActive: activeChecked ? '0' : '1',
          );
 
          Navigator.of(context).pop(); // Dismiss loading indicator
@@ -213,7 +231,7 @@ class _AddMachineState extends State<AddMachine> {
              if (addMachineResponse['message'] == 'Success') {
                machine_name_Controller.clear();
                machine_code_Controller.clear();
-               showSnackBar(context, "Machine added successfully.");
+               showSnackBar(context, addMachineResponse['message'] );
              } else {
                showSnackBar(context, addMachineResponse['message']);
              }
@@ -419,6 +437,78 @@ class ConfirmSubmitDialog extends StatelessWidget {
           const SizedBox(height: 16.0),
         ],
       ),
+    );
+  }
+}
+
+class CheckBoxRow extends StatelessWidget {
+  final bool activeChecked;
+  final ValueChanged<bool?> onActiveChanged;
+
+  const CheckBoxRow({
+    required this.activeChecked,
+    required this.onActiveChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      SizedBox(height: 10),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'Active Status:',
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CustomRadio(
+                value: true,
+                groupValue: activeChecked,
+                onChanged: onActiveChanged,
+                activeColor: colorMixGrad,
+              ),
+              const Text('Active'),
+              SizedBox(width: 20),
+              CustomRadio(
+                value: false,
+                groupValue: activeChecked,
+                onChanged: onActiveChanged,
+                activeColor: colorMixGrad,
+              ),
+              const Text('Inactive'),
+            ],
+          ),
+        ],
+      ),
+
+    ]);
+  }
+}
+class CustomRadio extends StatelessWidget {
+  final bool value;
+  final bool? groupValue;
+  final ValueChanged<bool?>? onChanged;
+  final Color activeColor;
+
+  const CustomRadio({
+    required this.value,
+    required this.groupValue,
+    required this.onChanged,
+    required this.activeColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Radio(
+      value: value,
+      groupValue: groupValue,
+      onChanged: onChanged,
+      activeColor: activeColor,
     );
   }
 }

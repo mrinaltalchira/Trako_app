@@ -46,6 +46,7 @@ class Machine {
   final String id;
   final String modelName;
   final String modelCode;
+  final String isActive;
   final String addBy;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -54,6 +55,7 @@ class Machine {
     required this.id,
     required this.modelName,
     required this.modelCode,
+    required this.isActive,
     required this.addBy,
     required this.createdAt,
     required this.updatedAt,
@@ -64,6 +66,7 @@ class Machine {
       id: json['id'].toString(),
       modelName: json['model_name'],
       modelCode: json['model_code'],
+      isActive: json['isActive'].toString(),
       addBy: json['add_by'].toString(),
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),

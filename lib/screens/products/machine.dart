@@ -462,13 +462,16 @@ class ScannedHistoryList extends StatelessWidget {
       physics: NeverScrollableScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
+        Color? cardColor =
+        items[index].isActive == "0" ? Colors.red[10] : Colors.grey[300];
+
         return Card(
           margin: const EdgeInsets.only(left: 8.0,right: 8.0,bottom: 8.0),
           elevation: 1.0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
-          color: Colors.red[10],
+          color: cardColor,
           child: Padding(
             padding: const EdgeInsets.only(left: 12.0,right: 12.0, bottom: 12),
             child: Column(
