@@ -41,13 +41,16 @@ class _AddUserState extends State<AddUser> {
       nameController.text = widget.user!.name;
       emailController.text = widget.user!.email;
       mobileController.text = widget.user!.phone;
-      phoneController.text = widget.user!.phone;
+      fullPhoneNumber = widget.user!.phone ?? '';
+      String? phone = widget.user?.phone; // Access phone property safely
+      List<String> phNumber = phone?.split(" ") ?? [];
+      phoneController.text = phNumber[1];
       authorityController.text = widget.user!.userRole;
       activeStatusController.text = widget.user!.isActive;
 
-      machineModuleChecked = widget.user!.machineModule == '1';
-      clientModuleChecked = widget.user!.clientModule == '1';
-      userPrivilegeChecked = widget.user!.userModule == '1';
+      machineModuleChecked = widget.user!.machineModule == '0';
+      clientModuleChecked = widget.user!.clientModule == '0';
+      userPrivilegeChecked = widget.user!.userModule == '0';
       activeChecked = widget.user!.isActive == '0';
     }
   }
@@ -138,8 +141,6 @@ class _AddUserState extends State<AddUser> {
   Future<void> submitUser() async {
     // Validate phone nu
 
-
-
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -180,13 +181,13 @@ class _AddUserState extends State<AddUser> {
              phoneController.text = "";
              passwordController.text = "";
              confirmPasswordController.text = "";
-             showSnackBar(context, "Client created successfully.");
+             showSnackBar(context, "User created successfully.");
            } else {
              showSnackBar(context, addUserResponse['message']);
            }
          } else {
            // Login failed
-           showSnackBar(context, "Login failed. Please check your credentials.");
+           showSnackBar(context, addUserResponse['message']);
          }
        } else {
          // Unexpected response structure
@@ -234,13 +235,13 @@ class _AddUserState extends State<AddUser> {
              phoneController.text = "";
              passwordController.text = "";
              confirmPasswordController.text = "";
-             showSnackBar(context, "Client created successfully.");
+             showSnackBar(context, "User created successfully.");
            } else {
              showSnackBar(context, addUserResponse['message']);
            }
          } else {
            // Login failed
-           showSnackBar(context, "Login failed. Please check your credentials.");
+           showSnackBar(context,addUserResponse['message']);
          }
        } else {
          // Unexpected response structure
@@ -709,7 +710,7 @@ class IntlPhoneInputTextField extends StatelessWidget {
       initialCountryCode: 'IN', // Example initial country code
       onChanged: (phone) {
         // Get the full phone number with country code
-        final fullPhoneNumber = '${phone.countryCode}${phone.number}';
+        final fullPhoneNumber = '${phone.countryCode} ${phone.number}';
         onPhoneNumberChanged(fullPhoneNumber);
       },
       showCountryFlag: true,

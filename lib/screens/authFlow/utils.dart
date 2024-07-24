@@ -40,7 +40,7 @@ class IntlPhoneInputTextField extends StatelessWidget {
       initialCountryCode: 'IN', // Example initial country code
       onChanged: (phone) {
         // Get the full phone number with country code
-        final fullPhoneNumber = '${phone.countryCode}${phone.number}';
+        final fullPhoneNumber = '${phone.countryCode} ${phone.number}';
         onPhoneNumberChanged(fullPhoneNumber);
       },
       showCountryFlag: true,

@@ -46,7 +46,7 @@ class LoggerInterceptor extends Interceptor {
 class ApiService {
 
   // final String baseUrl = 'https://trako.tracesci.in/api';
-  final String baseUrl = 'http://192.168.1.46:8000/api';
+  final String baseUrl = 'http://192.168.1.21:8080/api';
   late Dio _dio;
   late String? token;
 
@@ -463,7 +463,7 @@ class ApiService {
       if (response.statusCode == 200) {
         return response.data;
       } else {
-        throw Exception('Failed to add user');
+        throw Exception('Failed to update user');
       }
     } catch (e) {
       print('Add user API error: $e');

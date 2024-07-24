@@ -497,7 +497,7 @@ class ScannedHistoryList extends StatelessWidget {
                     Row(
                       children: [
                         Opacity(
-                          opacity: 0,
+                          opacity: 1,
                           child: IconButton(
                             icon: const Icon(Icons.edit),
                             onPressed: (){

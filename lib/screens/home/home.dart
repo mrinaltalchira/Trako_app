@@ -116,9 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
               String? clientModule = snapshot.data![1];
               String? userModule = snapshot.data![2];
 
-              bool showMachinesItem = machineModule != "0";
-              bool showClientItem = clientModule != "0";
-              bool showUserItem = userModule != "0";
+              bool showMachinesItem = machineModule != "1";
+              bool showClientItem = clientModule != "1";
+              bool showUserItem = userModule != "1";
 
 
               return ListView(

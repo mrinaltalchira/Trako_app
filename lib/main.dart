@@ -61,7 +61,7 @@ class MyApp extends StatelessWidget {
       builder: (context, themeNotifier, child) {
         return MaterialApp(
           navigatorObservers: [routeObserver],
-          debugShowCheckedModeBanner: true,
+          debugShowCheckedModeBanner: false,
           theme: themeNotifier.currentTheme,
           home: FutureBuilder<bool?>(
             future: PrefManager().getIsLoggedIn(),
