@@ -85,8 +85,17 @@ class _ClientModuleState extends State<ClientModule> {
                   const SizedBox(width: 20.0),
                   GradientIconButton(
                     icon: Icons.add,
-                    onPressed: () {
-                      Navigator.pushNamed(context, '/add_client');
+                    onPressed: () async{
+
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const AddClient(),
+                        ),
+                      );
+                      refreshClientsList();
+                      // Navigate to add machine screen
+                      // Navigator.pushNamed(context, '/add_machine');
                     },
                   ),
                 ],

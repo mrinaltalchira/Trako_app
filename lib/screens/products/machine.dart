@@ -15,6 +15,7 @@ class _MachineModuleState extends State<MachineModule> {
   late Future<List<Machine>> machineFuture;
   final ApiService _apiService = ApiService(); // Initialize your ApiService
 
+
   @override
   void initState() {
     super.initState();
@@ -86,9 +87,17 @@ class _MachineModuleState extends State<MachineModule> {
                         borderRadius: BorderRadius.circular(25.0),
                       ),
                       child: IconButton(
-                        onPressed: () {
+                        onPressed: () async{
+
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddMachine(),
+                            ),
+                          );
+                          refreshMachineList();
                           // Navigate to add machine screen
-                          Navigator.pushNamed(context, '/add_machine');
+                          // Navigator.pushNamed(context, '/add_machine');
                         },
                         icon: Icon(
                           Icons.add,
@@ -125,7 +134,7 @@ class _MachineModuleState extends State<MachineModule> {
                                   onRefresh: refreshMachineList,
                                 );
                               } else {
-                                return ScannedHistoryList(items: machines);
+                                return ScannedHistoryList(items: machines  );
                               }
                             }
                           },
@@ -141,8 +150,155 @@ class _MachineModuleState extends State<MachineModule> {
       ),
     );
   }
+
+
 }
 
+class ScannedHistoryList extends StatelessWidget {
+  final List<Machine> items;
+
+  const ScannedHistoryList({Key? key, required this.items }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        Color? cardColor =
+        items[index].isActive == "0" ? Colors.red[10] : Colors.grey[300];
+
+        return Card(
+          margin: const EdgeInsets.only(left: 8.0,right: 8.0,bottom: 8.0),
+          elevation: 1.0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          color: cardColor,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 12.0,right: 12.0, bottom: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Client name
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '${items[index].modelName[0].toUpperCase()}${items[index].modelName.substring(1)}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                          ),
+
+                        ],
+                      ),
+                    ),
+                    // Edit and delete buttons
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            // Handle edit action
+                            _showEditDialog(context, items[index] );
+                          },
+                        ),
+                        /* IconButton(
+                          icon: Icon(Icons.delete),
+                          onPressed: () {
+                            // Show delete confirmation dialog
+                            _showDeleteDialog(context, index);
+                          },
+                        ),*/
+                      ],
+                    ),
+                  ],
+                ),
+                Text(
+                  '${items[index].modelCode[0].toUpperCase()}${items[index].modelCode.substring(1)}',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4.0),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
+  void _showDeleteDialog(BuildContext context, int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Confirm Delete'),
+          content: Text('Are you sure you want to delete this item?'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Delete'),
+              onPressed: () {
+                // Perform delete action
+                _deleteItem(index);
+                Navigator.of(context).pop(); // Close dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteItem(int index) {
+    // Implement your delete logic here, such as deleting item from a list or database
+    print('Deleting item at index $index');
+  }
+
+  void _showEditDialog(BuildContext context, Machine item, ) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Edit Product'),
+          content: Text('Edit details of ${item.modelName}'),
+          actions: <Widget>[
+            TextButton(
+              child: Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text('Edit'),
+              onPressed: () async  {
+                Navigator.of(context).pop(); // Close the dialog
+                await  Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddMachine(machine: item),
+                  ),
+                );/*.then((_) => refreshMachineList()); */// Access the function using the state instance
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+}
 
 class NameInputTextField extends StatelessWidget {
   const NameInputTextField({Key? key}) : super(key: key);
@@ -450,151 +606,9 @@ class ContactPersonInputTextField extends StatelessWidget {
     );
   }
 }
-class ScannedHistoryList extends StatelessWidget {
-  final List<Machine> items;
-
-  const ScannedHistoryList({Key? key, required this.items}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        Color? cardColor =
-        items[index].isActive == "0" ? Colors.red[10] : Colors.grey[300];
-
-        return Card(
-          margin: const EdgeInsets.only(left: 8.0,right: 8.0,bottom: 8.0),
-          elevation: 1.0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          color: cardColor,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12.0,right: 12.0, bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Client name
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${items[index].modelName[0].toUpperCase()}${items[index].modelName.substring(1)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                          ),
-
-                        ],
-                      ),
-                    ),
-                    // Edit and delete buttons
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                            // Handle edit action
-                            _showEditDialog(context, items[index]);
-                          },
-                        ),
-                       /* IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            // Show delete confirmation dialog
-                            _showDeleteDialog(context, index);
-                          },
-                        ),*/
-                      ],
-                    ),
-                  ],
-                ),
-              Text(
-                '${items[index].modelCode[0].toUpperCase()}${items[index].modelCode.substring(1)}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-                const SizedBox(height: 4.0),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
 
 
-  void _showDeleteDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete this item?'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Delete'),
-              onPressed: () {
-                // Perform delete action
-                _deleteItem(index);
-                Navigator.of(context).pop(); // Close dialog
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
 
-  void _deleteItem(int index) {
-    // Implement your delete logic here, such as deleting item from a list or database
-    print('Deleting item at index $index');
-  }
-
-  void _showEditDialog(BuildContext context,Machine item) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Edit Product'),
-          content: Text('Edit details of ${item.modelName}'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: Text('Edit'),
-              onPressed: () {
-                Navigator.of(context).pop();  // Close the dialog
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddMachine(machine: item),
-                  ),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-
-}
 
 class CustomSearchField extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;

@@ -184,7 +184,7 @@ class _AddTonerState extends State<AddToner> {
                     'Supply created successfully.' ||
                 addUserResponse['data']['message'] ==
                     'Supply updated successfully.') {
-                Navigator.of(context).pop(true);
+                Navigator.pop(context,true);
             } else {
               showSnackBar(context, addUserResponse['message']);
             }

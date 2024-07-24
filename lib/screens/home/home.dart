@@ -125,7 +125,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: EdgeInsets.zero,
                 children: <Widget>[
                   SizedBox(
-                    height: 100,
                     child: DrawerHeader(
                       decoration: const BoxDecoration(
                         color: Colors.transparent,

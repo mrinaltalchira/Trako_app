@@ -11,9 +11,6 @@ import 'package:Trako/model/all_supply.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/add_toner/add_toner.dart';
 
-
-
-
 class SupplyChain extends StatefulWidget {
   @override
   State<SupplyChain> createState() => _SupplyChainState();
@@ -59,7 +56,8 @@ class _SupplyChainState extends State<SupplyChain> {
           physics: AlwaysScrollableScrollPhysics(),
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -95,8 +93,16 @@ class _SupplyChainState extends State<SupplyChain> {
                       borderRadius: BorderRadius.circular(25.0),
                     ),
                     child: IconButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/add_toner');
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddToner(),
+                          ),
+                        );
+                        refreshSupplyList();
+                        // Navigate to add machine screen
+                        // Navigator.pushNamed(context, '/add_machine');
                       },
                       icon: Icon(
                         Icons.add,
@@ -118,7 +124,6 @@ class _SupplyChainState extends State<SupplyChain> {
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else {
-
                     List<Supply> supplies = snapshot.data ?? [];
                     // Debug print to check the supplies before passing to the widget
                     print('Supplies to display: $supplies');
@@ -141,10 +146,6 @@ class _SupplyChainState extends State<SupplyChain> {
   }
 }
 
-
-
-
-
 class SupplyChainList extends StatelessWidget {
   final List<Supply> items;
 
@@ -165,7 +166,8 @@ class SupplyChainList extends StatelessWidget {
           ),
           color: Colors.red[10],
           child: Padding(
-            padding: const EdgeInsets.only(left: 12.0,bottom: 12.0,right: 12.0),
+            padding:
+                const EdgeInsets.only(left: 12.0, bottom: 12.0, right: 12.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -177,7 +179,6 @@ class SupplyChainList extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-
                           Text(
                             '${items[index].qrCode}',
                             style: const TextStyle(
@@ -187,7 +188,6 @@ class SupplyChainList extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             maxLines: 1,
                           ),
-
                         ],
                       ),
                     ),
@@ -205,12 +205,12 @@ class SupplyChainList extends StatelessWidget {
                             ? Icon(Icons.arrow_forward,color: Colors.red,)
                             : Icon(Icons.arrow_back,color: Colors.green,),
 */
-
                       ],
                     ),
                   ],
                 ),
-                Text(items[index].clientName,style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(items[index].clientName,
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4.0),
               ],
             ),
@@ -220,11 +220,10 @@ class SupplyChainList extends StatelessWidget {
     );
   }
 
-
   Widget createTextWidget(String text, Color color) {
     return Text(
       text,
-      style: TextStyle(color: color,fontSize: 15,fontWeight: FontWeight.bold),
+      style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.bold),
     );
   }
 
@@ -261,7 +260,6 @@ class SupplyChainList extends StatelessWidget {
     print('Editing item: ${id}');
   }
 }
-
 
 class QRViewTracesci extends StatefulWidget {
   const QRViewTracesci({Key? key}) : super(key: key);
@@ -351,7 +349,8 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
 
   EdgeInsets _calculateScanArea(BuildContext context) {
     double scanAreaSize = MediaQuery.of(context).size.shortestSide * 0.75;
-    return EdgeInsets.all((MediaQuery.of(context).size.shortestSide - scanAreaSize) / 2);
+    return EdgeInsets.all(
+        (MediaQuery.of(context).size.shortestSide - scanAreaSize) / 2);
   }
 
   void _onQRViewCreated(QRViewController controller) {
@@ -391,7 +390,9 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
 
 class CustomSearchField extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
-  const CustomSearchField({Key? key, required this.onSearchChanged}) : super(key: key);
+
+  const CustomSearchField({Key? key, required this.onSearchChanged})
+      : super(key: key);
 
   @override
   _CustomSearchFieldState createState() => _CustomSearchFieldState();
@@ -400,20 +401,21 @@ class CustomSearchField extends StatefulWidget {
 class _CustomSearchFieldState extends State<CustomSearchField> {
   TextEditingController _searchController = TextEditingController();
 
-
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Colors.blue, Colors.green], // Replace with your gradient colors
+          colors: [
+            Colors.blue,
+            Colors.green
+          ], // Replace with your gradient colors
         ),
         borderRadius: BorderRadius.circular(25.0),
       ),

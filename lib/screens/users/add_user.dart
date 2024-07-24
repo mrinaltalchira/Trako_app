@@ -158,6 +158,7 @@ class _AddUserState extends State<AddUser> {
        // Determine whether to use phone or email for login
 
        addUserResponse = await apiService.updateUser(
+         user_id: widget.user!.id.toString(),
            name: nameController.text,
            email: emailController.text,
            phone: fullPhoneNumber.toString(),
@@ -181,7 +182,7 @@ class _AddUserState extends State<AddUser> {
              phoneController.text = "";
              passwordController.text = "";
              confirmPasswordController.text = "";
-             showSnackBar(context, "User created successfully.");
+             Navigator.pop(context,true);
            } else {
              showSnackBar(context, addUserResponse['message']);
            }
@@ -235,7 +236,7 @@ class _AddUserState extends State<AddUser> {
              phoneController.text = "";
              passwordController.text = "";
              confirmPasswordController.text = "";
-             showSnackBar(context, "User created successfully.");
+             Navigator.pop(context,true);
            } else {
              showSnackBar(context, addUserResponse['message']);
            }

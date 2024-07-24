@@ -46,7 +46,7 @@ class LoggerInterceptor extends Interceptor {
 class ApiService {
 
   // final String baseUrl = 'https://trako.tracesci.in/api';
-  final String baseUrl = 'http://192.168.1.21:8080/api';
+  final String baseUrl = 'http://192.168.2.177:8080/api';
   late Dio _dio;
   late String? token;
 
@@ -426,6 +426,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> updateUser({
     required String name,
+    required String user_id,
     required String email,
     required String phone,
     required String isActive,
@@ -449,6 +450,7 @@ class ApiService {
         ),
         data: json.encode({
           "name": name,
+          "user_id":user_id,
           "email": email,
           "phone": phone,
           "is_active": isActive,

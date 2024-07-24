@@ -191,25 +191,21 @@ class _AddMachineState extends State<AddMachine> {
              addMachineResponse.containsKey('status')) {
            if (!addMachineResponse['error'] &&
                addMachineResponse['status'] == 200) {
-             if (addMachineResponse['message'] == 'Success') {
-               machine_name_Controller.clear();
-               machine_code_Controller.clear();
-               showSnackBar(context, addMachineResponse['message']);
+             if (addMachineResponse['message'] == 'Machine updated successfully') {
+               Navigator.pop(context,true);
+               // showSnackBar(context, addMachineResponse['message']);
              } else {
                showSnackBar(context, addMachineResponse['message']);
              }
            } else {
-             showSnackBar(
-                 context, addMachineResponse['message']);
+             showSnackBar( context, addMachineResponse['message']);
            }
          } else {
-           showSnackBar(context,
-               "Unexpected response from server. Please try again later.");
+           showSnackBar(context,"Unexpected response from server. Please try again later.");
          }
        } catch (e) {
          Navigator.of(context).pop(); // Dismiss loading indicator
-         showSnackBar(context,
-             "Failed to connect to the server. Please try again later.");
+         showSnackBar(context, "Failed to connect to the server. Please try again later.");
          print("Add Machine API Error: $e");
        }
      }else{
@@ -231,7 +227,8 @@ class _AddMachineState extends State<AddMachine> {
              if (addMachineResponse['message'] == 'Success') {
                machine_name_Controller.clear();
                machine_code_Controller.clear();
-               showSnackBar(context, addMachineResponse['message'] );
+               // showSnackBar(context, addMachineResponse['message']);
+               Navigator.pop(context,true);
              } else {
                showSnackBar(context, addMachineResponse['message']);
              }

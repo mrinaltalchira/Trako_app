@@ -87,9 +87,17 @@ class _UsersModuleState extends State<UsersModule> {
                       borderRadius: BorderRadius.circular(25.0),
                     ),
                     child: IconButton(
-                      onPressed: () {
-                        // Navigate to add user screen
-                        Navigator.pushNamed(context, '/add_user');
+                      onPressed: () async{
+
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const AddUser(),
+                          ),
+                        );
+                        refreshUsersList();
+                        // Navigate to add machine screen
+                        // Navigator.pushNamed(context, '/add_machine');
                       },
                       icon: Icon(
                         Icons.add,

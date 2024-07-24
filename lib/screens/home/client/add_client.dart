@@ -236,8 +236,7 @@ class _AddClientState extends State<AddClient> {
         if (updateClientResponse.containsKey('error') && updateClientResponse.containsKey('status')) {
           if (!updateClientResponse['error'] && updateClientResponse['status'] == 200) {
             if (updateClientResponse['message'] == 'Success') {
-              showSnackBar(context, "Client updated successfully.");
-              Navigator.of(context).pop(true);
+              Navigator.pop(context,true);
             } else {
               showSnackBar(context, updateClientResponse['message']);
             }
@@ -270,8 +269,7 @@ class _AddClientState extends State<AddClient> {
               phoneController.clear();
               addressController.clear();
               contactPersonController.clear();
-              showSnackBar(context, "Client created successfully.");
-              Navigator.of(context).pop(true);
+              Navigator.pop(context,true);
             } else {
               showSnackBar(context, addClientResponse['message']);
             }
