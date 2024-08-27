@@ -17,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
   @override
   _HomeScreenState createState() => _HomeScreenState();
+
 }
 
 class _HomeScreenState extends State<HomeScreen> {
@@ -109,16 +110,19 @@ class _HomeScreenState extends State<HomeScreen> {
             PrefManager().getMachineModule(),
             PrefManager().getClientModule(),
             PrefManager().getUserModule(),
+            PrefManager().getSupplyChainModule(),
           ]),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
               String? machineModule = snapshot.data![0];
               String? clientModule = snapshot.data![1];
               String? userModule = snapshot.data![2];
+              String? supplyChain = snapshot.data![3];
 
               bool showMachinesItem = machineModule != "1";
               bool showClientItem = clientModule != "1";
               bool showUserItem = userModule != "1";
+              bool supplyChainItem = supplyChain != "1";
 
 
               return ListView(
@@ -152,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       text: 'Clients',
                       index: 1,
                     ),
+                  if(supplyChainItem)
                   _buildDrawerItem(
                     icon: Icons.account_tree_outlined,
                     text: 'Supply Chain',

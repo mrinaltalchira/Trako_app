@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:dio/dio.dart';
+
 import 'package:Trako/model/all_clients.dart';
 import 'package:Trako/model/all_machine.dart';
 import 'package:Trako/model/all_supply.dart';
@@ -10,7 +10,13 @@ import 'package:Trako/model/dashboard.dart';
 import 'package:Trako/model/supply_fields_data.dart';
 import 'package:Trako/model/user_profie.dart';
 import 'package:Trako/pref_manager.dart';
+import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+
+import '../main.dart';
+import '../screens/authFlow/signin.dart';
 
 
 class LoggerInterceptor extends Interceptor {
@@ -31,22 +37,40 @@ class LoggerInterceptor extends Interceptor {
     return super.onResponse(response, handler);
   }
 
+
   @override
-  void onError(DioError err, ErrorInterceptorHandler handler) {
+  void onError(DioError err, ErrorInterceptorHandler handler) async {
     print("Error from: ${err.requestOptions.uri}");
     print("Error Message: ${err.message}");
     if (err.response != null) {
-      print("Error Data: ${err.response?.data}");
+      print("Error Data: ${err.response?.data['message']}");
+
+      final errorData = err.response?.data;
+      if (err.response?.statusCode == 401 && errorData is Map<String, dynamic>) {
+
+        if (errorData['error'] == 'Unauthorized' || errorData['message'] == 'Invalid token') {
+
+          navigateToAuthProcess();
+        }
+      }
     }
     return super.onError(err, handler);
   }
+
+  void navigateToAuthProcess() {
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (context) => AuthProcess()),
+          (Route<dynamic> route) => false,
+    );
+  }
+
 }
 
 
 class ApiService {
 
   // final String baseUrl = 'https://trako.tracesci.in/api';
-  final String baseUrl = 'http://192.168.2.177:8080/api';
+  final String baseUrl = 'http://192.168.2.169:8080/api';
   late Dio _dio;
   late String? token;
 
@@ -113,6 +137,8 @@ class ApiService {
       throw Exception('Failed to connect to the server.');
     }
   }
+
+
   Future<Map<String, dynamic>> login(String? email, String? phone, String password) async {
     try {
       await initializeApiService(); // Ensure token is initialized before login
@@ -386,7 +412,7 @@ class ApiService {
     required String password,
     required String machineModule,
     required String clientModule,
-    required String userModule,
+    required String userModule, required String supplyChainModule,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addUser
@@ -410,6 +436,8 @@ class ApiService {
           "machine_module": machineModule,
           "client_module": clientModule,
           "user_module": userModule,
+          "supply_chain_module": supplyChainModule,
+
         }),
       );
 
@@ -435,6 +463,7 @@ class ApiService {
     required String machineModule,
     required String clientModule,
     required String userModule,
+    required String supplyChainModule,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addUser
@@ -459,6 +488,7 @@ class ApiService {
           "machine_module": machineModule,
           "client_module": clientModule,
           "user_module": userModule,
+          "supply_chain_module": supplyChainModule,
         }),
       );
 

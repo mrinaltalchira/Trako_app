@@ -18,6 +18,10 @@ import 'package:Trako/screens/users/users.dart';
 
 import 'ThemeNotifier.dart';
 
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+
 void main() {
   runApp(
     MultiProvider(
@@ -63,6 +67,7 @@ class MyApp extends StatelessWidget {
           navigatorObservers: [routeObserver],
           debugShowCheckedModeBanner: false,
           theme: themeNotifier.currentTheme,
+          navigatorKey: navigatorKey,
           home: FutureBuilder<bool?>(
             future: PrefManager().getIsLoggedIn(),
             builder: (context, snapshot) {

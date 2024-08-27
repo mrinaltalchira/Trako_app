@@ -12,6 +12,7 @@ class User {
   final String machineModule;
   final String clientModule;
   final String userModule;
+  final String supplyChain;
 
   User({
     required this.id,
@@ -27,6 +28,7 @@ class User {
     required this.machineModule,
     required this.clientModule,
     required this.userModule,
+    required this.supplyChain,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class User {
       machineModule: json['machine_module'].toString(), // Convert '1' to true, '0' to false
       clientModule: json['client_module'], // Convert '1' to true, '0' to false
       userModule: json['user_module'], // Convert '1' to true, '0' to false
+      supplyChain: json['supply_chain_module'], // Convert '1' to true, '0' to false
     );
   }
 }

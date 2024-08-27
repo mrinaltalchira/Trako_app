@@ -5,7 +5,6 @@ import 'package:Trako/color/colors.dart';
 import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_user.dart';
 import 'package:Trako/network/ApiService.dart';
-import 'package:Trako/screens/home/home.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 
 class AddUser extends StatefulWidget {
@@ -17,6 +16,7 @@ class AddUser extends StatefulWidget {
 }
 
 class _AddUserState extends State<AddUser> {
+  bool isModuleAccessVisible = true;
   String? selectedUserRole;
   TextEditingController nameController = TextEditingController();
   TextEditingController emailController = TextEditingController();
@@ -30,6 +30,7 @@ class _AddUserState extends State<AddUser> {
   bool machineModuleChecked = false;
   bool clientModuleChecked = false;
   bool userPrivilegeChecked = false;
+  bool supplyChainModuleModuleChecked = false;
   bool activeChecked = true; // Assuming Active is initially checked
   String? fullPhoneNumber;
 
@@ -41,7 +42,7 @@ class _AddUserState extends State<AddUser> {
       nameController.text = widget.user!.name;
       emailController.text = widget.user!.email;
       mobileController.text = widget.user!.phone;
-      fullPhoneNumber = widget.user!.phone ?? '';
+      fullPhoneNumber = widget.user!.phone;
       String? phone = widget.user?.phone; // Access phone property safely
       List<String> phNumber = phone?.split(" ") ?? [];
       phoneController.text = phNumber[1];
@@ -49,6 +50,7 @@ class _AddUserState extends State<AddUser> {
       activeStatusController.text = widget.user!.isActive;
 
       machineModuleChecked = widget.user!.machineModule == '0';
+      supplyChainModuleModuleChecked = widget.user!.supply_chain_module == '0';
       clientModuleChecked = widget.user!.clientModule == '0';
       userPrivilegeChecked = widget.user!.userModule == '0';
       activeChecked = widget.user!.isActive == '0';
@@ -139,7 +141,7 @@ class _AddUserState extends State<AddUser> {
   }
 
   Future<void> submitUser() async {
-    // Validate phone nu
+    // Validate phone number
 
     showDialog(
       context: context,
@@ -167,7 +169,10 @@ class _AddUserState extends State<AddUser> {
            password: passwordController.text,
            machineModule: machineModuleChecked ? '0' : '1',
            clientModule: clientModuleChecked ? '0' : '1',
-           userModule: userPrivilegeChecked ? '0' : '1');
+           userModule: userPrivilegeChecked ? '0' : '1',
+           supplyChainModule: supplyChainModuleModuleChecked ? '0' : '1'
+
+       );
 
        // Dismiss loading indicator
        Navigator.of(context).pop();
@@ -221,7 +226,8 @@ class _AddUserState extends State<AddUser> {
            password: passwordController.text,
            machineModule: machineModuleChecked ? '0' : '1',
            clientModule: clientModuleChecked ? '0' : '1',
-           userModule: userPrivilegeChecked ? '0' : '1');
+           userModule: userPrivilegeChecked ? '0' : '1',
+           supplyChainModule: supplyChainModuleModuleChecked ? '0' : '1');
 
        // Dismiss loading indicator
        Navigator.of(context).pop();
@@ -322,6 +328,37 @@ class _AddUserState extends State<AddUser> {
                 selectedValue: selectedUserRole,
                 onChanged: (newValue) {
                   setState(() {
+                    if(newValue == "Admin"){
+                      isModuleAccessVisible = true;
+
+                   machineModuleChecked = true;
+                   clientModuleChecked= true;
+                   userPrivilegeChecked= true;
+                      supplyChainModuleModuleChecked = true;
+
+                    }else if(newValue == "Client"){
+                      isModuleAccessVisible = false;
+
+                      machineModuleChecked = false;
+                      clientModuleChecked= false;
+                      userPrivilegeChecked= false;
+                      supplyChainModuleModuleChecked = false;
+
+                    }else if(newValue == "User"){
+                      isModuleAccessVisible = true;
+
+                      machineModuleChecked = false;
+                      clientModuleChecked= false;
+                      userPrivilegeChecked= false;
+                      supplyChainModuleModuleChecked = false;
+                    }else{
+                      isModuleAccessVisible = true;
+
+                      machineModuleChecked = false;
+                      clientModuleChecked= false;
+                      userPrivilegeChecked= false;
+                      supplyChainModuleModuleChecked = false;
+                    }
                     selectedUserRole = newValue;
                   });
                 },
@@ -383,8 +420,8 @@ class _AddUserState extends State<AddUser> {
                 padding: const EdgeInsets.all(8.0),
                 child: Column(
                   children: [
-                    Text(
-                      "Authority",
+                    const Text(
+                      "Modules Access",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -395,7 +432,9 @@ class _AddUserState extends State<AddUser> {
                       machineModuleChecked: machineModuleChecked,
                       clientModuleChecked: clientModuleChecked,
                       userPrivilegeChecked: userPrivilegeChecked,
-                      activeChecked: activeChecked,
+                      supplyChainModuleChecked: supplyChainModuleModuleChecked,
+                      isModuleAccessVisible: isModuleAccessVisible,
+                activeChecked: activeChecked,
                       onMachineModuleChanged: (bool? value) {
                         setState(() {
                           machineModuleChecked = value ?? false;
@@ -416,6 +455,11 @@ class _AddUserState extends State<AddUser> {
                           activeChecked = value ?? false;
                         });
                       },
+                      onSupplyChainModuleChanged: (bool? value) {
+                      setState(() {
+                        supplyChainModuleModuleChecked = value ?? false;
+                      });
+                    },
                     ),
                   ],
                 ),
@@ -569,7 +613,7 @@ class UserRolesSpinner extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text('Select Role'),
-      items: ['Admin', 'Client', 'Logistic', 'User'].map((String value) {
+      items: ['Admin', 'Client', 'User'].map((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -816,22 +860,28 @@ class _ConfirmPasswordTextFieldState
 class CheckBoxRow extends StatelessWidget {
   final bool machineModuleChecked;
   final bool clientModuleChecked;
+  final bool supplyChainModuleChecked;
   final bool userPrivilegeChecked;
   final bool activeChecked;
+  final bool isModuleAccessVisible;
   final ValueChanged<bool?> onMachineModuleChanged;
   final ValueChanged<bool?> onClientModuleChanged;
+  final ValueChanged<bool?> onSupplyChainModuleChanged;
   final ValueChanged<bool?> onUserPrivilegeChanged;
   final ValueChanged<bool?> onActiveChanged;
 
   const CheckBoxRow({
     required this.machineModuleChecked,
     required this.clientModuleChecked,
+    required this.supplyChainModuleChecked,
     required this.userPrivilegeChecked,
     required this.activeChecked,
     required this.onMachineModuleChanged,
     required this.onClientModuleChanged,
+    required this.onSupplyChainModuleChanged,
     required this.onUserPrivilegeChanged,
     required this.onActiveChanged,
+    required this.isModuleAccessVisible,
   });
 
   @override
@@ -839,26 +889,34 @@ class CheckBoxRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
+        if (isModuleAccessVisible) Row(
           children: [
-            CustomCheckbox(
-              value: machineModuleChecked,
-              onChanged: onMachineModuleChanged,
-              activeColor: colorMixGrad,
-            ),
-            const Text('Machine Module'),
-            const SizedBox(width: 20),
+
             CustomCheckbox(
               value: clientModuleChecked,
               onChanged: onClientModuleChanged,
               activeColor: colorMixGrad,
             ),
-            const Text('Client Module'),
+            const Text('Client            '),
+            CustomCheckbox(
+              value: machineModuleChecked,
+              onChanged: onMachineModuleChanged,
+              activeColor: colorMixGrad,
+            ),
+            const Text('Machine'),
+
           ],
         ),
         const SizedBox(height: 10),
-        Row(
+        if (isModuleAccessVisible)  Row(
           children: [
+
+            CustomCheckbox(
+              value: supplyChainModuleChecked,
+              onChanged: onSupplyChainModuleChanged,
+              activeColor: colorMixGrad,
+            ),
+            const Text('SupplyChain '),
             CustomCheckbox(
               value: userPrivilegeChecked,
               onChanged: onUserPrivilegeChanged,
@@ -881,7 +939,7 @@ class CheckBoxRow extends StatelessWidget {
                   activeColor: colorMixGrad,
                 ),
                 Text('Active'),
-                SizedBox(width: 20),
+
                 CustomRadio(
                   value: false,
                   groupValue: activeChecked,

@@ -129,7 +129,7 @@ class _AuthProcessState extends State<AuthProcess> {
                             style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.normal,
-                                color: Colors.blueAccent),
+                                color: colorMixGrad),
                           ),
                         ),
                       ],
@@ -199,7 +199,7 @@ class _AuthProcessState extends State<AuthProcess> {
                 // Removed const from SizedBox
                 SizedBox(
                   child: GradientButton(
-                      gradientColors: [colorMixGrad, colorMixGrad],
+                      gradientColors: [colorFirstGrad, colorSecondGrad],
                       // Removed const from gradientColors
                       height: 45.0,
                       width: 10.0,
@@ -301,11 +301,9 @@ class _AuthProcessState extends State<AuthProcess> {
               PrefManager().setUserModule(user.userModule.toString());
               PrefManager().setClientModule(user.clientModule.toString());
               PrefManager().setMachineModule(user.machineModule.toString());
+              PrefManager().setSupplyChainModule(user.supplyChain.toString());
 
 
-              print('showMachinesItem: ${user.userModule.toString()}');
-              print('showClientItem: ${user.clientModule.toString()}');
-              print('showUserItem: ${user.machineModule.toString()}');
 
               PrefManager().setIsLoggedIn(true);
               // Navigate to home screen

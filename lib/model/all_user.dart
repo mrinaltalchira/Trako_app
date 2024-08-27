@@ -52,6 +52,7 @@ class User {
   String createdAt;
   String updatedAt;
   String machineModule;
+  String supply_chain_module;
   String clientModule;
   String userModule;
 
@@ -67,6 +68,7 @@ class User {
     required this.updatedAt,
     required this.machineModule,
     required this.clientModule,
+    required this.supply_chain_module,
     required this.userModule,
   });
 
@@ -83,6 +85,7 @@ class User {
       updatedAt: json['updated_at'] ?? "",
       machineModule: json['machine_module'] ?? "",
       clientModule: json['client_module'] ?? "",
+      supply_chain_module: json['supply_chain_module'] ?? "",
       userModule: json['user_module'] ?? "",
     );
   }
