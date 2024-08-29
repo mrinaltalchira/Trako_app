@@ -259,7 +259,8 @@ class _AddTonerState extends State<AddToner> {
               ),
               const SizedBox(height: 15),
 
-              _selectedDispatchReceive == DispatchReceive.dispatch ?   Column(
+              _selectedDispatchReceive == DispatchReceive.dispatch ?
+              Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
@@ -314,8 +315,6 @@ class _AddTonerState extends State<AddToner> {
                     const SizedBox(height: 15),
                   ])
                   :
-
-
 
               const Text(
                 "Selected DateTime",
