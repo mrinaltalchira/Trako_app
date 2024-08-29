@@ -170,7 +170,7 @@ class _DispatchReceiveRadioButtonState
   }
 }
 
-class ClientNameSpinner extends StatelessWidget {
+class ClientNameSpinner extends StatefulWidget {
   final ValueChanged<SupplyClient?> onChanged;
   final List<SupplyClient> clients;
 
@@ -180,39 +180,204 @@ class ClientNameSpinner extends StatelessWidget {
     Key? key,
   }) : super(key: key);
 
+  @override
+  _ClientNameSpinnerState createState() => _ClientNameSpinnerState();
+}
+
+class _ClientNameSpinnerState extends State<ClientNameSpinner> {
+  final TextEditingController _searchController = TextEditingController();
+  List<SupplyClient> _filteredClients = [];
+  SupplyClient? _selectedClient;
+  bool _isSearching = false;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredClients = widget.clients;
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _filterClients(_searchController.text);
+  }
+
+  void _filterClients(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredClients = widget.clients;
+      } else {
+        _filteredClients = widget.clients
+            .where((client) =>
+            client.name.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+    _updateOverlay();
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    _overlayEntry = _createOverlayEntry();
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _updateOverlay() {
+    if (_overlayEntry != null && _overlayEntry!.mounted) {
+      _overlayEntry!.markNeedsBuild();
+    }
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  OverlayEntry _createOverlayEntry() {
+    RenderBox renderBox = context.findRenderObject() as RenderBox;
+    var size = renderBox.size;
+    var offset = renderBox.localToGlobal(Offset.zero);
+
+    return OverlayEntry(
+      builder: (context) => Positioned(
+        top: offset.dy + size.height + 5.0, // Position below the spinner
+        left: offset.dx,
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0.0, size.height + 5.0), // Ensure the overlay appears below the spinner
+          child: Material(
+            elevation: 4.0,
+            child: ListView(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              children: _filteredClients.map((client) {
+                return ListTile(
+                  title: Text(client.name,style: TextStyle(fontSize: 18)),
+                  subtitle: Text(client.city,style: TextStyle(fontSize: 12),),
+                  onTap: () {
+                    setState(() {
+                      _selectedClient = client;
+                      _isSearching = false;
+                      _searchController.clear();
+                    });
+                    widget.onChanged(client);
+                    _removeOverlay();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Column(
+        children: [
+          _isSearching
+              ? TextFormField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search client...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: colorMixGrad),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+              suffixIcon: IconButton(
+                icon: Icon(Icons.close, color: colorMixGrad),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchController.clear();
+                    _filteredClients = widget.clients;
+                  });
+                  _removeOverlay();
+                },
+              ),
+            ),
+            onTap: _showOverlay,
+          )
+              : DropdownButtonFormField<SupplyClient>(
+            value: _selectedClient,
+            hint: Text('Select a client'),
+            items: widget.clients.map((SupplyClient client) {
+              return DropdownMenuItem<SupplyClient>(
+                value: client,
+                child: Text('${client.name} - ${client.city}'), // Show name and city in the dropdown
+              );
+            }).toList(),
+            onChanged: (SupplyClient? newClient) {
+              setState(() {
+                _selectedClient = newClient;
+                widget.onChanged(newClient);
+              });
+            },
+            decoration: InputDecoration(
+              hintStyle: TextStyle(color: Colors.grey),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
 
-    return DropdownButtonFormField<SupplyClient>(
-      hint: const Text('Select a client'),
-      items: clients.map((SupplyClient client) {
-        return DropdownMenuItem<SupplyClient>(
-          value: client,
-          child: Text(client.name),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintStyle: const TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-          const BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding:
-        const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: const TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
+
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: Colors.black),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: BorderSide(color: colorMixGrad),
+              ),
+              contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+
+              suffixIcon: IconButton(
+                icon: Icon(Icons.search, color: colorMixGrad),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = true;
+                    _filteredClients = widget.clients;
+                  });
+                  _showOverlay();
+                },
+              ),
+            ),
+            // Display only the name of the selected client
+
+            selectedItemBuilder: (BuildContext context) {
+              return widget.clients.map((SupplyClient client) {
+                return DropdownMenuItem<SupplyClient>(
+                  value: client,
+                  child: Text(client.name), // Display only name in the selected item
+                );
+              }).toList();
+            },
+          )
+          ,
+        ],
       ),
     );
   }
 }
+
 
 
 class CityNameTextField extends StatelessWidget {

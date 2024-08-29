@@ -5,6 +5,10 @@ import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_machine.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/home/home.dart';
+import 'package:flutter/services.dart';
+
+import '../../model/supply_fields_data.dart';
+import '../add_toner/utils.dart';
 
 class AddMachine extends StatefulWidget {
   final Machine? machine;
@@ -16,19 +20,47 @@ class AddMachine extends StatefulWidget {
 
 
 class _AddMachineState extends State<AddMachine> {
+
    final TextEditingController machine_name_Controller = TextEditingController();
    final TextEditingController machine_code_Controller = TextEditingController();
+   final TextEditingController controllerCityName = TextEditingController();
+
+   List<SupplyClient> clients = [];
    bool activeChecked = true;
+   String? selectedClientId;
+   String? selectedClientName;
+   String? selectedCityName;
+   String? selectedTonerName;
+   final ApiService _apiService = ApiService();
 
    @override
    void initState() {
      super.initState();
+
      if (widget.machine != null) {
        machine_name_Controller.text = widget.machine!.modelName;
        machine_code_Controller.text = widget.machine!.modelCode;
        activeChecked = widget.machine!.isActive == "0";
      }
+     fetchSpinnerData();
    }
+
+   Future<void> fetchSpinnerData() async {
+
+     try {
+       SupplySpinnerResponse spinnerResponse =
+       await _apiService.getSpinnerDetails();
+       setState(() {
+         clients = spinnerResponse.data.clients;
+       });
+     } catch (e) {
+       print('Error fetching supply spinner details: $e');
+       setState(() {
+       });
+       // Handle error as needed
+     }
+   }
+
 
 
    @override
@@ -93,7 +125,7 @@ class _AddMachineState extends State<AddMachine> {
                       height: 20,
                     ),
                     Text(
-                      "Model Code",
+                      "Serial no.",
                       // Dynamic text, removed const
                       style: TextStyle(
                         fontSize: 16,
@@ -105,6 +137,28 @@ class _AddMachineState extends State<AddMachine> {
                     const SizedBox(
                       height: 20,
                     ),
+                    const Text(
+                      "Client Name",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ClientNameSpinner(
+                      onChanged: (SupplyClient? newClient) {
+                        setState(() {
+                          selectedClientName = newClient?.name;
+                          selectedCityName = newClient?.city;
+                          selectedClientId = newClient?.id.toString();
+                          controllerCityName.text = selectedCityName.toString();
+                        });
+                      },
+                      clients: clients,
+                    ),
+
+                    const SizedBox(height: 15),
+
                     SizedBox(height: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -307,7 +361,7 @@ class _MachineCodeInputTextFieldState extends State<MachineCodeInputTextField> {
       keyboardType: TextInputType.emailAddress,
 
       decoration: InputDecoration(
-        hintText: 'Model Code',
+        hintText: 'Serial no.',
 
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
@@ -329,6 +383,9 @@ class _MachineCodeInputTextFieldState extends State<MachineCodeInputTextField> {
     );
   }
 }
+
+
+
 
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -509,3 +566,4 @@ class CustomRadio extends StatelessWidget {
     );
   }
 }
+
