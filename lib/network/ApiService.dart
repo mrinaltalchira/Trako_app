@@ -17,6 +17,8 @@ import 'package:flutter/material.dart';
 
 import '../main.dart';
 import '../screens/authFlow/signin.dart';
+import '../screens/customer_acknowledgement/client_acknowledgement.dart';
+import '../screens/toner_request/toner_request.dart';
 
 
 class LoggerInterceptor extends Interceptor {
@@ -105,6 +107,75 @@ class ApiService {
     }
   }
 
+  Future<List<AcknowledgementItem>> getAllAcknowledgements(String? search) async {
+    // Simulated delay to mimic network request
+    await Future.delayed(Duration(seconds: 2));
+
+    // Simulated data
+    List<AcknowledgementItem> acknowledgements = [
+      AcknowledgementItem(
+        id: '1',
+        name: 'Acknowledgment 1',
+        description: 'This is the first acknowledgment.',
+        date: '2024-08-28',
+        isAcknowledged: true,
+      ),
+      AcknowledgementItem(
+        id: '2',
+        name: 'Acknowledgment 2',
+        description: 'This is the second acknowledgment.',
+        date: '2024-08-27',
+        isAcknowledged: false,
+      ),
+      AcknowledgementItem(
+        id: '3',
+        name: 'Acknowledgment 3',
+        description: 'This is the third acknowledgment.',
+        date: '2024-08-26',
+        isAcknowledged: true,
+      ),
+    ];
+
+    // If there's a search query, filter the list based on the name or description
+    if (search != null && search.isNotEmpty) {
+      acknowledgements = acknowledgements.where((item) {
+        return item.name.toLowerCase().contains(search.toLowerCase()) ||
+            item.description.toLowerCase().contains(search.toLowerCase());
+      }).toList();
+    }
+
+    return acknowledgements;
+  }
+
+  Future<Toner> getAllToners(String? search) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before getAllClients
+
+      final response = await _dio.get(
+        '$baseUrl/get-profile',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+        options: Options(
+
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        Toner userResponse = Toner.fromJson(data);
+        return userResponse;
+      } else {
+        throw Exception('Failed to load user profile');
+      }
+    } catch (e) {
+      print('Get User Profile API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
 
   //////////////////////////////// AUTH
 

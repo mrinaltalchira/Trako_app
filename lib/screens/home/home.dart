@@ -11,6 +11,8 @@ import 'package:Trako/screens/supply_chian/supplychain.dart';
 import 'package:Trako/screens/users/users.dart';
 
 import '../authFlow/signin.dart';
+import '../customer_acknowledgement/client_acknowledgement.dart';
+import '../toner_request/toner_request.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -56,6 +58,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const ClientModule(),
             SupplyChain(),
             MachineModule(),
+            Acknowledgement(),
+            TonerRequest(),
             MyReportScreen(),
             const UsersModule(),
           ],
@@ -168,16 +172,26 @@ class _HomeScreenState extends State<HomeScreen> {
                       text: 'Machines',
                       index: 3,
                     ),
+                    _buildDrawerItem(
+                      icon: Icons.quick_contacts_mail_outlined,
+                      text: 'Acknowledgement',
+                      index: 4,
+                    ),
+                  _buildDrawerItem(
+                      icon: Icons.voicemail,
+                      text: 'Toner Request',
+                      index: 5,
+                    ),
                   _buildDrawerItem(
                     icon: Icons.report,
                     text: 'Reports',
-                    index: 4,
+                    index: 6,
                   ),
                   if (showUserItem)
                     _buildDrawerItem(
                       icon: Icons.add,
                       text: 'Users',
-                      index: 5,
+                      index: 7,
                     ),
                   ListTile(
                     leading: const Icon(Icons.exit_to_app, color: Colors.white),
