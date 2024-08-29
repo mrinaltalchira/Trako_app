@@ -263,8 +263,13 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
               shrinkWrap: true,
               children: _filteredClients.map((client) {
                 return ListTile(
-                  title: Text(client.name,style: TextStyle(fontSize: 18)),
-                  subtitle: Text(client.city,style: TextStyle(fontSize: 12),),
+                  title: Text(
+                    '${client.name} - ${client.city}', // Combine name and city with a dash
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold, // Make text bold
+                    ),
+                  ),
                   onTap: () {
                     setState(() {
                       _selectedClient = client;
