@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:Trako/model/supply_fields_data.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/supply_chian/supplychain.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 import 'utils.dart';
 
@@ -81,9 +83,14 @@ class _AddTonerState extends State<AddToner> {
   }
 
   Future<void> _scanQrCode() async {
-    final result = await Navigator.of(context).push(MaterialPageRoute(
-      builder: (context) => const QRViewTracesci(),
-    ));
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => _selectedDispatchReceive == DispatchReceive.dispatch
+            ? const DualQRScannerTracesci()
+            : const QRViewTracesci(),
+      ),
+    );
+
 
     if (result != null && result is String) {
       setState(() {
@@ -106,9 +113,8 @@ class _AddTonerState extends State<AddToner> {
     }
   }
 
-  void validate(){
-
-    if( _selectedDispatchReceive == DispatchReceive.dispatch){
+  void validate() {
+    if (_selectedDispatchReceive == DispatchReceive.dispatch) {
       if (selectedClientName == null) {
         showSnackBar(context, "Please select client name");
         return;
@@ -120,12 +126,10 @@ class _AddTonerState extends State<AddToner> {
       }
 
       if (selectedTonerName == null) {
-        showSnackBar(context, "Please select Model no.");
+        showSnackBar(context, "Please select Serial no.");
         return;
       }
     }
-
-
 
     if (scannedCodes.isEmpty) {
       showSnackBar(context, "Please add Toner code");
@@ -142,8 +146,8 @@ class _AddTonerState extends State<AddToner> {
       },
     );
   }
-  Future<void> submitToner() async {
 
+  Future<void> submitToner() async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -179,12 +183,11 @@ class _AddTonerState extends State<AddToner> {
           addUserResponse.containsKey('status')) {
         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
           if (addUserResponse['message'] == 'Success') {
-
             if (addUserResponse['data']['message'] ==
                     'Supply created successfully.' ||
                 addUserResponse['data']['message'] ==
                     'Supply updated successfully.') {
-                Navigator.pop(context,true);
+              Navigator.pop(context, true);
             } else {
               showSnackBar(context, addUserResponse['message']);
             }
@@ -197,7 +200,8 @@ class _AddTonerState extends State<AddToner> {
         }
       } else {
         // Unexpected response structure
-        showSnackBar(context, "Unexpected response from server. Please try again later.");
+        showSnackBar(context,
+            "Unexpected response from server. Please try again later.");
       }
     } catch (e) {
       // Dismiss loading indicator
@@ -258,72 +262,52 @@ class _AddTonerState extends State<AddToner> {
                 },
               ),
               const SizedBox(height: 15),
+              _selectedDispatchReceive == DispatchReceive.dispatch
+                  ? Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                          const Text(
+                            "Serial no.",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          SerialNoSpinner(
+                            selectedValue: selectedTonerName,
+                            onChanged: (newValue) {
+                              setState(() {
+                                selectedTonerName = newValue;
+                              });
+                            },
+                            modelList:
+                            modelNos, // List<String> containing serial numbers
+                          ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Client Name: clientNames, City: clientCity',
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12.0,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                          const SizedBox(height: 15),
 
-              _selectedDispatchReceive == DispatchReceive.dispatch ?
-              Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      "Client Name",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    ClientNameSpinner(
-                      onChanged: (SupplyClient? newClient) {
-                        setState(() {
-                          selectedClientName = newClient?.name;
-                          selectedCityName = newClient?.city;
-                          selectedClientId = newClient?.id.toString();
-                          controllerCityName.text = selectedCityName.toString();
-                        });
-                      },
-                      clients: clients,
-                    ),
-                    const SizedBox(height: 15),
-                    const Text(
-                      "City Name",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    CityNameTextField(
-                      controller: controllerCityName,
-                    ),
-                    const SizedBox(height: 15),
-                    const Text(
-                      "Model no.",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    ModelNoSpinner(
-                      selectedValue: selectedTonerName,
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedTonerName = newValue;
-                        });
-                      },
-                      modelLsit: modelNos,
-                    ),
-                    const SizedBox(height: 15),
-                  ])
+                        ])
                   :
+              const SizedBox(height: 5),
 
               const Text(
-                "Selected DateTime",
+                "Select DateTime",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 5),
+
               DateTimeInputField(
                 initialDateTime: DateTime.now(),
                 onDateTimeChanged: (dateTime) {
@@ -418,7 +402,7 @@ class _AddTonerState extends State<AddToner> {
                   radius: 25.0,
                   buttonText: "Submit",
                   onPressed: () {
-                   validate();
+                    validate();
                   },
                 ),
               ),
@@ -428,5 +412,170 @@ class _AddTonerState extends State<AddToner> {
         ),
       ),
     );
+  }
+}
+
+class DualQRScannerTracesci extends StatefulWidget {
+  const DualQRScannerTracesci({Key? key}) : super(key: key);
+
+  @override
+  _DualQRScannerTracesciState createState() => _DualQRScannerTracesciState();
+}
+
+class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
+  Barcode? firstResult;
+  Barcode? secondResult;
+  QRViewController? controller;
+  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  bool flashOn = false;
+  bool isScanningSecondQR = false;
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    if (Platform.isAndroid) {
+      controller!.pauseCamera();
+    }
+    controller!.resumeCamera();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Container(
+                margin: const EdgeInsets.only(right: 50),
+                alignment: Alignment.center,
+                child: Image.asset(
+                  'assets/images/ic_trako.png',
+                  fit: BoxFit.contain,
+                  height: 30,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Stack(
+        children: [
+          Column(
+            children: <Widget>[
+              Expanded(flex: 4, child: _buildQrView(context)),
+              if (firstResult != null && !isScanningSecondQR)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    children: [
+                      Text(
+                        'First QR code scanned successfully!',
+                        style: TextStyle(fontSize: 16, color: Colors.green),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            isScanningSecondQR = true;
+                          });
+                        },
+                        child: Text('Scan Second QR Code',style: TextStyle(color: colorMixGrad ),),
+                      ),
+                    ],
+                  ),
+                ),
+              if (firstResult != null && secondResult != null)
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _returnScannedData();
+                    },
+                    child: Text('Finish Scanning'),
+                  ),
+                ),
+            ],
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: FloatingActionButton(
+                onPressed: () async {
+                  await controller?.toggleFlash();
+                  setState(() {
+                    flashOn = !flashOn;
+                  });
+                },
+                child: Icon(flashOn ? Icons.flash_on : Icons.flash_off),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQrView(BuildContext context) {
+    var scanArea = _calculateScanArea(context);
+    return QRView(
+      key: qrKey,
+      onQRViewCreated: _onQRViewCreated,
+      overlay: QrScannerOverlayShape(
+        borderColor: Colors.red,
+        borderRadius: 10,
+        borderLength: 30,
+        borderWidth: 10,
+        cutOutSize: 200,
+      ),
+      onPermissionSet: (ctrl, p) => _onPermissionSet(context, ctrl, p),
+    );
+  }
+
+  EdgeInsets _calculateScanArea(BuildContext context) {
+    double scanAreaSize = MediaQuery.of(context).size.shortestSide * 0.75;
+    return EdgeInsets.all(
+        (MediaQuery.of(context).size.shortestSide - scanAreaSize) / 2);
+  }
+
+  void _onQRViewCreated(QRViewController controller) {
+    setState(() {
+      this.controller = controller;
+    });
+    controller.scannedDataStream.listen((scanData) {
+      if (firstResult == null && !isScanningSecondQR) {
+        setState(() {
+          firstResult = scanData;
+        });
+      } else if (secondResult == null && isScanningSecondQR) {
+        setState(() {
+          secondResult = scanData;
+        });
+        _returnScannedData();
+      }
+    });
+  }
+
+  void _returnScannedData() {
+    if (firstResult != null && secondResult != null) {
+      String combinedResult =
+          '${firstResult!.code}~${secondResult!.code}';
+      Navigator.pop(context, combinedResult);
+    }
+  }
+
+  void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
+    if (!p) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No camera permission')),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    super.dispose();
   }
 }

@@ -11,8 +11,8 @@ class RequestToner extends StatefulWidget {
 }
 
 class _RequestTonerState extends State<RequestToner> {
-  final TextEditingController _quantityController = TextEditingController();
-  final TextEditingController _detailsController = TextEditingController();
+  int quantity = 1;
+  final TextEditingController _counterController = TextEditingController();
   String? _selectedMachineModel;
   String? _selectedColor;
 
@@ -22,20 +22,22 @@ class _RequestTonerState extends State<RequestToner> {
   List<TonerRequest> _cart = [];
 
   void _addToCart() {
-    if (_selectedMachineModel != null && _selectedColor != null && _quantityController.text.isNotEmpty) {
+    if (_selectedMachineModel != null && _selectedColor != null) {
       final tonerRequest = TonerRequest(
         machineModel: _selectedMachineModel!,
         color: _selectedColor!,
-        quantity: int.parse(_quantityController.text),
-        details: _detailsController.text,
+        quantity: quantity ,
+        last_counter: _counterController.text
+
       );
 
       setState(() {
         _cart.add(tonerRequest);
-        _quantityController.clear();
-        _detailsController.clear();
+        quantity = 1;
         _selectedMachineModel = null;
         _selectedColor = null;
+        _counterController.text = "";
+
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -128,7 +130,7 @@ class _RequestTonerState extends State<RequestToner> {
                                     style: TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                   subtitle: Text(
-                                    'Quantity: ${request.quantity}\nDetails: ${request.details}',
+                                    'Quantity: ${request.quantity}\nCounter : ${request.last_counter}',
                                     style: TextStyle(fontSize: 14),
                                   ),
                                   trailing: Row(
@@ -283,6 +285,14 @@ class _RequestTonerState extends State<RequestToner> {
               ),
               SizedBox(height: 24.0),
 
+              _buildSectionTitle('Current / Total Counter'),
+
+              CustomTextField(
+                controller: _counterController,
+                hintText: 'Add counter',
+                keyboardType: TextInputType.number,
+              ),
+              SizedBox(height: 24.0),
               // Color Selection
               _buildSectionTitle('Select Color'),
               ColorSpinner(
@@ -294,21 +304,16 @@ class _RequestTonerState extends State<RequestToner> {
 
               // Toner Quantity
               _buildSectionTitle('Toner Quantity'),
-              CustomTextField(
-                controller: _quantityController,
-                hintText: 'Enter quantity',
-                keyboardType: TextInputType.number,
-              ),
+          QuantitySelector(
+            initialValue: quantity,
+            onChanged: (newQuantity) {
+              setState(() {
+                quantity = newQuantity;
+              });
+            },
+          ),
               SizedBox(height: 24.0),
 
-              // Additional Details
-              _buildSectionTitle('Additional Details'),
-              CustomTextField(
-                controller: _detailsController,
-                hintText: 'Enter additional details',
-                keyboardType: TextInputType.multiline,
-                maxLines: 3,
-              ),
               SizedBox(height: 32.0),
 
               // Add to Cart Button
@@ -361,13 +366,13 @@ class TonerRequest {
   final String machineModel;
   final String color;
   final int quantity;
-  final String details;
+  final String last_counter;
 
   TonerRequest({
     required this.machineModel,
     required this.color,
     required this.quantity,
-    required this.details,
+    required this.last_counter,
   });
 }
 
@@ -513,6 +518,74 @@ class ColorSpinner extends StatelessWidget {
       ),
       isExpanded: true,
       icon: Icon(Icons.arrow_drop_down, color: colorMixGrad), // Custom dropdown icon color
+    );
+  }
+}
+
+
+class QuantitySelector extends StatefulWidget {
+  final int initialValue;
+  final ValueChanged<int> onChanged;
+
+  QuantitySelector({Key? key, this.initialValue = 1, required this.onChanged}) : super(key: key);
+
+  @override
+  _QuantitySelectorState createState() => _QuantitySelectorState();
+}
+
+class _QuantitySelectorState extends State<QuantitySelector> {
+  late int _currentValue;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentValue = widget.initialValue;
+  }
+
+  void _increment() {
+    if (_currentValue < 5) {
+      setState(() {
+        _currentValue++;
+      });
+      widget.onChanged(_currentValue);
+    }
+  }
+
+  void _decrement() {
+    if (_currentValue > 1) {
+      setState(() {
+        _currentValue--;
+      });
+      widget.onChanged(_currentValue);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(Icons.remove, color: colorMixGrad), // Replace with colorMixGrad if needed
+          onPressed: _decrement,
+        ),
+        Container(
+          width: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            border: Border.all(color: colorMixGrad), // Replace with colorMixGrad if needed
+            borderRadius: BorderRadius.circular(10.0),
+          ),
+          child: Text(
+            '$_currentValue',
+            style: TextStyle(fontSize: 16.0, color: Colors.black),
+          ),
+        ),
+        IconButton(
+          icon: Icon(Icons.add, color: colorMixGrad), // Replace with colorMixGrad if needed
+          onPressed: _increment,
+        ),
+      ],
     );
   }
 }

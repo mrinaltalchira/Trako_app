@@ -384,6 +384,204 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
 }
 
 
+class SerialNoSpinner extends StatefulWidget {
+  final String? selectedValue;
+  final ValueChanged<String?> onChanged;
+  final List<String> modelList;
+
+  const SerialNoSpinner({
+    required this.selectedValue,
+    required this.onChanged,
+    required this.modelList,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _SerialNoSpinnerState createState() => _SerialNoSpinnerState();
+}
+
+class _SerialNoSpinnerState extends State<SerialNoSpinner> {
+  final TextEditingController _searchController = TextEditingController();
+  List<String> _filteredModelList = [];
+  String? _selectedModel;
+  bool _isSearching = false;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredModelList = widget.modelList;
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _filterModels(_searchController.text);
+  }
+
+  void _filterModels(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredModelList = widget.modelList;
+      } else {
+        _filteredModelList = widget.modelList
+            .where((model) => model.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+    _updateOverlay();
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    _overlayEntry = _createOverlayEntry();
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _updateOverlay() {
+    if (_overlayEntry != null && _overlayEntry!.mounted) {
+      _overlayEntry!.markNeedsBuild();
+    }
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  OverlayEntry _createOverlayEntry() {
+    RenderBox renderBox = context.findRenderObject() as RenderBox;
+    var size = renderBox.size;
+    var offset = renderBox.localToGlobal(Offset.zero);
+
+    return OverlayEntry(
+      builder: (context) => Positioned(
+        top: offset.dy + size.height + 5.0,
+        left: offset.dx,
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0.0, size.height + 5.0),
+          child: Material(
+            elevation: 4.0,
+            child: ListView(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              children: _filteredModelList.map((model) {
+                return ListTile(
+                  title: Text(
+                    model,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _selectedModel = model;
+                      _isSearching = false;
+                      _searchController.clear();
+                    });
+                    widget.onChanged(model);
+                    _removeOverlay();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Column(
+        children: [
+          _isSearching
+              ? TextFormField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search serial number...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: const BorderSide(color: colorMixGrad),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12.0, horizontal: 16.0),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.close, color: colorMixGrad),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchController.clear();
+                    _filteredModelList = widget.modelList;
+                  });
+                  _removeOverlay();
+                },
+              ),
+            ),
+            onTap: _showOverlay,
+          )
+              : DropdownButtonFormField<String>(
+            value: _selectedModel,
+            hint: const Text('Select a serial number'),
+            items: widget.modelList.map((String model) {
+              return DropdownMenuItem<String>(
+                value: model,
+                child: Text(model),
+              );
+            }).toList(),
+            onChanged: (String? newModel) {
+              setState(() {
+                _selectedModel = newModel;
+                widget.onChanged(newModel);
+              });
+            },
+            decoration: InputDecoration(
+              hintStyle: const TextStyle(color: Colors.grey),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: const BorderSide(color: colorMixGrad),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12.0, horizontal: 16.0),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.search, color: colorMixGrad),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = true;
+                    _filteredModelList = widget.modelList;
+                  });
+                  _showOverlay();
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
 
 class CityNameTextField extends StatelessWidget {
   final TextEditingController controller;
@@ -418,50 +616,7 @@ class CityNameTextField extends StatelessWidget {
   }
 }
 
-class ModelNoSpinner extends StatelessWidget {
-  final String? selectedValue;
-  final ValueChanged<String?> onChanged;
-  final List<String> modelLsit;
 
-  const ModelNoSpinner({
-    required this.selectedValue,
-    required this.onChanged,
-    Key? key,
-    required this.modelLsit,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      hint: const Text('Select an option'),
-      items: modelLsit.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        hintStyle: const TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              const BorderSide(color: colorMixGrad), // Adjust color as needed
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: const TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
 
 class DateTimeInputField extends StatefulWidget {
   final DateTime initialDateTime;

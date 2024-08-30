@@ -23,7 +23,7 @@ class _AddMachineState extends State<AddMachine> {
 
    final TextEditingController machine_name_Controller = TextEditingController();
    final TextEditingController machine_code_Controller = TextEditingController();
-   final TextEditingController controllerCityName = TextEditingController();
+   String? selectedTimePeriod;
 
    List<SupplyClient> clients = [];
    bool activeChecked = true;
@@ -151,14 +151,28 @@ class _AddMachineState extends State<AddMachine> {
                           selectedClientName = newClient?.name;
                           selectedCityName = newClient?.city;
                           selectedClientId = newClient?.id.toString();
-                          controllerCityName.text = selectedCityName.toString();
                         });
                       },
                       clients: clients,
                     ),
 
-                    const SizedBox(height: 15),
-
+                    const SizedBox(height: 20),
+                    const Text(
+                      "Empty Bottle Receive",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    TimePeriodDropdown(
+                      selectedValue: selectedTimePeriod,
+                      onChanged: (newValue) {
+                        setState(() {
+                          selectedTimePeriod = newValue;
+                        });
+                      },
+                    ),
                     SizedBox(height: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -236,6 +250,8 @@ class _AddMachineState extends State<AddMachine> {
            id:widget.machine!.id.toString(),
            model_name: machine_name_Controller.text,
            model_code: machine_code_Controller.text,
+           client_name : selectedClientName.toString(),
+           toner_receive_time : selectedTimePeriod.toString(),
            isActive: activeChecked ? '0' : '1',
          );
 
@@ -269,6 +285,8 @@ class _AddMachineState extends State<AddMachine> {
          final addMachineResponse = await apiService.addMachine(
            model_name: machine_name_Controller.text,
            model_code: machine_code_Controller.text,
+           client_name : selectedClientName.toString(),
+           toner_receive_time : selectedTimePeriod.toString(),
            isActive: activeChecked ? '0' : '1',
          );
 
@@ -567,3 +585,51 @@ class CustomRadio extends StatelessWidget {
   }
 }
 
+class TimePeriodDropdown extends StatelessWidget {
+  final List<String> timePeriods = [
+    '7 days',
+    '15 days',
+    '1 month',
+    '3 months',
+    '6 months',
+    '1 year',
+  ];
+
+  final String? selectedValue;
+  final ValueChanged<String?> onChanged;
+
+  TimePeriodDropdown({Key? key, required this.selectedValue, required this.onChanged}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: selectedValue,
+      onChanged: onChanged,
+      hint: Text('e.g. 15 days or 1 month'),
+      decoration: InputDecoration(
+        hintStyle: TextStyle(color: Colors.grey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+
+
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.black),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(color: colorMixGrad),
+        ),
+        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+
+      ),
+      items: timePeriods.map((String timePeriod) {
+        return DropdownMenuItem<String>(
+          value: timePeriod,
+          child: Text(timePeriod),
+        );
+      }).toList(),
+    );
+  }
+}

@@ -366,6 +366,7 @@ class ApiService {
     required String model_name,
     required String model_code,
     required String isActive,
+    required String client_name, required String toner_receive_time,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -382,6 +383,8 @@ class ApiService {
         data: json.encode({
           'model_name': model_name,
           'model_code': model_code,
+          'client_name' : client_name,
+          'toner_receive_time':toner_receive_time,
           'isActive': isActive,
         }),
       );
@@ -403,7 +406,7 @@ class ApiService {
     required String id,
     required String model_name,
     required String model_code,
-    required String isActive,
+    required String isActive, required String client_name, required String toner_receive_time,
 
 
   }) async {
@@ -423,6 +426,8 @@ class ApiService {
           'id':id,
           'model_name': model_name,
           'model_code': model_code,
+          'client_name' : client_name,
+          'toner_receive_time':toner_receive_time,
           'isActive': isActive,
         }),
       );

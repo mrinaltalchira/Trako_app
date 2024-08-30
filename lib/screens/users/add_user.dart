@@ -9,6 +9,7 @@ import 'package:intl_phone_field/intl_phone_field.dart';
 
 class AddUser extends StatefulWidget {
   final User? user;
+
   const AddUser({super.key, this.user});
 
   @override
@@ -30,10 +31,15 @@ class _AddUserState extends State<AddUser> {
   bool machineModuleChecked = false;
   bool clientModuleChecked = false;
   bool userPrivilegeChecked = false;
-  bool supplyChainModuleModuleChecked = false;
+  bool supplyChainModuleChecked = false;
+  bool tonerRequestModuleChecked = false;
+  bool acknowledgementModuleChecked = false;
+
+  bool dispatchModuleChecked = false;
+  bool receiveModuleChecked = false;
+
   bool activeChecked = true; // Assuming Active is initially checked
   String? fullPhoneNumber;
-
 
   @override
   void initState() {
@@ -50,7 +56,7 @@ class _AddUserState extends State<AddUser> {
       activeStatusController.text = widget.user!.isActive;
 
       machineModuleChecked = widget.user!.machineModule == '0';
-      supplyChainModuleModuleChecked = widget.user!.supply_chain_module == '0';
+      supplyChainModuleChecked = widget.user!.supply_chain_module == '0';
       clientModuleChecked = widget.user!.clientModule == '0';
       userPrivilegeChecked = widget.user!.userModule == '0';
       activeChecked = widget.user!.isActive == '0';
@@ -72,12 +78,12 @@ class _AddUserState extends State<AddUser> {
   }
 
   bool isValidPhoneNumber(String phone) {
-    final phoneRegExp = RegExp(r'^[0-9]{7,15}$'); // Example: valid phone numbers with 10 to 15 digits
+    final phoneRegExp = RegExp(
+        r'^[0-9]{7,15}$'); // Example: valid phone numbers with 10 to 15 digits
     return phoneRegExp.hasMatch(phone);
   }
 
-  void validate(){
-
+  void validate() {
     if (selectedUserRole == null) {
       showSnackBar(context, "Please select User Role.");
       return;
@@ -113,7 +119,8 @@ class _AddUserState extends State<AddUser> {
     }
 
     if (!isValidPassword(passwordController.text)) {
-      showSnackBar(context, "Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character.");
+      showSnackBar(context,
+          "Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character.");
       return;
     }
 
@@ -137,7 +144,6 @@ class _AddUserState extends State<AddUser> {
         );
       },
     );
-
   }
 
   Future<void> submitUser() async {
@@ -151,120 +157,120 @@ class _AddUserState extends State<AddUser> {
       },
     );
 
-   if(widget.user != null){
-     // Call the login API
-     try {
-       final ApiService apiService = ApiService();
-       late final Map<String, dynamic> addUserResponse;
+    if (widget.user != null) {
+      // Call the login API
+      try {
+        final ApiService apiService = ApiService();
+        late final Map<String, dynamic> addUserResponse;
 
-       // Determine whether to use phone or email for login
+        // Determine whether to use phone or email for login
 
-       addUserResponse = await apiService.updateUser(
-         user_id: widget.user!.id.toString(),
-           name: nameController.text,
-           email: emailController.text,
-           phone: fullPhoneNumber.toString(),
-           isActive: activeChecked ? '0' : '1',
-           userRole: selectedUserRole ?? 'user', // Default to 'user' if not selected
-           password: passwordController.text,
-           machineModule: machineModuleChecked ? '0' : '1',
-           clientModule: clientModuleChecked ? '0' : '1',
-           userModule: userPrivilegeChecked ? '0' : '1',
-           supplyChainModule: supplyChainModuleModuleChecked ? '0' : '1'
+        addUserResponse = await apiService.updateUser(
+            user_id: widget.user!.id.toString(),
+            name: nameController.text,
+            email: emailController.text,
+            phone: fullPhoneNumber.toString(),
+            isActive: activeChecked ? '0' : '1',
+            userRole: selectedUserRole ?? 'User',
+            // Default to 'user' if not selected
+            password: passwordController.text,
+            machineModule: machineModuleChecked ? '0' : '1',
+            clientModule: clientModuleChecked ? '0' : '1',
+            userModule: userPrivilegeChecked ? '0' : '1',
+            supplyChainModule: supplyChainModuleChecked ? '0' : '1');
 
-       );
+        // Dismiss loading indicator
+        Navigator.of(context).pop();
 
-       // Dismiss loading indicator
-       Navigator.of(context).pop();
+        // Check if the login was successful based on the response structure
+        if (addUserResponse.containsKey('error') &&
+            addUserResponse.containsKey('status')) {
+          if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
+            if (addUserResponse['message'] == 'Success') {
+              nameController.text = "";
+              emailController.text = "";
+              phoneController.text = "";
+              passwordController.text = "";
+              confirmPasswordController.text = "";
+              Navigator.pop(context, true);
+            } else {
+              showSnackBar(context, addUserResponse['message']);
+            }
+          } else {
+            // Login failed
+            showSnackBar(context, addUserResponse['message']);
+          }
+        } else {
+          // Unexpected response structure
+          showSnackBar(context,
+              "Unexpected response from server. Please try again later.");
+        }
+      } catch (e) {
+        // Dismiss loading indicator
+        Navigator.of(context).pop();
 
-       // Check if the login was successful based on the response structure
-       if (addUserResponse.containsKey('error') &&
-           addUserResponse.containsKey('status')) {
-         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
-           if (addUserResponse['message'] == 'Success') {
-             nameController.text = "";
-             emailController.text = "";
-             phoneController.text = "";
-             passwordController.text = "";
-             confirmPasswordController.text = "";
-             Navigator.pop(context,true);
-           } else {
-             showSnackBar(context, addUserResponse['message']);
-           }
-         } else {
-           // Login failed
-           showSnackBar(context, addUserResponse['message']);
-         }
-       } else {
-         // Unexpected response structure
-         showSnackBar(context,
-             "Unexpected response from server. Please try again later.");
-       }
-     } catch (e) {
-       // Dismiss loading indicator
-       Navigator.of(context).pop();
+        // Handle API errors
+        showSnackBar(context,
+            "Failed to connect to the server. Please try again later.");
+        print("Login API Error: $e");
+      }
+    } else {
+      // Call the login API
+      try {
+        final ApiService apiService = ApiService();
+        late final Map<String, dynamic> addUserResponse;
 
-       // Handle API errors
-       showSnackBar(
-           context, "Failed to connect to the server. Please try again later.");
-       print("Login API Error: $e");
-     }
-   }else{
-     // Call the login API
-     try {
-       final ApiService apiService = ApiService();
-       late final Map<String, dynamic> addUserResponse;
+        // Determine whether to use phone or email for login
 
-       // Determine whether to use phone or email for login
+        addUserResponse = await apiService.addUser(
+            name: nameController.text,
+            email: emailController.text,
+            phone: fullPhoneNumber.toString(),
+            isActive: activeChecked ? '0' : '1',
+            userRole: selectedUserRole ?? 'user',
+            // Default to 'user' if not selected
+            password: passwordController.text,
+            machineModule: machineModuleChecked ? '0' : '1',
+            clientModule: clientModuleChecked ? '0' : '1',
+            userModule: userPrivilegeChecked ? '0' : '1',
+            supplyChainModule: supplyChainModuleChecked ? '0' : '1');
 
-       addUserResponse = await apiService.addUser(
-           name: nameController.text,
-           email: emailController.text,
-           phone: fullPhoneNumber.toString(),
-           isActive: activeChecked ? '0' : '1',
-           userRole: selectedUserRole ?? 'user', // Default to 'user' if not selected
-           password: passwordController.text,
-           machineModule: machineModuleChecked ? '0' : '1',
-           clientModule: clientModuleChecked ? '0' : '1',
-           userModule: userPrivilegeChecked ? '0' : '1',
-           supplyChainModule: supplyChainModuleModuleChecked ? '0' : '1');
+        // Dismiss loading indicator
+        Navigator.of(context).pop();
 
-       // Dismiss loading indicator
-       Navigator.of(context).pop();
+        // Check if the login was successful based on the response structure
+        if (addUserResponse.containsKey('error') &&
+            addUserResponse.containsKey('status')) {
+          if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
+            if (addUserResponse['message'] == 'Success') {
+              nameController.text = "";
+              emailController.text = "";
+              phoneController.text = "";
+              passwordController.text = "";
+              confirmPasswordController.text = "";
+              Navigator.pop(context, true);
+            } else {
+              showSnackBar(context, addUserResponse['message']);
+            }
+          } else {
+            // Login failed
+            showSnackBar(context, addUserResponse['message']);
+          }
+        } else {
+          // Unexpected response structure
+          showSnackBar(context,
+              "Unexpected response from server. Please try again later.");
+        }
+      } catch (e) {
+        // Dismiss loading indicator
+        Navigator.of(context).pop();
 
-       // Check if the login was successful based on the response structure
-       if (addUserResponse.containsKey('error') &&
-           addUserResponse.containsKey('status')) {
-         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
-           if (addUserResponse['message'] == 'Success') {
-             nameController.text = "";
-             emailController.text = "";
-             phoneController.text = "";
-             passwordController.text = "";
-             confirmPasswordController.text = "";
-             Navigator.pop(context,true);
-           } else {
-             showSnackBar(context, addUserResponse['message']);
-           }
-         } else {
-           // Login failed
-           showSnackBar(context,addUserResponse['message']);
-         }
-       } else {
-         // Unexpected response structure
-         showSnackBar(context,
-             "Unexpected response from server. Please try again later.");
-       }
-     } catch (e) {
-       // Dismiss loading indicator
-       Navigator.of(context).pop();
-
-       // Handle API errors
-       showSnackBar(
-           context, "Failed to connect to the server. Please try again later.");
-       print("Login API Error: $e");
-     }
-   }
+        // Handle API errors
+        showSnackBar(context,
+            "Failed to connect to the server. Please try again later.");
+        print("Login API Error: $e");
+      }
+    }
   }
 
   void _handlePhoneNumberChanged(String phoneNumber) {
@@ -304,7 +310,7 @@ class _AddUserState extends State<AddUser> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-               Center(
+              Center(
                 child: Text(
                   widget.user != null ? "Update User:" : "Add New:",
                   textAlign: TextAlign.center,
@@ -328,36 +334,70 @@ class _AddUserState extends State<AddUser> {
                 selectedValue: selectedUserRole,
                 onChanged: (newValue) {
                   setState(() {
-                    if(newValue == "Admin"){
+                    if (newValue == "Admin") {
                       isModuleAccessVisible = true;
 
-                   machineModuleChecked = true;
-                   clientModuleChecked= true;
-                   userPrivilegeChecked= true;
-                      supplyChainModuleModuleChecked = true;
-
-                    }else if(newValue == "Client"){
-                      isModuleAccessVisible = false;
-
-                      machineModuleChecked = false;
-                      clientModuleChecked= false;
-                      userPrivilegeChecked= false;
-                      supplyChainModuleModuleChecked = false;
-
-                    }else if(newValue == "User"){
+                      machineModuleChecked = true;
+                      clientModuleChecked = true;
+                      userPrivilegeChecked = true;
+                      supplyChainModuleChecked = true;
+                      tonerRequestModuleChecked = true;
+                      acknowledgementModuleChecked = true;
+                      dispatchModuleChecked = true;
+                      receiveModuleChecked = true;
+                    } else if (newValue == "Client") {
                       isModuleAccessVisible = true;
 
                       machineModuleChecked = false;
-                      clientModuleChecked= false;
-                      userPrivilegeChecked= false;
-                      supplyChainModuleModuleChecked = false;
-                    }else{
+                      clientModuleChecked = false;
+                      userPrivilegeChecked = false;
+                      supplyChainModuleChecked = false;
+                      tonerRequestModuleChecked = true;
+                      acknowledgementModuleChecked = true;
+                      dispatchModuleChecked = false;
+                      receiveModuleChecked = false;
+                    } else if (newValue == "User") {
+                      isModuleAccessVisible = true;
+                      machineModuleChecked = false;
+                      clientModuleChecked = false;
+                      userPrivilegeChecked = false;
+                      supplyChainModuleChecked = false;
+                      tonerRequestModuleChecked = false;
+                      acknowledgementModuleChecked = false;
+                      dispatchModuleChecked = false;
+                      receiveModuleChecked = false;
+                    } else if (newValue == "Logistics") {
+                      isModuleAccessVisible = true;
+                      machineModuleChecked = false;
+                      clientModuleChecked = false;
+                      userPrivilegeChecked = false;
+                      supplyChainModuleChecked = true;
+
+                      tonerRequestModuleChecked = false;
+                      acknowledgementModuleChecked = false;
+                      dispatchModuleChecked = true;
+                      receiveModuleChecked = true;
+                    } else if (newValue == "Engineer/Technician") {
+                      isModuleAccessVisible = true;
+                      machineModuleChecked = false;
+                      clientModuleChecked = false;
+                      userPrivilegeChecked = false;
+                      supplyChainModuleChecked = true;
+                      tonerRequestModuleChecked = false;
+                      acknowledgementModuleChecked = false;
+                      dispatchModuleChecked = false;
+                      receiveModuleChecked = true;
+                    } else {
                       isModuleAccessVisible = true;
 
                       machineModuleChecked = false;
-                      clientModuleChecked= false;
-                      userPrivilegeChecked= false;
-                      supplyChainModuleModuleChecked = false;
+                      clientModuleChecked = false;
+                      userPrivilegeChecked = false;
+                      supplyChainModuleChecked = false;
+                      tonerRequestModuleChecked = false;
+                      acknowledgementModuleChecked = false;
+                      dispatchModuleChecked = false;
+                      receiveModuleChecked = false;
                     }
                     selectedUserRole = newValue;
                   });
@@ -392,8 +432,10 @@ class _AddUserState extends State<AddUser> {
                 ),
               ),
               SizedBox(height: 5),
-              IntlPhoneInputTextField(controller: phoneController,
-                onPhoneNumberChanged: _handlePhoneNumberChanged,),
+              IntlPhoneInputTextField(
+                controller: phoneController,
+                onPhoneNumberChanged: _handlePhoneNumberChanged,
+              ),
               const SizedBox(height: 20),
               Text(
                 "Password",
@@ -432,9 +474,13 @@ class _AddUserState extends State<AddUser> {
                       machineModuleChecked: machineModuleChecked,
                       clientModuleChecked: clientModuleChecked,
                       userPrivilegeChecked: userPrivilegeChecked,
-                      supplyChainModuleChecked: supplyChainModuleModuleChecked,
+                      supplyChainModuleChecked: supplyChainModuleChecked,
                       isModuleAccessVisible: isModuleAccessVisible,
-                activeChecked: activeChecked,
+                      tonerRequestModuleChecked: tonerRequestModuleChecked,
+                      activeChecked: activeChecked,
+                      acknowledgementChecked: acknowledgementModuleChecked,
+                      dispatchModuleChecked: dispatchModuleChecked,
+                      receiveModuleChecked: receiveModuleChecked,
                       onMachineModuleChanged: (bool? value) {
                         setState(() {
                           machineModuleChecked = value ?? false;
@@ -456,10 +502,30 @@ class _AddUserState extends State<AddUser> {
                         });
                       },
                       onSupplyChainModuleChanged: (bool? value) {
-                      setState(() {
-                        supplyChainModuleModuleChecked = value ?? false;
-                      });
-                    },
+                        setState(() {
+                          supplyChainModuleChecked = value ?? false;
+                        });
+                      },
+                      onTonerRequestModuleChanged: (bool? value) {
+                        setState(() {
+                          tonerRequestModuleChecked = value ?? false;
+                        });
+                      },
+                      onAcknowledgementChanged: (bool? value) {
+                        setState(() {
+                          acknowledgementModuleChecked = value ?? false;
+                        });
+                      },
+                      onReceiveModuleChanged: (bool? value) {
+                        setState(() {
+                          receiveModuleChecked = value ?? false;
+                        });
+                      },
+                      onDispatchModuleChecked: (bool? value) {
+                        setState(() {
+                          dispatchModuleChecked = value ?? false;
+                        });
+                      },
                     ),
                   ],
                 ),
@@ -468,15 +534,14 @@ class _AddUserState extends State<AddUser> {
                 child: Padding(
                   padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
                   child: GradientButton(
-                    gradientColors: const [colorFirstGrad, colorSecondGrad],
-                    height: 45.0,
-                    width: 10.0,
-                    radius: 25.0,
-                    buttonText: "Submit",
-                    onPressed:(){
-                      validate();
-                    }
-                  ),
+                      gradientColors: const [colorFirstGrad, colorSecondGrad],
+                      height: 45.0,
+                      width: 10.0,
+                      radius: 25.0,
+                      buttonText: "Submit",
+                      onPressed: () {
+                        validate();
+                      }),
                 ),
               ),
               SizedBox(height: 100),
@@ -486,14 +551,13 @@ class _AddUserState extends State<AddUser> {
       ),
     );
   }
-
 }
-
 
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
 
-  const ConfirmSubmitDialog({Key? key, required this.onConfirm}) : super(key: key);
+  const ConfirmSubmitDialog({Key? key, required this.onConfirm})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -579,7 +643,8 @@ class ConfirmSubmitDialog extends StatelessWidget {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8.0),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
+                  padding: const EdgeInsets.symmetric(
+                      vertical: 12.0, horizontal: 24.0),
                 ),
                 child: const Text(
                   'Confirm',
@@ -613,7 +678,8 @@ class UserRolesSpinner extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text('Select Role'),
-      items: ['Admin', 'Client', 'User'].map((String value) {
+      items: ['Admin', 'Client', 'User', 'Logistics', 'Engineer/Technician']
+          .map((String value) {
         return DropdownMenuItem<String>(
           value: value,
           child: Text(value),
@@ -641,7 +707,6 @@ class UserRolesSpinner extends StatelessWidget {
 }
 
 class NameInputTextField extends StatelessWidget {
-
   final TextEditingController controller;
 
   NameInputTextField({Key? key, required this.controller}) : super(key: key);
@@ -652,7 +717,8 @@ class NameInputTextField extends StatelessWidget {
       maxLength: 30,
       controller: controller,
       inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')), // Allow only letters
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')),
+        // Allow only letters
       ],
       keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
@@ -692,7 +758,8 @@ class EmailInputTextField extends StatelessWidget {
       controller: controller,
       maxLength: 50,
       inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // Allow only email characters
+        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
+        // Allow only email characters
       ],
       keyboardType: TextInputType.text,
       decoration: InputDecoration(
@@ -752,7 +819,8 @@ class IntlPhoneInputTextField extends StatelessWidget {
           horizontal: 20.0,
         ),
       ),
-      initialCountryCode: 'IN', // Example initial country code
+      initialCountryCode: 'IN',
+      // Example initial country code
       onChanged: (phone) {
         // Get the full phone number with country code
         final fullPhoneNumber = '${phone.countryCode} ${phone.number}';
@@ -861,19 +929,28 @@ class CheckBoxRow extends StatelessWidget {
   final bool machineModuleChecked;
   final bool clientModuleChecked;
   final bool supplyChainModuleChecked;
+  final bool tonerRequestModuleChecked;
   final bool userPrivilegeChecked;
+  final bool acknowledgementChecked;
   final bool activeChecked;
   final bool isModuleAccessVisible;
+  final bool dispatchModuleChecked;
+  final bool receiveModuleChecked;
   final ValueChanged<bool?> onMachineModuleChanged;
   final ValueChanged<bool?> onClientModuleChanged;
+  final ValueChanged<bool?> onAcknowledgementChanged;
   final ValueChanged<bool?> onSupplyChainModuleChanged;
+  final ValueChanged<bool?> onTonerRequestModuleChanged;
   final ValueChanged<bool?> onUserPrivilegeChanged;
+  final ValueChanged<bool?> onDispatchModuleChecked;
+  final ValueChanged<bool?> onReceiveModuleChanged;
   final ValueChanged<bool?> onActiveChanged;
 
   const CheckBoxRow({
     required this.machineModuleChecked,
     required this.clientModuleChecked,
     required this.supplyChainModuleChecked,
+    required this.tonerRequestModuleChecked,
     required this.userPrivilegeChecked,
     required this.activeChecked,
     required this.onMachineModuleChanged,
@@ -882,6 +959,13 @@ class CheckBoxRow extends StatelessWidget {
     required this.onUserPrivilegeChanged,
     required this.onActiveChanged,
     required this.isModuleAccessVisible,
+    required this.onTonerRequestModuleChanged,
+    required this.acknowledgementChecked,
+    required this.onAcknowledgementChanged,
+    required this.dispatchModuleChecked,
+    required this.receiveModuleChecked,
+    required this.onDispatchModuleChecked,
+    required this.onReceiveModuleChanged,
   });
 
   @override
@@ -889,42 +973,78 @@ class CheckBoxRow extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (isModuleAccessVisible) Row(
-          children: [
-
-            CustomCheckbox(
-              value: clientModuleChecked,
-              onChanged: onClientModuleChanged,
-              activeColor: colorMixGrad,
-            ),
-            const Text('Client            '),
-            CustomCheckbox(
-              value: machineModuleChecked,
-              onChanged: onMachineModuleChanged,
-              activeColor: colorMixGrad,
-            ),
-            const Text('Machine'),
-
-          ],
-        ),
-        const SizedBox(height: 10),
-        if (isModuleAccessVisible)  Row(
-          children: [
-
-            CustomCheckbox(
-              value: supplyChainModuleChecked,
-              onChanged: onSupplyChainModuleChanged,
-              activeColor: colorMixGrad,
-            ),
-            const Text('SupplyChain '),
-            CustomCheckbox(
-              value: userPrivilegeChecked,
-              onChanged: onUserPrivilegeChanged,
-              activeColor: colorMixGrad,
-            ),
-            const Text('User Privilege'),
-          ],
-        ),
+        if (isModuleAccessVisible)
+          Column(
+            children: [
+              Row(
+                children: [
+                  CustomCheckbox(
+                    value: clientModuleChecked,
+                    onChanged: onClientModuleChanged,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('Client            '),
+                  CustomCheckbox(
+                    value: machineModuleChecked,
+                    onChanged: onMachineModuleChanged,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('Machine'),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  CustomCheckbox(
+                    value: supplyChainModuleChecked,
+                    onChanged: onSupplyChainModuleChanged,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('SupplyChain '),
+                  CustomCheckbox(
+                    value: userPrivilegeChecked,
+                    onChanged: onUserPrivilegeChanged,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('User Privilege'),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  CustomCheckbox(
+                    value: tonerRequestModuleChecked,
+                    onChanged: onTonerRequestModuleChanged,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('Toner Request'),
+                  CustomCheckbox(
+                    value: acknowledgementChecked,
+                    onChanged: onAcknowledgementChanged,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('Acknowledgement'),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  CustomCheckbox(
+                    value: dispatchModuleChecked,
+                    onChanged: onDispatchModuleChecked,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('Dispatch        '),
+                  CustomCheckbox(
+                    value: receiveModuleChecked,
+                    onChanged: onReceiveModuleChanged,
+                    activeColor: colorMixGrad,
+                  ),
+                  const Text('Receive'),
+                ],
+              ),
+            ],
+          ),
         SizedBox(height: 20),
         Row(
           children: [
@@ -939,7 +1059,6 @@ class CheckBoxRow extends StatelessWidget {
                   activeColor: colorMixGrad,
                 ),
                 Text('Active'),
-
                 CustomRadio(
                   value: false,
                   groupValue: activeChecked,

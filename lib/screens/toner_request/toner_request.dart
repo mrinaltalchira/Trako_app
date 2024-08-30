@@ -52,7 +52,7 @@ class _TonerRequestState extends State<TonerRequest> {
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.only(left: 25.0, top: 10, bottom: 10),
+              padding: const EdgeInsets.only(left: 25.0, top: 10),
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -60,6 +60,21 @@ class _TonerRequestState extends State<TonerRequest> {
                   style: TextStyle(
                     fontSize: 24.0,
                     color: colorMixGrad, // Replace with your colorSecondGrad
+                    fontWeight: FontWeight.w600,
+                  ),
+                  textAlign: TextAlign.start,
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(left: 25.0,  bottom: 10),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Make sure to acknowledge the toner after receiving it.",
+                  style: TextStyle(
+                    fontSize: 14.0,
+                    color: Colors.grey, // Replace with your colorSecondGrad
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.start,
