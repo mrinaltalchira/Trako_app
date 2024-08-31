@@ -364,9 +364,10 @@ class ApiService {
 
   Future<Map<String, dynamic>> addMachine({
     required String model_name,
-    required String model_code,
+    required String serial_no,
     required String isActive,
-    required String client_name, required String toner_receive_time,
+    required String client_id,
+    required String receive_days,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -382,9 +383,9 @@ class ApiService {
         ),
         data: json.encode({
           'model_name': model_name,
-          'model_code': model_code,
-          'client_name' : client_name,
-          'toner_receive_time':toner_receive_time,
+          'serial_no': serial_no,
+          'client_id' : client_id,
+          'receive_days':receive_days,
           'isActive': isActive,
         }),
       );
@@ -405,8 +406,10 @@ class ApiService {
   Future<Map<String, dynamic>> updateMachine({
     required String id,
     required String model_name,
-    required String model_code,
-    required String isActive, required String client_name, required String toner_receive_time,
+    required String serial_no,
+    required String isActive,
+    required String client_id,
+    required String receive_days,
 
 
   }) async {
@@ -425,9 +428,9 @@ class ApiService {
         data: json.encode({
           'id':id,
           'model_name': model_name,
-          'model_code': model_code,
-          'client_name' : client_name,
-          'toner_receive_time':toner_receive_time,
+          'serial_no': serial_no,
+          'client_id' : client_id,
+          'receive_days':receive_days,
           'isActive': isActive,
         }),
       );
@@ -614,8 +617,6 @@ class ApiService {
 
   Future<Map<String, dynamic>> addSupply({
     required String dispatch_receive,
-    required String client_name,
-    required String client_city,
     required String model_no,
     required String client_id,
     required String date_time,
@@ -636,8 +637,6 @@ class ApiService {
         ),
         data: json.encode({
           "dispatch_receive": dispatch_receive,
-          "client_name": client_name,
-          "client_city": client_city, // Add this
           "model_no": model_no,
           "client_id": client_id,
           "date_time": date_time,

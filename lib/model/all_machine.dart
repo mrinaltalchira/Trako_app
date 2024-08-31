@@ -32,8 +32,9 @@ class MachineData {
 
   factory MachineData.fromJson(Map<String, dynamic> json) {
     var machinesList = json['machine'] as List;
-    List<Machine> machines =
-    machinesList.map((machineJson) => Machine.fromJson(machineJson)).toList();
+    List<Machine> machines = machinesList
+        .map((machineJson) => Machine.fromJson(machineJson))
+        .toList();
 
     return MachineData(
       message: json['message'],
@@ -45,18 +46,24 @@ class MachineData {
 class Machine {
   final String id;
   final String modelName;
-  final String modelCode;
+  final String serialNo; // Updated field name
+  final String receiveDays; // Updated field name
+  final int? clientId; // Updated field type
   final String isActive;
-  final String addBy;
+  final int? addedBy; // Updated field type
+  final String clientName; // Updated field type
   final DateTime createdAt;
   final DateTime updatedAt;
 
   Machine({
+    required this.clientName,
     required this.id,
     required this.modelName,
-    required this.modelCode,
+    required this.serialNo, // Updated field name
+    required this.receiveDays, // Updated field name
+    required this.clientId, // Updated field type
     required this.isActive,
-    required this.addBy,
+    required this.addedBy, // Updated field type
     required this.createdAt,
     required this.updatedAt,
   });
@@ -65,9 +72,16 @@ class Machine {
     return Machine(
       id: json['id'].toString(),
       modelName: json['model_name'],
-      modelCode: json['model_code'],
+      serialNo: json['serial_no'],
+      // Updated field name
+      receiveDays: json['receive_days'],
+      clientName: json['client_name'],
+      // Updated field name
+      clientId: json['client_id'] != null ? json['client_id'] as int : null,
+      // Updated field type
       isActive: json['isActive'].toString(),
-      addBy: json['add_by'].toString(),
+      addedBy: json['added_by'] != null ? json['added_by'] as int : null,
+      // Updated field type
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
     );

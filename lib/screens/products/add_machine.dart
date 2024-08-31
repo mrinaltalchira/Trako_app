@@ -23,6 +23,7 @@ class _AddMachineState extends State<AddMachine> {
 
    final TextEditingController machine_name_Controller = TextEditingController();
    final TextEditingController machine_code_Controller = TextEditingController();
+
    String? selectedTimePeriod;
 
    List<SupplyClient> clients = [];
@@ -39,8 +40,11 @@ class _AddMachineState extends State<AddMachine> {
 
      if (widget.machine != null) {
        machine_name_Controller.text = widget.machine!.modelName;
-       machine_code_Controller.text = widget.machine!.modelCode;
+       machine_code_Controller.text = widget.machine!.serialNo;
+       selectedTimePeriod = widget.machine!.receiveDays;
        activeChecked = widget.machine!.isActive == "0";
+       selectedClientId = widget.machine!.clientId.toString();
+       selectedClientName = widget.machine!.clientName;
      }
      fetchSpinnerData();
    }
@@ -145,16 +149,17 @@ class _AddMachineState extends State<AddMachine> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    ClientNameSpinner(
-                      onChanged: (SupplyClient? newClient) {
-                        setState(() {
-                          selectedClientName = newClient?.name;
-                          selectedCityName = newClient?.city;
-                          selectedClientId = newClient?.id.toString();
-                        });
-                      },
-                      clients: clients,
-                    ),
+              ClientNameSpinner(
+                onChanged: (SupplyClient? newClient) {
+                  setState(() {
+                    selectedClientName = newClient?.name;
+                    selectedCityName = newClient?.city;
+                    selectedClientId = newClient?.id.toString();
+                  });
+                },
+                clients: clients
+              ),
+
 
                     const SizedBox(height: 20),
                     const Text(
@@ -218,9 +223,20 @@ class _AddMachineState extends State<AddMachine> {
      }
 
      if (machine_code_Controller.text.isEmpty) {
-       showSnackBar(context, "Model Code is required.");
+       showSnackBar(context, "Serial no is required.");
        return;
      }
+     if (selectedClientName == null) {
+       showSnackBar(context, "Client Name is required.");
+       return;
+     }
+     if (selectedTimePeriod == null) {
+       showSnackBar(context, "Receive time is required.");
+       return;
+     }
+     print("fgdfgfdgfgfdgdgf $selectedClientName $selectedTimePeriod");
+
+
 
      showDialog(
        context: context,
@@ -249,9 +265,9 @@ class _AddMachineState extends State<AddMachine> {
          final addMachineResponse = await apiService.updateMachine(
            id:widget.machine!.id.toString(),
            model_name: machine_name_Controller.text,
-           model_code: machine_code_Controller.text,
-           client_name : selectedClientName.toString(),
-           toner_receive_time : selectedTimePeriod.toString(),
+           serial_no: machine_code_Controller.text,
+           client_id : selectedClientName.toString(),
+           receive_days : selectedTimePeriod.toString(),
            isActive: activeChecked ? '0' : '1',
          );
 
@@ -284,9 +300,9 @@ class _AddMachineState extends State<AddMachine> {
 
          final addMachineResponse = await apiService.addMachine(
            model_name: machine_name_Controller.text,
-           model_code: machine_code_Controller.text,
-           client_name : selectedClientName.toString(),
-           toner_receive_time : selectedTimePeriod.toString(),
+           serial_no: machine_code_Controller.text,
+           client_id : selectedClientId.toString(),
+           receive_days : selectedTimePeriod.toString(),
            isActive: activeChecked ? '0' : '1',
          );
 
@@ -306,7 +322,7 @@ class _AddMachineState extends State<AddMachine> {
              }
            } else {
              showSnackBar(
-                 context, "Failed to add machine. Please check your details.");
+                 context, addMachineResponse['message']);
            }
          } else {
            showSnackBar(context,

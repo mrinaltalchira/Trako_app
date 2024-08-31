@@ -37,20 +37,24 @@ class _AddTonerState extends State<AddToner> {
   final ApiService _apiService = ApiService();
   DispatchReceive? _selectedDispatchReceive = DispatchReceive.dispatch;
   List<String> scannedCodes = [];
-  List<String> modelNos = [];
+  List<SupplyClient> spinnerClientData = [];
   List<String> clientCities = [];
   List<String> clientNames = [];
   List<SupplyClient> clients = [];
-  String? selectedClientName;
   String? selectedCityName;
   String? selectedTonerName;
+
+  String? selectedSerialNoId;
+  String? selectedClientId;
+  String? selectedClientName;
+  String? selectedClientCity;
+
 
   TextEditingController manualTonerCode = TextEditingController();
   TextEditingController controllerCityName = TextEditingController();
   TextEditingController referenceController = TextEditingController();
   DateTime? _selectedDateTime = DateTime.now();
   bool _isLoading = false;
-  String? selectedClientId;
 
   @override
   void initState() {
@@ -67,7 +71,7 @@ class _AddTonerState extends State<AddToner> {
       SupplySpinnerResponse spinnerResponse =
           await _apiService.getSpinnerDetails();
       setState(() {
-        modelNos = spinnerResponse.data.modelNo;
+        spinnerClientData = spinnerResponse.data.clients;
         clients = spinnerResponse.data.clients;
         clientNames = spinnerResponse.data.clientName;
         clientCities = spinnerResponse.data.clientCity;
@@ -85,12 +89,12 @@ class _AddTonerState extends State<AddToner> {
   Future<void> _scanQrCode() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => _selectedDispatchReceive == DispatchReceive.dispatch
-            ? const DualQRScannerTracesci()
-            : const QRViewTracesci(),
+        builder: (context) =>
+            _selectedDispatchReceive == DispatchReceive.dispatch
+                ? const DualQRScannerTracesci()
+                : const QRViewTracesci(),
       ),
     );
-
 
     if (result != null && result is String) {
       setState(() {
@@ -115,16 +119,6 @@ class _AddTonerState extends State<AddToner> {
 
   void validate() {
     if (_selectedDispatchReceive == DispatchReceive.dispatch) {
-      if (selectedClientName == null) {
-        showSnackBar(context, "Please select client name");
-        return;
-      }
-
-      if (selectedCityName == null) {
-        showSnackBar(context, "Please select client city");
-        return;
-      }
-
       if (selectedTonerName == null) {
         showSnackBar(context, "Please select Serial no.");
         return;
@@ -165,10 +159,7 @@ class _AddTonerState extends State<AddToner> {
       String commaSeparatedString = scannedCodes.join(',');
 
       addUserResponse = await apiService.addSupply(
-          dispatch_receive:
-              _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
-          client_name: selectedClientName.toString(),
-          client_city: selectedCityName.toString(),
+          dispatch_receive: _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
           client_id: selectedClientId.toString(),
           model_no: selectedTonerName.toString(),
           date_time: _selectedDateTime.toString(),
@@ -183,10 +174,7 @@ class _AddTonerState extends State<AddToner> {
           addUserResponse.containsKey('status')) {
         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
           if (addUserResponse['message'] == 'Success') {
-            if (addUserResponse['data']['message'] ==
-                    'Supply created successfully.' ||
-                addUserResponse['data']['message'] ==
-                    'Supply updated successfully.') {
+            if (addUserResponse['data']['message'] == 'Supply created successfully.' || addUserResponse['data']['message'] == 'Supply updated successfully.') {
               Navigator.pop(context, true);
             } else {
               showSnackBar(context, addUserResponse['message']);
@@ -274,31 +262,29 @@ class _AddTonerState extends State<AddToner> {
                             ),
                           ),
                           const SizedBox(height: 5),
-                          SerialNoSpinner(
-                            selectedValue: selectedTonerName,
-                            onChanged: (newValue) {
-                              setState(() {
-                                selectedTonerName = newValue;
-                              });
-                            },
-                            modelList:
-                            modelNos, // List<String> containing serial numbers
-                          ),
-                        const SizedBox(height: 5),
-                        Text(
-                          'Client Name: clientNames, City: clientCity',
-                          style: TextStyle(
-                            color: Colors.grey.shade600,
-                            fontSize: 12.0,
-                            fontStyle: FontStyle.italic,
-                          ),
+                        SerialNoSpinner(
+                          onChanged: (String? newSerialNo) {
+                            setState(() {
+
+                              print("Selected Serial No: $newSerialNo");
+                            });
+                          },
+                          supplyClientList: spinnerClientData,
                         ),
+                        SizedBox(height: 20),
+
+                          const SizedBox(height: 5),
+                          Text(
+                            'Client Name: clientNames, City: clientCity',
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12.0,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
                           const SizedBox(height: 15),
-
                         ])
-                  :
-              const SizedBox(height: 5),
-
+                  : const SizedBox(height: 5),
               const Text(
                 "Select DateTime",
                 style: TextStyle(
@@ -307,7 +293,6 @@ class _AddTonerState extends State<AddToner> {
                 ),
               ),
               const SizedBox(height: 5),
-
               DateTimeInputField(
                 initialDateTime: DateTime.now(),
                 onDateTimeChanged: (dateTime) {
@@ -480,7 +465,10 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
                             isScanningSecondQR = true;
                           });
                         },
-                        child: Text('Scan Second QR Code',style: TextStyle(color: colorMixGrad ),),
+                        child: Text(
+                          'Scan Second QR Code',
+                          style: TextStyle(color: colorMixGrad),
+                        ),
                       ),
                     ],
                   ),
@@ -559,8 +547,7 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
 
   void _returnScannedData() {
     if (firstResult != null && secondResult != null) {
-      String combinedResult =
-          '${firstResult!.code}~${secondResult!.code}';
+      String combinedResult = '${firstResult!.code}~${secondResult!.code}';
       Navigator.pop(context, combinedResult);
     }
   }

@@ -383,16 +383,13 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
   }
 }
 
-
 class SerialNoSpinner extends StatefulWidget {
-  final String? selectedValue;
   final ValueChanged<String?> onChanged;
-  final List<String> modelList;
+  final List<SupplyClient> supplyClientList;
 
   const SerialNoSpinner({
-    required this.selectedValue,
     required this.onChanged,
-    required this.modelList,
+    required this.supplyClientList,
     Key? key,
   }) : super(key: key);
 
@@ -402,8 +399,8 @@ class SerialNoSpinner extends StatefulWidget {
 
 class _SerialNoSpinnerState extends State<SerialNoSpinner> {
   final TextEditingController _searchController = TextEditingController();
-  List<String> _filteredModelList = [];
-  String? _selectedModel;
+  List<String> _filteredSerialNos = [];
+  String? _selectedSerialNo;
   bool _isSearching = false;
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
@@ -411,7 +408,7 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
   @override
   void initState() {
     super.initState();
-    _filteredModelList = widget.modelList;
+    _filteredSerialNos = _getAllSerialNumbers();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -423,17 +420,23 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
     super.dispose();
   }
 
-  void _onSearchChanged() {
-    _filterModels(_searchController.text);
+  List<String> _getAllSerialNumbers() {
+    return widget.supplyClientList
+        .expand((client) => client.machines.map((machine) => machine.serialNo))
+        .toList();
   }
 
-  void _filterModels(String query) {
+  void _onSearchChanged() {
+    _filterSerialNos(_searchController.text);
+  }
+
+  void _filterSerialNos(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredModelList = widget.modelList;
+        _filteredSerialNos = _getAllSerialNumbers();
       } else {
-        _filteredModelList = widget.modelList
-            .where((model) => model.toLowerCase().contains(query.toLowerCase()))
+        _filteredSerialNos = _getAllSerialNumbers()
+            .where((serialNo) => serialNo.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -476,10 +479,10 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
             child: ListView(
               padding: EdgeInsets.zero,
               shrinkWrap: true,
-              children: _filteredModelList.map((model) {
+              children: _filteredSerialNos.map((serialNo) {
                 return ListTile(
                   title: Text(
-                    model,
+                    serialNo,
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -487,11 +490,11 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
                   ),
                   onTap: () {
                     setState(() {
-                      _selectedModel = model;
+                      _selectedSerialNo = serialNo;
                       _isSearching = false;
                       _searchController.clear();
                     });
-                    widget.onChanged(model);
+                    widget.onChanged(serialNo);
                     _removeOverlay();
                   },
                 );
@@ -529,7 +532,7 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
                   setState(() {
                     _isSearching = false;
                     _searchController.clear();
-                    _filteredModelList = widget.modelList;
+                    _filteredSerialNos = _getAllSerialNumbers();
                   });
                   _removeOverlay();
                 },
@@ -538,18 +541,18 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
             onTap: _showOverlay,
           )
               : DropdownButtonFormField<String>(
-            value: _selectedModel,
+            value: _selectedSerialNo,
             hint: const Text('Select a serial number'),
-            items: widget.modelList.map((String model) {
+            items: _getAllSerialNumbers().map((serialNo) {
               return DropdownMenuItem<String>(
-                value: model,
-                child: Text(model),
+                value: serialNo,
+                child: Text(serialNo),
               );
             }).toList(),
-            onChanged: (String? newModel) {
+            onChanged: (String? newSerialNo) {
               setState(() {
-                _selectedModel = newModel;
-                widget.onChanged(newModel);
+                _selectedSerialNo = newSerialNo;
+                widget.onChanged(newSerialNo);
               });
             },
             decoration: InputDecoration(
@@ -568,7 +571,7 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
                 onPressed: () {
                   setState(() {
                     _isSearching = true;
-                    _filteredModelList = widget.modelList;
+                    _filteredSerialNos = _getAllSerialNumbers();
                   });
                   _showOverlay();
                 },
@@ -580,6 +583,8 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
     );
   }
 }
+
+
 
 
 

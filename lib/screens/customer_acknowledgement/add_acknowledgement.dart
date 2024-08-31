@@ -114,8 +114,6 @@ class _AddAcknowledgementState extends State<AddAcknowledgement> {
 
       addUserResponse = await apiService.addSupply(
           dispatch_receive: '1', // Hardcoded for receive
-          client_name: selectedClientName ?? '',
-          client_city: selectedCityName ?? '',
           model_no: selectedTonerName ?? '',
           date_time: _selectedDateTime.toString(),
           qr_code: commaSeparatedString,

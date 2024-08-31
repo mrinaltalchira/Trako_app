@@ -219,7 +219,7 @@ class ScannedHistoryList extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  '${items[index].modelCode[0].toUpperCase()}${items[index].modelCode.substring(1)}',
+                  '${items[index].serialNo[0].toUpperCase()}${items[index].serialNo.substring(1)}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4.0),
