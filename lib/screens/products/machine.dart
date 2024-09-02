@@ -190,7 +190,7 @@ class ScannedHistoryList extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${items[index].modelName[0].toUpperCase()}${items[index].modelName.substring(1)}',
+                            '${items[index].modelName?[0].toUpperCase()}${items[index].modelName?.substring(1)}',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                           ),
 
@@ -219,7 +219,7 @@ class ScannedHistoryList extends StatelessWidget {
                   ],
                 ),
                 Text(
-                  '${items[index].serialNo[0].toUpperCase()}${items[index].serialNo.substring(1)}',
+                  '${items[index].serialNo?[0].toUpperCase()}${items[index].serialNo?.substring(1)}',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4.0),

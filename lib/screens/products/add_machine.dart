@@ -39,8 +39,8 @@ class _AddMachineState extends State<AddMachine> {
      super.initState();
 
      if (widget.machine != null) {
-       machine_name_Controller.text = widget.machine!.modelName;
-       machine_code_Controller.text = widget.machine!.serialNo;
+       machine_name_Controller.text = widget.machine!.modelName!;
+       machine_code_Controller.text = widget.machine!.serialNo!;
        selectedTimePeriod = widget.machine!.receiveDays;
        activeChecked = widget.machine!.isActive == "0";
        selectedClientId = widget.machine!.clientId.toString();
@@ -141,43 +141,7 @@ class _AddMachineState extends State<AddMachine> {
                     const SizedBox(
                       height: 20,
                     ),
-                    const Text(
-                      "Client Name",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-              ClientNameSpinner(
-                onChanged: (SupplyClient? newClient) {
-                  setState(() {
-                    selectedClientName = newClient?.name;
-                    selectedCityName = newClient?.city;
-                    selectedClientId = newClient?.id.toString();
-                  });
-                },
-                clients: clients
-              ),
 
-
-                    const SizedBox(height: 20),
-                    const Text(
-                      "Empty Bottle Receive",
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    TimePeriodDropdown(
-                      selectedValue: selectedTimePeriod,
-                      onChanged: (newValue) {
-                        setState(() {
-                          selectedTimePeriod = newValue;
-                        });
-                      },
-                    ),
                     SizedBox(height: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -226,14 +190,7 @@ class _AddMachineState extends State<AddMachine> {
        showSnackBar(context, "Serial no is required.");
        return;
      }
-     if (selectedClientName == null) {
-       showSnackBar(context, "Client Name is required.");
-       return;
-     }
-     if (selectedTimePeriod == null) {
-       showSnackBar(context, "Receive time is required.");
-       return;
-     }
+
      print("fgdfgfdgfgfdgdgf $selectedClientName $selectedTimePeriod");
 
 

@@ -14,8 +14,8 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import '../main.dart';
+import '../model/acknowledgment.dart';
 import '../screens/authFlow/signin.dart';
 import '../screens/customer_acknowledgement/client_acknowledgement.dart';
 import '../screens/toner_request/toner_request.dart';
@@ -107,46 +107,6 @@ class ApiService {
     }
   }
 
-  Future<List<AcknowledgementItem>> getAllAcknowledgements(String? search) async {
-    // Simulated delay to mimic network request
-    await Future.delayed(Duration(seconds: 2));
-
-    // Simulated data
-    List<AcknowledgementItem> acknowledgements = [
-      AcknowledgementItem(
-        id: '1',
-        name: 'Acknowledgment 1',
-        description: 'This is the first acknowledgment.',
-        date: '2024-08-28',
-        isAcknowledged: true,
-      ),
-      AcknowledgementItem(
-        id: '2',
-        name: 'Acknowledgment 2',
-        description: 'This is the second acknowledgment.',
-        date: '2024-08-27',
-        isAcknowledged: false,
-      ),
-      AcknowledgementItem(
-        id: '3',
-        name: 'Acknowledgment 3',
-        description: 'This is the third acknowledgment.',
-        date: '2024-08-26',
-        isAcknowledged: true,
-      ),
-    ];
-
-    // If there's a search query, filter the list based on the name or description
-    if (search != null && search.isNotEmpty) {
-      acknowledgements = acknowledgements.where((item) {
-        return item.name.toLowerCase().contains(search.toLowerCase()) ||
-            item.description.toLowerCase().contains(search.toLowerCase());
-      }).toList();
-    }
-
-    return acknowledgements;
-  }
-
   Future<Toner> getAllToners(String? search) async {
     try {
       await initializeApiService(); // Ensure token is initialized before getAllClients
@@ -224,7 +184,7 @@ class ApiService {
         ),
         data: jsonEncode({
           if (email != null && email.isNotEmpty) 'email': email,
-          if (phone != null && phone.isNotEmpty) 'phone': phone,
+            if (phone != null && phone.isNotEmpty) 'phone': phone,
           'password': password,
         }),
       ).timeout(const Duration(seconds: 15));
@@ -246,7 +206,7 @@ class ApiService {
     required String phone,
     required String address,
     required String contactPerson,
-    required String isActive,
+    required String isActive, required String machines,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -268,6 +228,7 @@ class ApiService {
           "isActive": isActive,
           'address': address,
           'contact_person': contactPerson,
+          'machines':machines
         }),
       );
 
@@ -291,7 +252,7 @@ class ApiService {
     required String phone,
     required String address,
     required String contactPerson,
-    required String isActive,
+    required String isActive, required String machines,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -313,7 +274,8 @@ class ApiService {
           "isActive": isActive,
           'address': address,
           'contact_person': contactPerson,
-          'id':id
+          'id':id,
+          'machines':machines
         }),
       );
 
@@ -783,6 +745,78 @@ class ApiService {
       }
     } catch (e) {
       print('GET Dashboard API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  // addAcknowledgement
+
+
+  Future<Map<String, dynamic>> addAcknowledgement({
+    required String qr_code,
+    required String date_time,
+    required String? reference
+  }) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before addClient
+
+      final url = '/add-acknowledgement'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          'qr_code': qr_code,
+          'date_time': date_time,
+          'reference' : reference,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to add acknowledgement');
+      }
+    } catch (e) {
+      print('Add acknowledgement API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+
+  Future<List<AcknowledgementModel>> getAllAcknowledgeList(String? search) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before making the API call
+
+      final response = await _dio.get(
+        '$baseUrl/all-acknowledgement',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final acknowledgementsJson = data['data']['acknowledgement'] as List;
+        List<AcknowledgementModel> acknowledgements = acknowledgementsJson
+            .map((json) => AcknowledgementModel.fromJson(json))
+            .toList();
+        return acknowledgements;
+      } else {
+        throw Exception('Failed to load Acknowledgement data');
+      }
+    } catch (e) {
+      print('Get All Acknowledgement API error: $e');
       throw Exception('Failed to connect to the server.');
     }
   }

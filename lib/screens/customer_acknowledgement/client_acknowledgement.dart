@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../color/colors.dart';
 import '../../globals.dart';
+import '../../model/acknowledgment.dart';
 import '../../network/ApiService.dart';
 import '../home/client/client.dart';
 import 'add_acknowledgement.dart';
@@ -30,32 +31,37 @@ class AcknowledgementItem {
 }
 
 
+
+
 class _AcknowledgementState extends State<Acknowledgement> {
-  late Future<List<AcknowledgementItem>> acknowledgementsFuture;
+
+  late Future<List<AcknowledgementModel>> acknowledgementsFuture;
   final ApiService _apiService = ApiService(); // Initialize your ApiService
 
-  @override
-  void initState() {
-    super.initState();
-    acknowledgementsFuture = getAcknowledgementsList(null);
-  }
 
-  Future<List<AcknowledgementItem>> getAcknowledgementsList(String? search) async {
+  Future<List<AcknowledgementModel>> getAcknowledgementDataList(String? search) async {
     try {
-      List<AcknowledgementItem> acknowledgements = await _apiService.getAllAcknowledgements(search);
-      // Debug print to check the fetched acknowledgements
-      print('Fetched acknowledgements: $acknowledgements');
-      return acknowledgements;
+      List<AcknowledgementModel> clients = await _apiService.getAllAcknowledgeList(search);
+      // Debug print to check the fetched clients
+      print('Fetched clients: $clients');
+      return clients;
     } catch (e) {
       // Handle error
-      print('Error fetching acknowledgements: $e');
+      print('Error fetching clients: $e');
       return [];
     }
   }
 
+  @override
+  void initState() {
+    super.initState();
+    acknowledgementsFuture = getAcknowledgementDataList(null);
+
+  }
+
   Future<void> refreshAcknowledgementsList() async {
     setState(() {
-      acknowledgementsFuture = getAcknowledgementsList(null);
+      acknowledgementsFuture = getAcknowledgementDataList(null);
     });
   }
 
@@ -90,7 +96,7 @@ class _AcknowledgementState extends State<Acknowledgement> {
                     child: CustomSearchField(
                       onSearchChanged: (searchQuery) {
                         setState(() {
-                          acknowledgementsFuture = getAcknowledgementsList(searchQuery);
+                          acknowledgementsFuture = getAcknowledgementDataList(searchQuery);
                         });
                       },
                     ),
@@ -131,7 +137,7 @@ class _AcknowledgementState extends State<Acknowledgement> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      FutureBuilder<List<AcknowledgementItem>>(
+                      FutureBuilder<List<AcknowledgementModel>>(
                         future: acknowledgementsFuture,
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -139,16 +145,20 @@ class _AcknowledgementState extends State<Acknowledgement> {
                           } else if (snapshot.hasError) {
                             return Center(child: Text('Error: ${snapshot.error}'));
                           } else {
-                            List<AcknowledgementItem> acknowledgements = snapshot.data ?? [];
-                            // Debug print to check the acknowledgements before passing to the widget
-                            print('Acknowledgements to display: $acknowledgements');
+                            List<AcknowledgementModel> clients = snapshot.data ??
+                                []; // Handle null case if necessary
+                            // Debug print to check the clients before passing to the widget
+                            print('Clients to display: $clients');
 
-                            if (acknowledgements.isEmpty) {
+                            if (clients.isEmpty) {
                               return NoDataFoundWidget(
-                                onRefresh: refreshAcknowledgementsList,
+                                onRefresh: () async {
+                                  // Simulate an API call
+                                  refreshAcknowledgementsList();
+                                },
                               );
                             } else {
-                              return AcknowledgementList(items: acknowledgements);
+                              return AcknowledgementList(items: clients);
                             }
                           }
                         },
@@ -166,7 +176,7 @@ class _AcknowledgementState extends State<Acknowledgement> {
 }
 
 class AcknowledgementList extends StatelessWidget {
-  final List<AcknowledgementItem> items;
+  final List<AcknowledgementModel> items;
 
   const AcknowledgementList({Key? key, required this.items}) : super(key: key);
 
@@ -178,7 +188,7 @@ class AcknowledgementList extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         // Determine the background color based on isAcknowledged status
-        Color? cardColor = items[index].isAcknowledged ? Colors.green[100] : Colors.grey[300];
+
 
         return Card(
           margin: const EdgeInsets.all(8.0),
@@ -186,7 +196,6 @@ class AcknowledgementList extends StatelessWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0),
           ),
-          color: cardColor,
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
@@ -201,7 +210,7 @@ class AcknowledgementList extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${items[index].name[0].toUpperCase()}${items[index].name.substring(1)}',
+                            'QR - ${items[index].qrCode.toUpperCase()}',
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                           ),
                         ],
@@ -211,14 +220,10 @@ class AcknowledgementList extends StatelessWidget {
 
                   ],
                 ),
-                const SizedBox(height: 8.0),
+                const SizedBox(height: 10.0),
+
                 Text(
-                  items[index].description,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4.0),
-                Text(
-                  'Date: ${items[index].date}',
+                  'Date: ${items[index].dateTime}',
                   style: const TextStyle(color: Colors.black54),
                 ),
               ],

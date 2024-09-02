@@ -13,6 +13,8 @@ import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/supply_chian/supplychain.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
+import '../../model/all_clients.dart';
+import '../../model/all_machine.dart';
 import 'utils.dart';
 
 /*
@@ -37,10 +39,6 @@ class _AddTonerState extends State<AddToner> {
   final ApiService _apiService = ApiService();
   DispatchReceive? _selectedDispatchReceive = DispatchReceive.dispatch;
   List<String> scannedCodes = [];
-  List<SupplyClient> spinnerClientData = [];
-  List<String> clientCities = [];
-  List<String> clientNames = [];
-  List<SupplyClient> clients = [];
   String? selectedCityName;
   String? selectedTonerName;
 
@@ -48,41 +46,58 @@ class _AddTonerState extends State<AddToner> {
   String? selectedClientId;
   String? selectedClientName;
   String? selectedClientCity;
-
+  late Future<List<Client>> clientsFuture;
+  Client? _selectedClient;
 
   TextEditingController manualTonerCode = TextEditingController();
   TextEditingController controllerCityName = TextEditingController();
   TextEditingController referenceController = TextEditingController();
   DateTime? _selectedDateTime = DateTime.now();
-  bool _isLoading = false;
+
+  late Future<List<Machine>> machineFuture;
+
+  void _onClientChanged(Client? client) {
+    setState(() {
+      _selectedClient = client;
+      showSnackBar(context,client!.id.toString());
+
+    });
+
+  }
+
+
 
   @override
   void initState() {
     super.initState();
-    fetchSpinnerData();
+    machineFuture = getMachineList(null);
+    clientsFuture = getClientsList(null);
     scannedCodes = widget.qrData.isNotEmpty ? [widget.qrData] : [];
   }
 
-  Future<void> fetchSpinnerData() async {
-    setState(() {
-      _isLoading = true;
-    });
+  Future<List<Client>> getClientsList(String? search) async {
     try {
-      SupplySpinnerResponse spinnerResponse =
-          await _apiService.getSpinnerDetails();
-      setState(() {
-        spinnerClientData = spinnerResponse.data.clients;
-        clients = spinnerResponse.data.clients;
-        clientNames = spinnerResponse.data.clientName;
-        clientCities = spinnerResponse.data.clientCity;
-        _isLoading = false;
-      });
+      List<Client> clients = await _apiService.getAllClients(search);
+      // Debug print to check the fetched clients
+      print('Fetched clients: $clients');
+      return clients;
     } catch (e) {
-      print('Error fetching supply spinner details: $e');
-      setState(() {
-        _isLoading = false;
-      });
-      // Handle error as needed
+      // Handle error
+      print('Error fetching clients: $e');
+      return [];
+    }
+  }
+
+  Future<List<Machine>> getMachineList(String? search) async {
+    try {
+      List<Machine> machines = await _apiService.getAllMachines(search);
+      // Debug print to check the fetched machines
+      print('Fetched machines: $machines');
+      return machines;
+    } catch (e) {
+      // Handle error
+      print('Error fetching machines: $e');
+      return [];
     }
   }
 
@@ -159,7 +174,8 @@ class _AddTonerState extends State<AddToner> {
       String commaSeparatedString = scannedCodes.join(',');
 
       addUserResponse = await apiService.addSupply(
-          dispatch_receive: _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
+          dispatch_receive:
+              _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
           client_id: selectedClientId.toString(),
           model_no: selectedTonerName.toString(),
           date_time: _selectedDateTime.toString(),
@@ -174,7 +190,10 @@ class _AddTonerState extends State<AddToner> {
           addUserResponse.containsKey('status')) {
         if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
           if (addUserResponse['message'] == 'Success') {
-            if (addUserResponse['data']['message'] == 'Supply created successfully.' || addUserResponse['data']['message'] == 'Supply updated successfully.') {
+            if (addUserResponse['data']['message'] ==
+                    'Supply created successfully.' ||
+                addUserResponse['data']['message'] ==
+                    'Supply updated successfully.') {
               Navigator.pop(context, true);
             } else {
               showSnackBar(context, addUserResponse['message']);
@@ -254,6 +273,19 @@ class _AddTonerState extends State<AddToner> {
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        const Text(
+                          "Client name",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
+                          ClientNameSpinner(
+                            fetchClients: getClientsList,
+                            onChanged: _onClientChanged,
+                          ),
+                        const SizedBox(height: 15),
                           const Text(
                             "Serial no.",
                             style: TextStyle(
@@ -262,25 +294,14 @@ class _AddTonerState extends State<AddToner> {
                             ),
                           ),
                           const SizedBox(height: 5),
-                        SerialNoSpinner(
-                          onChanged: (String? newSerialNo) {
-                            setState(() {
-
-                              print("Selected Serial No: $newSerialNo");
-                            });
-                          },
-                          supplyClientList: spinnerClientData,
-                        ),
-                        SizedBox(height: 20),
-
-                          const SizedBox(height: 5),
-                          Text(
-                            'Client Name: clientNames, City: clientCity',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12.0,
-                              fontStyle: FontStyle.italic,
-                            ),
+                          SerialNoSpinner(
+                            onChanged: (String? newSerialNo) {
+                              setState(() {
+                                print("Selected Serial No: $newSerialNo");
+                              });
+                            },
+                            machines:
+                                machineFuture, // Pass the list of machines
                           ),
                           const SizedBox(height: 15),
                         ])

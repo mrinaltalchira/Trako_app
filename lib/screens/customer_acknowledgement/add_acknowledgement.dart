@@ -90,64 +90,79 @@ class _AddAcknowledgementState extends State<AddAcknowledgement> {
       builder: (BuildContext context) {
         return ConfirmSubmitDialog(
           onConfirm: () {
-            // submitToner(); // Call your submit function here
+            submitAcknowledgement(); // Call your submit function here
           },
         );
       },
     );
   }
 
-  Future<void> submitToner() async {
+  Future<void> submitAcknowledgement() async {
+    // Show a loading dialog
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return Center(child: CircularProgressIndicator());
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
     try {
       final ApiService apiService = ApiService();
-      late final Map<String, dynamic> addUserResponse;
+      late final Map<String, dynamic> addAckResponse;
 
+      // Convert the scanned codes list into a comma-separated string
       String commaSeparatedString = scannedCodes.join(',');
 
-      addUserResponse = await apiService.addSupply(
-          dispatch_receive: '1', // Hardcoded for receive
-          model_no: selectedTonerName ?? '',
-          date_time: _selectedDateTime.toString(),
-          qr_code: commaSeparatedString,
-          reference: referenceController.text, client_id: '');
+      // Call the API to add the acknowledgment.dart
+      addAckResponse = await apiService.addAcknowledgement(
+        date_time: _selectedDateTime.toString(),
+        qr_code: commaSeparatedString,
+        reference: referenceController.text.isNotEmpty ? referenceController.text : "",
 
-      Navigator.of(context).pop();
+      );
 
-      if (addUserResponse.containsKey('error') &&
-          addUserResponse.containsKey('status')) {
-        if (!addUserResponse['error'] && addUserResponse['status'] == 200) {
-          if (addUserResponse['message'] == 'Success') {
-            if (addUserResponse['data']['message'] ==
-                'Supply created successfully.' ||
-                addUserResponse['data']['message'] ==
-                    'Supply updated successfully.') {
+
+      // Check if the response contains the required keys
+      if (addAckResponse.containsKey('error') && addAckResponse.containsKey('status')) {
+        if (!addAckResponse['error'] && addAckResponse['status'] == 200) {
+          // Show a success message
+          showSnackBar(context, addAckResponse['message']);
+
+          if (addAckResponse['message'] == 'Success') {
+            // Check if the acknowledgment.dart was added successfully
+            if (addAckResponse['data']['message'] == 'Acknowledgement added successfully.') {
+              // Close the loading dialog and navigate back with a success result
               Navigator.pop(context, true);
+
             } else {
-              showSnackBar(context, addUserResponse['message']);
+              // Show the specific message from the API response if not successful
+              showSnackBar(context, addAckResponse['data']['message']);
             }
           } else {
-            showSnackBar(context, addUserResponse['message']);
+            // If the message is not "Success", stay on the page and show the message
+            showSnackBar(context, addAckResponse['data']['message']);
           }
         } else {
-          showSnackBar(context, "Submission failed. Please try again.");
+          // Handle cases where the API returns a different status
+          showSnackBar(context, addAckResponse['data']['message'] ?? "Submission failed. Please try again.");
         }
       } else {
+        // Handle unexpected responses
         showSnackBar(context, "Unexpected response from server. Please try again later.");
       }
     } catch (e) {
-      Navigator.of(context).pop();
+      // Handle any errors that occur during the API call
       showSnackBar(context, "Failed to connect to the server. Please try again later.");
       print("API Error: $e");
+    } finally {
+      // Close the loading dialog if it's still open
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
     }
   }
+
 
   void _removeScannedCode(String code) {
     setState(() {

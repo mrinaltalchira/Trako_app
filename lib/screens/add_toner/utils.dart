@@ -3,6 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:Trako/color/colors.dart';
 import 'package:Trako/model/supply_fields_data.dart';
 
+import '../../model/all_clients.dart';
+import '../../model/all_machine.dart';
+
 class ManualCodeField extends StatefulWidget {
   final TextEditingController controller;
   final Function(String) onAddPressed;
@@ -170,13 +173,14 @@ class _DispatchReceiveRadioButtonState
   }
 }
 
+
 class ClientNameSpinner extends StatefulWidget {
-  final ValueChanged<SupplyClient?> onChanged;
-  final List<SupplyClient> clients;
+  final Future<List<Client>> Function(String? search) fetchClients;
+  final ValueChanged<Client?> onChanged;
 
   const ClientNameSpinner({
+    required this.fetchClients,
     required this.onChanged,
-    required this.clients,
     Key? key,
   }) : super(key: key);
 
@@ -186,8 +190,9 @@ class ClientNameSpinner extends StatefulWidget {
 
 class _ClientNameSpinnerState extends State<ClientNameSpinner> {
   final TextEditingController _searchController = TextEditingController();
-  List<SupplyClient> _filteredClients = [];
-  SupplyClient? _selectedClient;
+  List<Client> _clients = [];
+  List<Client> _filteredClients = [];
+  Client? _selectedClient;
   bool _isSearching = false;
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
@@ -195,7 +200,7 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
   @override
   void initState() {
     super.initState();
-    _filteredClients = widget.clients;
+    _fetchClients();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -207,6 +212,18 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
     super.dispose();
   }
 
+  Future<void> _fetchClients() async {
+    try {
+      List<Client> clients = await widget.fetchClients(null);
+      setState(() {
+        _clients = clients;
+        _filteredClients = clients;
+      });
+    } catch (e) {
+      print('Error fetching clients: $e');
+    }
+  }
+
   void _onSearchChanged() {
     _filterClients(_searchController.text);
   }
@@ -214,11 +231,12 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
   void _filterClients(String query) {
     setState(() {
       if (query.isEmpty) {
-        _filteredClients = widget.clients;
+        _filteredClients = _clients;
       } else {
-        _filteredClients = widget.clients
+        _filteredClients = _clients
             .where((client) =>
-            client.name.toLowerCase().contains(query.toLowerCase()))
+        client.name.toLowerCase().contains(query.toLowerCase()) ||
+            client.city.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });
@@ -249,13 +267,13 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
 
     return OverlayEntry(
       builder: (context) => Positioned(
-        top: offset.dy + size.height + 5.0, // Position below the spinner
+        top: offset.dy + size.height + 5.0,
         left: offset.dx,
         width: size.width,
         child: CompositedTransformFollower(
           link: _layerLink,
           showWhenUnlinked: false,
-          offset: Offset(0.0, size.height + 5.0), // Ensure the overlay appears below the spinner
+          offset: Offset(0.0, size.height + 5.0),
           child: Material(
             elevation: 4.0,
             child: ListView(
@@ -264,10 +282,10 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
               children: _filteredClients.map((client) {
                 return ListTile(
                   title: Text(
-                    '${client.name} - ${client.city}', // Combine name and city with a dash
+                    '${client.name} - ${client.city}', // Display name and city
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.bold, // Make text bold
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   onTap: () {
@@ -287,7 +305,6 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -314,7 +331,7 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
                   setState(() {
                     _isSearching = false;
                     _searchController.clear();
-                    _filteredClients = widget.clients;
+                    _filteredClients = _clients;
                   });
                   _removeOverlay();
                 },
@@ -322,16 +339,16 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
             ),
             onTap: _showOverlay,
           )
-              : DropdownButtonFormField<SupplyClient>(
+              : DropdownButtonFormField<Client>(
             value: _selectedClient,
             hint: Text('Select a client'),
-            items: widget.clients.map((SupplyClient client) {
-              return DropdownMenuItem<SupplyClient>(
+            items: _clients.map((Client client) {
+              return DropdownMenuItem<Client>(
                 value: client,
-                child: Text('${client.name} - ${client.city}'), // Show name and city in the dropdown
+                child: Text('${client.name} - ${client.city}'), // Display name and city
               );
             }).toList(),
-            onChanged: (SupplyClient? newClient) {
+            onChanged: (Client? newClient) {
               setState(() {
                 _selectedClient = newClient;
                 widget.onChanged(newClient);
@@ -342,8 +359,6 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10.0),
               ),
-
-
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide(color: Colors.black),
@@ -353,43 +368,40 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
                 borderSide: BorderSide(color: colorMixGrad),
               ),
               contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-
               suffixIcon: IconButton(
                 icon: Icon(Icons.search, color: colorMixGrad),
                 onPressed: () {
                   setState(() {
                     _isSearching = true;
-                    _filteredClients = widget.clients;
+                    _filteredClients = _clients;
                   });
                   _showOverlay();
                 },
               ),
             ),
-            // Display only the name of the selected client
-
             selectedItemBuilder: (BuildContext context) {
-              return widget.clients.map((SupplyClient client) {
-                return DropdownMenuItem<SupplyClient>(
+              return _clients.map((Client client) {
+                return DropdownMenuItem<Client>(
                   value: client,
-                  child: Text(client.name), // Display only name in the selected item
+                  child: Text('${client.name} - ${client.city}'), // Display name and city
                 );
               }).toList();
             },
-          )
-          ,
+          ),
         ],
       ),
     );
   }
 }
 
+
 class SerialNoSpinner extends StatefulWidget {
   final ValueChanged<String?> onChanged;
-  final List<SupplyClient> supplyClientList;
+  final Future<List<Machine>> machines;
 
   const SerialNoSpinner({
     required this.onChanged,
-    required this.supplyClientList,
+    required this.machines,
     Key? key,
   }) : super(key: key);
 
@@ -404,11 +416,12 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
   bool _isSearching = false;
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
+  late Future<List<Machine>> _machinesFuture;
 
   @override
   void initState() {
     super.initState();
-    _filteredSerialNos = _getAllSerialNumbers();
+    _machinesFuture = widget.machines;
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -420,27 +433,39 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
     super.dispose();
   }
 
-  List<String> _getAllSerialNumbers() {
-    return widget.supplyClientList
-        .expand((client) => client.machines.map((machine) => machine.serialNo))
-        .toList();
-  }
-
   void _onSearchChanged() {
     _filterSerialNos(_searchController.text);
   }
 
-  void _filterSerialNos(String query) {
-    setState(() {
-      if (query.isEmpty) {
-        _filteredSerialNos = _getAllSerialNumbers();
-      } else {
-        _filteredSerialNos = _getAllSerialNumbers()
-            .where((serialNo) => serialNo.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      }
-    });
-    _updateOverlay();
+  void _filterSerialNos(String query) async {
+    try {
+      final machines = await _machinesFuture;
+      setState(() {
+        if (query.isEmpty) {
+          _filteredSerialNos = _formatMachines(machines);
+        } else {
+          _filteredSerialNos = _formatMachines(machines)
+              .where((serialNo) => serialNo.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+        }
+      });
+      _updateOverlay();
+    } catch (e) {
+      // Handle error
+      print('Error filtering machines: $e');
+    }
+  }
+
+  void _updateFilteredSerialNos() async {
+    try {
+      final machines = await _machinesFuture;
+      setState(() {
+        _filteredSerialNos = _formatMachines(machines);
+      });
+    } catch (e) {
+      // Handle error
+      print('Error updating filtered serial numbers: $e');
+    }
   }
 
   void _showOverlay() {
@@ -506,6 +531,13 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
     );
   }
 
+  List<String> _formatMachines(List<Machine> machines) {
+    return machines
+        .where((machine) => machine.serialNo != null && machine.modelName != null)
+        .map((machine) => '${machine.serialNo} - ${machine.modelName}')
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return CompositedTransformTarget(
@@ -532,7 +564,7 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
                   setState(() {
                     _isSearching = false;
                     _searchController.clear();
-                    _filteredSerialNos = _getAllSerialNumbers();
+                    _updateFilteredSerialNos();
                   });
                   _removeOverlay();
                 },
@@ -540,50 +572,60 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
             ),
             onTap: _showOverlay,
           )
-              : DropdownButtonFormField<String>(
-            value: _selectedSerialNo,
-            hint: const Text('Select a serial number'),
-            items: _getAllSerialNumbers().map((serialNo) {
-              return DropdownMenuItem<String>(
-                value: serialNo,
-                child: Text(serialNo),
-              );
-            }).toList(),
-            onChanged: (String? newSerialNo) {
-              setState(() {
-                _selectedSerialNo = newSerialNo;
-                widget.onChanged(newSerialNo);
-              });
+              : FutureBuilder<List<Machine>>(
+            future: _machinesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Text('No machines available');
+              } else {
+                return DropdownButtonFormField<String>(
+                  value: _selectedSerialNo,
+                  hint: const Text('Select a serial number'),
+                  items: _formatMachines(snapshot.data!).map((serialNo) {
+                    return DropdownMenuItem<String>(
+                      value: serialNo,
+                      child: Text(serialNo),
+                    );
+                  }).toList(),
+                  onChanged: (String? newSerialNo) {
+                    setState(() {
+                      _selectedSerialNo = newSerialNo;
+                      widget.onChanged(newSerialNo);
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: const BorderSide(color: colorMixGrad),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12.0, horizontal: 16.0),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.search, color: colorMixGrad),
+                      onPressed: () {
+                        setState(() {
+                          _isSearching = true;
+                          _updateFilteredSerialNos();
+                        });
+                        _showOverlay();
+                      },
+                    ),
+                  ),
+                );
+              }
             },
-            decoration: InputDecoration(
-              hintStyle: const TextStyle(color: Colors.grey),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.0),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.0),
-                borderSide: const BorderSide(color: colorMixGrad),
-              ),
-              contentPadding: const EdgeInsets.symmetric(
-                  vertical: 12.0, horizontal: 16.0),
-              suffixIcon: IconButton(
-                icon: const Icon(Icons.search, color: colorMixGrad),
-                onPressed: () {
-                  setState(() {
-                    _isSearching = true;
-                    _filteredSerialNos = _getAllSerialNumbers();
-                  });
-                  _showOverlay();
-                },
-              ),
-            ),
           ),
         ],
       ),
     );
   }
 }
-
 
 
 

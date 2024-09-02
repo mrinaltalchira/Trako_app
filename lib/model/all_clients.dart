@@ -5,6 +5,7 @@ class Client {
   final String email;
   final String phone;
   final String address;
+  final String machines;
   final String? contactPerson;
   final String addBy; // Nullable String for add_by field
   final DateTime createdAt;
@@ -18,6 +19,7 @@ class Client {
     required this.email,
     required this.phone,
     required this.address,
+    required this.machines,
     this.contactPerson,
     required this.addBy,
     required this.createdAt,
@@ -34,6 +36,7 @@ class Client {
       email: json['email'],
       phone: json['phone'],
       address: json['address'],
+       machines: json['machines'],
       contactPerson: json['contact_person'],
       addBy: json['add_by'],
       createdAt: DateTime.parse(json['created_at']), // Parse datetime directly
