@@ -29,7 +29,9 @@ class _SupplyChainState extends State<SupplyChain> {
 
   Future<List<Supply>> getSupplyList(String? search) async {
     try {
-      List<Supply> supplies = await _apiService.getAllSupply(search);
+      SupplyResponse response = await _apiService.getAllSupply(search);
+      List<Supply> supplies = response.data.supply;
+
       // Debug print to check the fetched supplies
       print('Fetched supplies: $supplies');
       return supplies;
@@ -180,7 +182,7 @@ class SupplyChainList extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '${items[index].qrCode}',
+                            'QR - ${items[index].qrCode}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 18,
@@ -196,10 +198,23 @@ class SupplyChainList extends StatelessWidget {
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(12.0),
-                          child: items[index].dispatchReceive == "0"
-                              ? createTextWidget("Dispatched", Colors.pink)
-                              : createTextWidget("Received", Colors.blue),
+                          child: Builder(
+                            builder: (context) {
+                              if (items[index].dispatchReceive == "0" && items[index].isAcknowledged == "0") {
+                                return createTextWidget("Dispatched", Colors.pink);
+                              } else if (items[index].dispatchReceive == "0" && items[index].isAcknowledged == "1") {
+                                return createTextWidget("Acknowledge", Colors.lightGreen);
+                              } else if (items[index].dispatchReceive == "1" && items[index].isAcknowledged == "1") {
+                                return createTextWidget("Received", Colors.blue);
+                              } else {
+                                return createTextWidget("Unknown State", Colors.grey); // Fallback case
+                              }
+                            },
+                          ),
                         ),
+
+
+
 /*
                         items[index].dispatchReceive == "0"
                             ? Icon(Icons.arrow_forward,color: Colors.red,)
@@ -209,7 +224,7 @@ class SupplyChainList extends StatelessWidget {
                     ),
                   ],
                 ),
-                Text(items[index].clientName,
+                Text(items[index].dateTime.toString(),
                     style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4.0),
               ],
@@ -245,7 +260,7 @@ class SupplyChainList extends StatelessWidget {
               child: Text('Edit'),
               onPressed: () {
                 // Perform edit action
-                _editItem(item.id);
+                _editItem(item.id.toString());
                 Navigator.of(context).pop(); // Close dialog
               },
             ),

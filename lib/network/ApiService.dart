@@ -16,6 +16,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import '../main.dart';
 import '../model/acknowledgment.dart';
+import '../model/machines_by_client_id.dart';
 import '../screens/authFlow/signin.dart';
 import '../screens/customer_acknowledgement/client_acknowledgement.dart';
 import '../screens/toner_request/toner_request.dart';
@@ -72,7 +73,8 @@ class LoggerInterceptor extends Interceptor {
 class ApiService {
 
   // final String baseUrl = 'https://trako.tracesci.in/api';
-  final String baseUrl = 'http://192.168.2.169:8080/api';
+     final String baseUrl = 'http://192.168.2.169:8080/api';
+
   late Dio _dio;
   late String? token;
 
@@ -276,7 +278,7 @@ class ApiService {
           'contact_person': contactPerson,
           'id':id,
           'machines':machines
-        }),
+      }),
       );
 
       if (response.statusCode == 200) {
@@ -290,7 +292,7 @@ class ApiService {
     }
   }
 
-  Future<List<Client>> getAllClients(String? search) async {
+  Future<List<Client>> getAllClients({String? search,String? filter}) async {
     try {
       await initializeApiService(); // Ensure token is initialized before getAllClients
 
@@ -299,6 +301,11 @@ class ApiService {
         queryParameters: {
           if (search != null && search.isNotEmpty) 'search': search,
         },
+
+        data: json.encode({
+          'filter': filter,
+        }),
+
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -409,7 +416,7 @@ class ApiService {
   }
 
 
-  Future<List<Machine>> getAllMachines(String? search) async {
+  Future<List<Machine>> getAllMachines({String? search,String? filter,}) async {
     try {
       await initializeApiService(); // Ensure token is initialized before getAllClients
 
@@ -418,6 +425,9 @@ class ApiService {
         queryParameters: {
           if (search != null && search.isNotEmpty) 'search': search,
         },
+        data: json.encode({
+          'filter': filter,
+        }),
         options: Options(
           headers: {
             'Authorization': 'Bearer $token',
@@ -579,8 +589,8 @@ class ApiService {
 
   Future<Map<String, dynamic>> addSupply({
     required String dispatch_receive,
-    required String model_no,
     required String client_id,
+    required String serial_no,
     required String date_time,
     required String qr_code,
     String? reference,
@@ -599,7 +609,7 @@ class ApiService {
         ),
         data: json.encode({
           "dispatch_receive": dispatch_receive,
-          "model_no": model_no,
+          "serial_no": serial_no,
           "client_id": client_id,
           "date_time": date_time,
           "qr_code": qr_code,
@@ -644,32 +654,36 @@ class ApiService {
     }
   }
 
-  Future<List<Supply>> getAllSupply(String? search) async {
+  Future<SupplyResponse> getAllSupply(String? search) async {
     try {
-      await initializeApiService(); // Ensure token is initialized before getAllClients
+      await initializeApiService(); // Ensure token is initialized before making API calls
 
+      final url = '/all-supply'; // Adjust endpoint as per your API
       final response = await _dio.get(
-        '$baseUrl/all-supply',
+        baseUrl + url,
         queryParameters: {
           if (search != null && search.isNotEmpty) 'search': search,
         },
         options: Options(
           headers: {
+            'Content-Type': 'application/json',
             'Authorization': 'Bearer $token',
           },
         ),
       );
 
       if (response.statusCode == 200) {
-        final data = response.data;
-        final supplyJson = data['data']['supply'] as List;
-        List<Supply> supply = supplyJson.map((json) => Supply.fromJson(json)).toList();
-        return supply;
+        // Parse the response data into SupplyResponse
+        var responseData = response.data;
+        var supplyResponse = SupplyResponse.fromJson(responseData);
+        return supplyResponse;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Failed to fetch supply details');
       } else {
-        throw Exception('Failed to load supply');
+        throw Exception('Failed to fetch supply details');
       }
     } catch (e) {
-      print('Get All supply API error: $e');
+      print('GET All Supply API error: $e');
       throw Exception('Failed to connect to the server.');
     }
   }
@@ -820,6 +834,46 @@ class ApiService {
       throw Exception('Failed to connect to the server.');
     }
   }
+
+//      Spinner
+
+
+  Future<List<MachineByClientId>> getMachineByClientIdList(String clientId) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before making the API call
+
+      final response = await _dio.get(
+        '$baseUrl/machines/by-client',
+        queryParameters: {
+          'client_id': clientId,
+        },
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        final machinesJson = responseData['data']['machines'] as List<dynamic>;
+
+        List<MachineByClientId> machines = machinesJson
+            .map((json) => MachineByClientId.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        return machines;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Invalid token.');
+      } else {
+        throw Exception('Failed to load MachineByClientId data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Get All MachineByClientId API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
 
 
 }

@@ -55,26 +55,26 @@ class SupplyData {
 }
 
 class Supply {
-  final String id;
-  final String dispatchReceive;
-  final String clientName;
-  final String clientCity;
-  final String modelNo;
-  final String dateTime;
-  final String qrCode;
+  final String? id;
+  final String? dispatchReceive;
+  final String? serialNo;
+  final String? dateTime;
+  final String? quarter_id;
+  final String? qrCode;
+  final String? isAcknowledged; // Added this field
   final String? reference;
-  final String addBy;
-  final String createdAt;
-  final String updatedAt;
+  final String? addBy;
+  final String? createdAt;
+  final String? updatedAt;
 
   Supply({
     required this.id,
     required this.dispatchReceive,
-    required this.clientName,
-    required this.clientCity,
-    required this.modelNo,
+    required this.serialNo,
     required this.dateTime,
+    required this.quarter_id,
     required this.qrCode,
+    required this.isAcknowledged, // Added this field
     this.reference,
     required this.addBy,
     required this.createdAt,
@@ -85,11 +85,11 @@ class Supply {
     return Supply(
       id: json['id'].toString(),
       dispatchReceive: json['dispatch_receive'],
-      clientName: json['client_name'],
-      clientCity: json['client_city'],
-      modelNo: json['model_no'],
+      serialNo: json['serial_no'],
       dateTime: json['date_time'],
+      quarter_id: json['quarter_id'],
       qrCode: json['qr_code'],
+      isAcknowledged: json['is_acknowledged'].toString(), // Handling boolean conversion
       reference: json['reference'],
       addBy: json['add_by'],
       createdAt: json['created_at'],
@@ -101,11 +101,11 @@ class Supply {
     return {
       'id': id,
       'dispatch_receive': dispatchReceive,
-      'client_name': clientName,
-      'client_city': clientCity,
-      'model_no': modelNo,
+      'serial_no': serialNo,
       'date_time': dateTime,
+      'quarter_id': quarter_id,
       'qr_code': qrCode,
+      'is_acknowledged': isAcknowledged.toString(), // Convert boolean to integer for JSON
       'reference': reference,
       'add_by': addBy,
       'created_at': createdAt,

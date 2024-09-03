@@ -26,7 +26,7 @@ class _ClientModuleState extends State<ClientModule> {
 
   Future<List<Client>> getClientsList(String? search) async {
     try {
-      List<Client> clients = await _apiService.getAllClients(search);
+      List<Client> clients = await _apiService.getAllClients(search:search,filter: null);
       // Debug print to check the fetched clients
       print('Fetched clients: $clients');
       return clients;

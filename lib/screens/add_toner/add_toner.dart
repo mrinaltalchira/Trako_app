@@ -1,20 +1,14 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:Trako/color/colors.dart';
 import 'package:Trako/globals.dart';
-import 'package:intl/intl.dart';
-import 'package:Trako/model/supply_fields_data.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/supply_chian/supplychain.dart';
+import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 import '../../model/all_clients.dart';
-import '../../model/all_machine.dart';
+import '../../model/machines_by_client_id.dart';
 import 'utils.dart';
 
 /*
@@ -44,7 +38,7 @@ class _AddTonerState extends State<AddToner> {
 
   String? selectedSerialNoId;
   String? selectedClientId;
-  String? selectedClientName;
+  String? selectedSerialNo;
   String? selectedClientCity;
   late Future<List<Client>> clientsFuture;
   Client? _selectedClient;
@@ -54,30 +48,23 @@ class _AddTonerState extends State<AddToner> {
   TextEditingController referenceController = TextEditingController();
   DateTime? _selectedDateTime = DateTime.now();
 
-  late Future<List<Machine>> machineFuture;
+  // late Future<List<Machine>> machineFuture;
+   late Future<List<MachineByClientId>> machineFuture = Future.value([]) ;
 
-  void _onClientChanged(Client? client) {
-    setState(() {
-      _selectedClient = client;
-      showSnackBar(context,client!.id.toString());
-
-    });
-
-  }
 
 
 
   @override
   void initState() {
     super.initState();
-    machineFuture = getMachineList(null);
-    clientsFuture = getClientsList(null);
+
+    clientsFuture = getClientsList("only_active");
     scannedCodes = widget.qrData.isNotEmpty ? [widget.qrData] : [];
   }
 
-  Future<List<Client>> getClientsList(String? search) async {
+  Future<List<Client>> getClientsList(String? filter) async {
     try {
-      List<Client> clients = await _apiService.getAllClients(search);
+      List<Client> clients = await _apiService.getAllClients(search:null,filter: 'only_active');
       // Debug print to check the fetched clients
       print('Fetched clients: $clients');
       return clients;
@@ -88,7 +75,33 @@ class _AddTonerState extends State<AddToner> {
     }
   }
 
-  Future<List<Machine>> getMachineList(String? search) async {
+
+  Future<List<MachineByClientId>> getMachineList(String clientId) async {
+    try {
+      List<MachineByClientId> machines = await _apiService.getMachineByClientIdList(clientId);
+      // Debug print to check the fetched machines
+      print('Fetched machines: $machines');
+      return machines;
+    } catch (e) {
+      // Handle error
+      print('Error fetching machines: $e');
+      return [];
+    }
+  }
+
+
+  void _onClientChanged(Client? client) {
+    if (client != null) {
+      setState(() {
+        _selectedClient = client;
+        selectedClientId = client.id.toString();
+        machineFuture = getMachineList(client.id.toString());
+      });
+    }
+  }
+
+
+/*  Future<List<Machine>> getMachineList(String? search) async {
     try {
       List<Machine> machines = await _apiService.getAllMachines(search);
       // Debug print to check the fetched machines
@@ -99,7 +112,7 @@ class _AddTonerState extends State<AddToner> {
       print('Error fetching machines: $e');
       return [];
     }
-  }
+  }*/
 
   Future<void> _scanQrCode() async {
     final result = await Navigator.of(context).push(
@@ -134,7 +147,13 @@ class _AddTonerState extends State<AddToner> {
 
   void validate() {
     if (_selectedDispatchReceive == DispatchReceive.dispatch) {
-      if (selectedTonerName == null) {
+
+      if (selectedClientId == null) {
+        showSnackBar(context, "Please select Serial no.");
+        return;
+      }
+
+      if (selectedSerialNo == null) {
         showSnackBar(context, "Please select Serial no.");
         return;
       }
@@ -177,7 +196,7 @@ class _AddTonerState extends State<AddToner> {
           dispatch_receive:
               _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
           client_id: selectedClientId.toString(),
-          model_no: selectedTonerName.toString(),
+          serial_no: selectedSerialNo.toString(),
           date_time: _selectedDateTime.toString(),
           qr_code: commaSeparatedString,
           reference: referenceController.text);
@@ -294,15 +313,31 @@ class _AddTonerState extends State<AddToner> {
                             ),
                           ),
                           const SizedBox(height: 5),
-                          SerialNoSpinner(
-                            onChanged: (String? newSerialNo) {
-                              setState(() {
-                                print("Selected Serial No: $newSerialNo");
-                              });
-                            },
-                            machines:
-                                machineFuture, // Pass the list of machines
-                          ),
+                        FutureBuilder<List<MachineByClientId>>(
+                          future: machineFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              selectedSerialNo = null;
+                              return CircularProgressIndicator();
+                            } else if (snapshot.hasError) {
+                              selectedSerialNo = null;
+                              return Text('Error: ${snapshot.error}');
+                            } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                              selectedSerialNo = null;
+                              return Text('No machines available');
+                            } else {
+                              return MachineByClientIdSpinner(
+                                onChanged: (String? newSerialNo) {
+                                  setState(() {
+                                    selectedSerialNo = newSerialNo.toString();
+                                    print("Selected Serial No: $newSerialNo");
+                                  });
+                                },
+                                machinesFuture: Future.value(snapshot.data!), // Pass the list of machines as a Future
+                              );
+                            }
+                          },
+                        ),
                           const SizedBox(height: 15),
                         ])
                   : const SizedBox(height: 5),
@@ -568,7 +603,7 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
 
   void _returnScannedData() {
     if (firstResult != null && secondResult != null) {
-      String combinedResult = '${firstResult!.code}~${secondResult!.code}';
+      String combinedResult = '${firstResult!.code} - ${secondResult!.code}';
       Navigator.pop(context, combinedResult);
     }
   }

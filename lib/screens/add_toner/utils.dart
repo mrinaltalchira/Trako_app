@@ -5,6 +5,7 @@ import 'package:Trako/model/supply_fields_data.dart';
 
 import '../../model/all_clients.dart';
 import '../../model/all_machine.dart';
+import '../../model/machines_by_client_id.dart';
 
 class ManualCodeField extends StatefulWidget {
   final TextEditingController controller;
@@ -628,6 +629,238 @@ class _SerialNoSpinnerState extends State<SerialNoSpinner> {
 }
 
 
+class MachineByClientIdSpinner extends StatefulWidget {
+  final ValueChanged<String?> onChanged;
+  final Future<List<MachineByClientId>> machinesFuture;
+
+  const MachineByClientIdSpinner({
+    required this.onChanged,
+    required this.machinesFuture,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _MachineByClientIdSpinnerState createState() => _MachineByClientIdSpinnerState();
+}
+
+class _MachineByClientIdSpinnerState extends State<MachineByClientIdSpinner> {
+  final TextEditingController _searchController = TextEditingController();
+  List<String> _filteredSerialNos = [];
+  String? _selectedSerialNo;
+  bool _isSearching = false;
+  final LayerLink _layerLink = LayerLink();
+  OverlayEntry? _overlayEntry;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    _removeOverlay();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    _filterSerialNos(_searchController.text);
+  }
+
+  void _filterSerialNos(String query) async {
+    try {
+      final machines = await widget.machinesFuture;
+      setState(() {
+        if (query.isEmpty) {
+          _filteredSerialNos = _formatMachines(machines);
+        } else {
+          _filteredSerialNos = _formatMachines(machines)
+              .where((serialNo) => serialNo.toLowerCase().contains(query.toLowerCase()))
+              .toList();
+        }
+      });
+      _updateOverlay();
+    } catch (e) {
+      print('Error filtering machines: $e');
+    }
+  }
+
+  void _updateFilteredSerialNos() async {
+    try {
+      final machines = await widget.machinesFuture;
+      setState(() {
+        _filteredSerialNos = _formatMachines(machines);
+      });
+    } catch (e) {
+      print('Error updating filtered serial numbers: $e');
+    }
+  }
+
+  void _showOverlay() {
+    _removeOverlay();
+    _overlayEntry = _createOverlayEntry();
+    Overlay.of(context).insert(_overlayEntry!);
+  }
+
+  void _updateOverlay() {
+    if (_overlayEntry != null && _overlayEntry!.mounted) {
+      _overlayEntry!.markNeedsBuild();
+    }
+  }
+
+  void _removeOverlay() {
+    _overlayEntry?.remove();
+    _overlayEntry = null;
+  }
+
+  OverlayEntry _createOverlayEntry() {
+    RenderBox renderBox = context.findRenderObject() as RenderBox;
+    var size = renderBox.size;
+    var offset = renderBox.localToGlobal(Offset.zero);
+
+    return OverlayEntry(
+      builder: (context) => Positioned(
+        top: offset.dy + size.height + 5.0,
+        left: offset.dx,
+        width: size.width,
+        child: CompositedTransformFollower(
+          link: _layerLink,
+          showWhenUnlinked: false,
+          offset: Offset(0.0, size.height + 5.0),
+          child: Material(
+            elevation: 4.0,
+            child: ListView(
+              padding: EdgeInsets.zero,
+              shrinkWrap: true,
+              children: _filteredSerialNos.map((serialNo) {
+                return ListTile(
+                  title: Text(
+                    serialNo,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  onTap: () {
+                    setState(() {
+                      _selectedSerialNo = serialNo;
+                      _isSearching = false;
+                      _searchController.clear();
+                    });
+                    widget.onChanged(serialNo);
+                    _removeOverlay();
+                  },
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<String> _formatMachines(List<MachineByClientId> machines) {
+    return machines
+        .where((machine) => machine.serialNo != null && machine.modelName != null)
+        .map((machine) => '${machine.serialNo} - ${machine.modelName}')
+        .toList();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _layerLink,
+      child: Column(
+        children: [
+          _isSearching
+              ? TextFormField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search serial number...',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10.0),
+                borderSide: const BorderSide(color: colorMixGrad),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                  vertical: 12.0, horizontal: 16.0),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.close, color: colorMixGrad),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = false;
+                    _searchController.clear();
+                    _updateFilteredSerialNos();
+                  });
+                  _removeOverlay();
+                },
+              ),
+            ),
+            onTap: () {
+              _updateFilteredSerialNos();
+              _showOverlay();
+            },
+          )
+              : FutureBuilder<List<MachineByClientId>>(
+            future: widget.machinesFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator(); // Show a loading indicator
+              } else if (snapshot.hasError) {
+                return Text('Error: ${snapshot.error}');
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Text('No machines available');
+              } else {
+                return DropdownButtonFormField<String>(
+                  value: _selectedSerialNo,
+                  hint: const Text('Select a serial number'),
+                  items: _formatMachines(snapshot.data!).map((serialNo) {
+                    return DropdownMenuItem<String>(
+                      value: serialNo,
+                      child: Text(serialNo),
+                    );
+                  }).toList(),
+                  onChanged: (String? newSerialNo) {
+                    setState(() {
+                      _selectedSerialNo = newSerialNo;
+                      widget.onChanged(newSerialNo);
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintStyle: const TextStyle(color: Colors.grey),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10.0),
+                      borderSide: const BorderSide(color: colorMixGrad),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                        vertical: 12.0, horizontal: 16.0),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.search, color: colorMixGrad),
+                      onPressed: () {
+                        setState(() {
+                          _isSearching = true;
+                          _updateFilteredSerialNos();
+                        });
+                        _showOverlay();
+                      },
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 
 class CityNameTextField extends StatelessWidget {

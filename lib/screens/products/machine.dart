@@ -24,7 +24,7 @@ class _MachineModuleState extends State<MachineModule> {
 
   Future<List<Machine>> getMachineList(String? search) async {
     try {
-      List<Machine> machines = await _apiService.getAllMachines(search);
+      List<Machine> machines = await _apiService.getAllMachines(search: search,filter: null);
       // Debug print to check the fetched machines
       print('Fetched machines: $machines');
       return machines;

@@ -34,7 +34,7 @@ class _AddClientState extends State<AddClient> {
   @override
   void initState() {
     super.initState();
-    machineFuture = getMachineList(null);
+    machineFuture = getMachineList("only_active");
     if (widget.client != null) {
       nameController.text = widget.client!.name;
       cityController.text = widget.client!.city;
@@ -52,9 +52,9 @@ class _AddClientState extends State<AddClient> {
     // Fetch available machines for dropdown
   }
 
-  Future<List<Machine>> getMachineList(String? search) async {
+  Future<List<Machine>> getMachineList(String? filter) async {
     try {
-      List<Machine> machines = await ApiService().getAllMachines(search);
+      List<Machine> machines = await ApiService().getAllMachines(search: null,filter :filter.toString());
       // Debug print to check the fetched machines
       print('Fetched machines: $machines');
       return machines;
