@@ -10,6 +10,9 @@ import 'package:Trako/model/client_report.dart';
 import 'package:Trako/model/supply_fields_data.dart';
 import 'package:Trako/network/ApiService.dart';
 
+import '../../model/all_clients.dart';
+import '../add_toner/utils.dart';
+
 
 class MyReportScreen extends StatefulWidget {
   @override
@@ -29,6 +32,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
   String? selectedClientId;
   late DateTime _selectedFromDate;
   late DateTime _selectedToDate;
+  Client? _selectedClient;
 
   Future<void> fetchSpinnerData() async {
     setState(() {
@@ -51,6 +55,30 @@ class _MyReportScreenState extends State<MyReportScreen> {
       // Handle error as needed
     }
   }
+
+  Future<List<Client>> getClientsList(String? filter) async {
+    try {
+      List<Client> clients = await _apiService.getAllClients(search:null);
+      // Debug print to check the fetched clients
+      print('Fetched clients: $clients');
+      return clients;
+    } catch (e) {
+      // Handle error
+      print('Error fetching clients: $e');
+      return [];
+    }
+  }
+
+  void _onClientChanged(Client? client){
+    if (client != null) {
+      setState(() {
+        _selectedClient = client;
+        selectedClientId = client.id.toString();
+      });
+    }
+  }
+
+
 
   @override
   void initState() {
@@ -84,6 +112,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
           from_date: DateFormat('yyyy-MM-dd').format(_selectedFromDate),
           to_date: DateFormat('yyyy-MM-dd').format(_selectedToDate),
         );
+        print("d3r3rdsfdsfdf");
         setState(() {
           _reportData = report;
           _showDetails = true;
@@ -130,14 +159,8 @@ class _MyReportScreenState extends State<MyReportScreen> {
             ),
             SizedBox(height: 5),
             ClientNameSpinner(
-              onChanged: (SupplyClient? newClient) {
-                setState(() {
-                  selectedClientName = newClient?.name;
-                  selectedCityName = newClient?.city;
-                  selectedClientId = newClient?.id.toString();
-                });
-              },
-              clients: clients,
+              fetchClients: getClientsList,
+              onChanged: _onClientChanged,
             ),
             const SizedBox(height: 15),
             DatePickerRow(
@@ -159,12 +182,12 @@ class _MyReportScreenState extends State<MyReportScreen> {
             const SizedBox(height: 15),
             if (_isLoading) Center(child: CircularProgressIndicator()),
             if (_showDetails && _reportData != null)
-              TonerDetails(
-                tonerReceived: _reportData!.data.report[0].dispatchCount,
-                tonerDistributed: _reportData!.data.report[0].receiveCount,
-                client: selectedClientName!,
-                machine: _reportData!.data.report[0].reportCount.toString(),
-              ),
+            TonerDetails(
+            tonerReceived: _reportData!.data.report.dispatchCount.toString(), // Get the value directly
+            tonerDistributed: _reportData!.data.report.receiveCount.toString(), // Get the value directly
+            client: selectedClientName!, // Ensure selectedClientName is not null
+            machine: _reportData!.data.report.reportCount?.toString() ?? '0', // Handle potential null value
+            ),
             if (!_isLoading && !_showDetails)
               Center(child: Text('No data available')),
 
@@ -254,13 +277,13 @@ class _TonerDetailsPageState extends State<TonerDetailsPage> {
               return CircularProgressIndicator();
             } else if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
-            } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.data.report.isEmpty) {
+            } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.data.report.toString().isEmpty) {
               return Text('No data available');
             } else {
-              var data = snapshot.data!.data.report[0];
+              var data = snapshot.data!.data.report;
               return TonerDetails(
-                tonerReceived: data.dispatchCount,
-                tonerDistributed: data.receiveCount,
+                tonerReceived: data.dispatchCount.toString(),
+                tonerDistributed: data.receiveCount.toString(),
                 client: widget.clientId,
                 machine: data.reportCount.toString(),
               );
@@ -551,6 +574,7 @@ class PieChartSample2 extends StatelessWidget {
     );
   }
 }
+/*
 
 class ClientNameSpinner extends StatelessWidget {
   final ValueChanged<SupplyClient?> onChanged;
@@ -594,4 +618,5 @@ class ClientNameSpinner extends StatelessWidget {
     );
   }
 }
+*/
 

@@ -310,17 +310,11 @@ class _AddUserState extends State<AddUser> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              Center(
-                child: Text(
-                  widget.user != null ? "Update User:" : "Add New:",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    color: colorMixGrad,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+              UserFormHeader(
+                user: widget.user,
+                tooltipMessage: "Rolls have Access:- \nAdmin : All Module \nClient : Toner Request, Acknowledgement \nUser : Custom module \nLogistics : SupplyChain(Dispatch, Receive) \nEngineer : SupplyChain(Receive) ",
               ),
+
               const SizedBox(height: 20),
               Text(
                 "User Roles ",
@@ -335,7 +329,7 @@ class _AddUserState extends State<AddUser> {
                 onChanged: (newValue) {
                   setState(() {
                     if (newValue == "Admin") {
-                      isModuleAccessVisible = true;
+                      isModuleAccessVisible = false;
 
                       machineModuleChecked = true;
                       clientModuleChecked = true;
@@ -346,7 +340,7 @@ class _AddUserState extends State<AddUser> {
                       dispatchModuleChecked = true;
                       receiveModuleChecked = true;
                     } else if (newValue == "Client") {
-                      isModuleAccessVisible = true;
+                      isModuleAccessVisible = false;
 
                       machineModuleChecked = false;
                       clientModuleChecked = false;
@@ -367,7 +361,7 @@ class _AddUserState extends State<AddUser> {
                       dispatchModuleChecked = false;
                       receiveModuleChecked = false;
                     } else if (newValue == "Logistics") {
-                      isModuleAccessVisible = true;
+                      isModuleAccessVisible = false;
                       machineModuleChecked = false;
                       clientModuleChecked = false;
                       userPrivilegeChecked = false;
@@ -378,7 +372,7 @@ class _AddUserState extends State<AddUser> {
                       dispatchModuleChecked = true;
                       receiveModuleChecked = true;
                     } else if (newValue == "Engineer/Technician") {
-                      isModuleAccessVisible = true;
+                      isModuleAccessVisible = false;
                       machineModuleChecked = false;
                       clientModuleChecked = false;
                       userPrivilegeChecked = false;
@@ -388,7 +382,7 @@ class _AddUserState extends State<AddUser> {
                       dispatchModuleChecked = false;
                       receiveModuleChecked = true;
                     } else {
-                      isModuleAccessVisible = true;
+                      isModuleAccessVisible = false;
 
                       machineModuleChecked = false;
                       clientModuleChecked = false;
@@ -1116,6 +1110,99 @@ class CustomRadio extends StatelessWidget {
       groupValue: groupValue,
       onChanged: onChanged,
       activeColor: activeColor,
+    );
+  }
+}
+
+
+class UserFormHeader extends StatelessWidget {
+  final User? user;
+  final String tooltipMessage;
+
+  const UserFormHeader({
+    Key? key,
+    required this.user,
+    required this.tooltipMessage,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Center(
+            child: Text(
+              user != null ? "Update User:" : "Add New:",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 24.0,
+                color: colorMixGrad,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        IconButton(
+          icon: Icon(Icons.info_outline, color: colorMixGrad),
+          onPressed: () {
+            final RenderBox button = context.findRenderObject() as RenderBox;
+            final Offset topRight = button.localToGlobal(button.size.topRight(Offset.zero));
+            final screenSize = MediaQuery.of(context).size;
+
+            showDialog(
+              context: context,
+              barrierColor: Colors.transparent,
+              builder: (BuildContext context) {
+                return Stack(
+                  children: [
+                    Positioned(
+                      right: screenSize.width - topRight.dx,
+                      top: topRight.dy + button.size.height,
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxWidth: 300,
+                          maxHeight: screenSize.height - topRight.dy - button.size.height - 20,
+                        ),
+                        child: Card(
+                          color: Colors.black.withOpacity(0.8),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: SingleChildScrollView(
+                            padding: EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: tooltipMessage.split("\n").map((line) {
+                                var parts = line.split(":");
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 8.0),
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(color: Colors.white),
+                                      children: [
+                                        TextSpan(
+                                          text: parts[0] + ":",
+                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                        ),
+                                        TextSpan(text: parts.length > 1 ? parts[1] : ""),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ],
     );
   }
 }

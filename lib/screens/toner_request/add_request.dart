@@ -1,7 +1,11 @@
+import 'package:Trako/model/toner_colors.dart';
+import 'package:Trako/network/ApiService.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../color/colors.dart';
-import '../../globals.dart'; // Adjust the import as needed
+import '../../globals.dart';
+import '../../model/all_machine.dart';
+import '../add_toner/utils.dart'; // Adjust the import as needed
 
 class RequestToner extends StatefulWidget {
   const RequestToner({super.key});
@@ -13,28 +17,99 @@ class RequestToner extends StatefulWidget {
 class _RequestTonerState extends State<RequestToner> {
   int quantity = 1;
   final TextEditingController _counterController = TextEditingController();
-  String? _selectedMachineModel;
   String? _selectedColor;
+  late Future<List<Machine>> machineFuture;
+  List<TonerRequestModel> _cart = [];
+  String? selected_serial_no;
+  bool _isLoading = false;
+  late Future<TonerColors?> tonerColorFuture = getTonerColor("");
+  Future<List<Machine>> getMachineList(String? filter) async {
+    try {
+      List<Machine> machines = await ApiService().getAllMachines(search: null,filter :filter.toString());
+      // Debug print to check the fetched machines
+      print('Fetched machines: $machines');
+      return machines;
+    } catch (e) {
+      // Handle error
+      print('Error fetching machines: $e');
+      return [];
+    }
+  }
 
-  final List<String> _modelOptions = ['Model A', 'Model B', 'Model C'];
+  Future<TonerColors?> getTonerColor(String serialNo) async {
+    try {
+      TonerColors? tonerColors = await ApiService().getTonerColors(serialNo);
+      print('Fetched TonerColors: $tonerColors');
+      return tonerColors;
+    } catch (e) {
+      print('Error fetching tonerColors: $e');
+      return TonerColors(serialNo: 'Unknown', color: 'Unknown');
+    }
+  }
+
+
+  @override
+  void initState() {
+    super.initState();
+    machineFuture = getMachineList("only_active");
+  }
+
+
   final List<String> _colorOptions = ['Magenta', 'Black', 'Yellow', 'White', 'Clear'];
 
-  List<TonerRequest> _cart = [];
+
+
+
+  Future<void> submitRequest() async {
+    try {
+      // Show the loader before starting the request
+      setState(() {
+        _isLoading = true; // Show loader
+      });
+
+      // Assuming `_cart` is a list of TonerRequestModel instances
+      if (_cart.isEmpty) {
+        print('No toner requests to submit.');
+        return;
+      }
+
+      // Call the function to send toner requests to the backend
+      final response = await ApiService().sendTonerRequests(_cart);
+
+      if (response['success']) {
+        showSnackBar(context,"Order placed successfully");
+        // You can clear the cart or perform any other action after successful submission
+        _cart.clear();
+      } else {
+        showSnackBar1(context,'Failed to submit toner requests: ${response['message']}',isSuccess: false);
+
+      }
+    } catch (e) {
+      showSnackBar1(context,'Failed to submit toner requests: ${e}',isSuccess: false);
+
+    } finally {
+      // Hide the loader after the request completes
+      setState(() {
+        _isLoading = false; // Hide loader
+      });
+    }
+  }
+
+
 
   void _addToCart() {
-    if (_selectedMachineModel != null && _selectedColor != null) {
-      final tonerRequest = TonerRequest(
-        machineModel: _selectedMachineModel!,
+
+    if (selected_serial_no != null && _selectedColor != null) {
+      final tonerRequest = TonerRequestModel(
+        serial_no: selected_serial_no!,
         color: _selectedColor!,
         quantity: quantity ,
-        last_counter: _counterController.text
-
+        lastCounter: _counterController.text,
       );
 
       setState(() {
         _cart.add(tonerRequest);
         quantity = 1;
-        _selectedMachineModel = null;
         _selectedColor = null;
         _counterController.text = "";
 
@@ -126,11 +201,11 @@ class _RequestTonerState extends State<RequestToner> {
                                 child: ListTile(
                                   contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                   title: Text(
-                                    '${request.machineModel} - ${request.color}',
+                                    '${request.serial_no} - ${request.color}',
                                     style: TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                   subtitle: Text(
-                                    'Quantity: ${request.quantity}\nCounter : ${request.last_counter}',
+                                    'Quantity: ${request.quantity}\nCounter : ${request.lastCounter}',
                                     style: TextStyle(fontSize: 14),
                                   ),
                                   trailing: Row(
@@ -213,11 +288,11 @@ class _RequestTonerState extends State<RequestToner> {
                 // Handle the action to mail the order here
                 setState(() {
                   Navigator.of(context).pop();
-                  _cart.clear(); // Clear the cart after placing the order
+                  submitRequest(); // Clear the cart after placing the order
                 });
                 Navigator.of(context).pop();
                 FocusScope.of(context).unfocus();
-                showSnackBar(context,"Order placed successfully");
+
               },
               child: Text('Mail My Order', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
@@ -277,12 +352,19 @@ class _RequestTonerState extends State<RequestToner> {
               ),
 
               // Machine Model No
-              _buildSectionTitle('Select Machine Model No'),
-              ModelNoSpinner(
-                selectedValue: _selectedMachineModel,
-                onChanged: (value) => setState(() => _selectedMachineModel = value),
-                modelLsit: _modelOptions,
-              ),
+              _buildSectionTitle('Select Serial no.'),
+          SerialNoSpinner(
+            onChanged: (String? newSerialNo) {
+              setState(() {
+                if (newSerialNo != null ) {
+                  List<String> parts = newSerialNo.split(" - ");
+                  selected_serial_no = parts[0];
+                  tonerColorFuture = getTonerColor(selected_serial_no.toString());
+                }
+              });
+            },
+            machines: machineFuture, // Pass the future of the machines list
+          ),
               SizedBox(height: 24.0),
 
               _buildSectionTitle('Current / Total Counter'),
@@ -292,14 +374,46 @@ class _RequestTonerState extends State<RequestToner> {
                 hintText: 'Add counter',
                 keyboardType: TextInputType.number,
               ),
-              SizedBox(height: 24.0),
+
+              SizedBox(height: 10.0),
               // Color Selection
               _buildSectionTitle('Select Color'),
-              ColorSpinner(
-                selectedValue: _selectedColor,
-                onChanged: (value) => setState(() => _selectedColor = value),
-                colorList: _colorOptions,
-              ),
+              FutureBuilder<TonerColors?>(
+                future: tonerColorFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    _selectedColor = null;
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    _selectedColor = null;
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data?.color.isEmpty == true) {
+                    _selectedColor = null;
+                    return Center(child: Text('No colors available'));
+                  } else {
+                    // Process the data from the snapshot
+                    final tonerColors = snapshot.data!;
+                    final List<String> colors = tonerColors.color.split(",");
+
+                    // Update the color list and selected color
+                    if (colors.isNotEmpty) {
+                      _selectedColor = colors[0]; // Set the default selected color
+                    }
+
+                    return ColorSpinner(
+                      selectedValue: _selectedColor,
+                      onChanged: (String? newColor) {
+                        setState(() {
+                          _selectedColor = newColor;
+                        });
+                      },
+                      colorList: colors,
+                    );
+                  }
+                },
+              )
+,
+
               SizedBox(height: 24.0),
 
               // Toner Quantity
@@ -318,8 +432,16 @@ class _RequestTonerState extends State<RequestToner> {
 
               // Add to Cart Button
               _buildAddToCartButton(),
+
+
+              if (_isLoading)
+                Center(
+                  child: CircularProgressIndicator(),
+                ),
+
             ],
           ),
+
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -362,18 +484,28 @@ class _RequestTonerState extends State<RequestToner> {
   }
 }
 
-class TonerRequest {
-  final String machineModel;
+class TonerRequestModel {
+  final String serial_no;
   final String color;
   final int quantity;
-  final String last_counter;
+  final String lastCounter;
 
-  TonerRequest({
-    required this.machineModel,
+  TonerRequestModel({
+    required this.serial_no,
     required this.color,
     required this.quantity,
-    required this.last_counter,
+    required this.lastCounter,
   });
+
+  // Method to convert the instance to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'serial_no': serial_no,
+      'color': color,
+      'quantity': quantity,
+      'last_counter': lastCounter,
+    };
+  }
 }
 
 class CustomTextField extends StatelessWidget {
@@ -396,6 +528,7 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      maxLength: 10,
       inputFormatters: keyboardType == TextInputType.number ? [FilteringTextInputFormatter.digitsOnly] : null,
       decoration: InputDecoration(
         hintText: hintText,
@@ -424,56 +557,6 @@ class CustomTextField extends StatelessWidget {
   }
 }
 
-class ModelNoSpinner extends StatelessWidget {
-  final String? selectedValue;
-  final ValueChanged<String?> onChanged;
-  final List<String> modelLsit;
-
-  const ModelNoSpinner({
-    required this.selectedValue,
-    required this.onChanged,
-    Key? key,
-    required this.modelLsit,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return DropdownButtonFormField<String>(
-      value: selectedValue,
-      hint: const Text('Select an option'),
-      items: modelLsit.map((String value) {
-        return DropdownMenuItem<String>(
-          value: value,
-          child: Text(value),
-        );
-      }).toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.black),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorMixGrad),
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-        filled: true,
-        fillColor: Colors.white,
-      ),
-      dropdownColor: Colors.white,
-      style: const TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-       icon: Icon(Icons.arrow_drop_down, color: colorMixGrad),
-    );
-  }
-}
 
 class ColorSpinner extends StatelessWidget {
   final String? selectedValue;

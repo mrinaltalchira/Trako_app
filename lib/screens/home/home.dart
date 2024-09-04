@@ -115,18 +115,42 @@ class _HomeScreenState extends State<HomeScreen> {
             PrefManager().getClientModule(),
             PrefManager().getUserModule(),
             PrefManager().getSupplyChainModule(),
+            PrefManager().getAcknowledgeModuleModule(),
+            PrefManager().getTonerRequestModule(),
+            PrefManager().getDispatchModule(),
+            PrefManager().getReceiveModule(),
+
           ]),
           builder: (context, snapshot) {
             if (snapshot.hasData) {
+
               String? machineModule = snapshot.data![0];
               String? clientModule = snapshot.data![1];
               String? userModule = snapshot.data![2];
               String? supplyChain = snapshot.data![3];
+              String? acknowledgeModule = snapshot.data![4];
+              String? tonerRequestModule = snapshot.data![5];
+              String? dispatch = snapshot.data![6];
+              String? receive = snapshot.data![7];
 
               bool showMachinesItem = machineModule != "1";
               bool showClientItem = clientModule != "1";
               bool showUserItem = userModule != "1";
               bool supplyChainItem = supplyChain != "1";
+              bool acknowledgeItem = acknowledgeModule != "1";
+              bool tonerRequestItem = tonerRequestModule != "1";
+              bool dispatchItem = dispatch != "1";
+              bool receiveItem = receive != "1";
+
+              print("dgdfgubgdbfdkugbdjh "
+                  "showMachinesItem: $showMachinesItem, "
+                  "showClientItem: $showClientItem, "
+                  "showUserItem: $showUserItem, "
+                  "supplyChainItem: $supplyChainItem, "
+                  "acknowledgeItem: $acknowledgeItem, "
+                  "tonerRequestItem: $tonerRequestItem, "
+                  "dispatchItem: $dispatchItem, "
+                  "receiveItem: $receiveItem");
 
 
               return ListView(
@@ -172,16 +196,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       text: 'Machines',
                       index: 3,
                     ),
+                  if (acknowledgeItem)
                     _buildDrawerItem(
                       icon: Icons.quick_contacts_mail_outlined,
                       text: 'Acknowledgement',
                       index: 4,
                     ),
+                  if (tonerRequestItem)
                   _buildDrawerItem(
                       icon: Icons.voicemail,
                       text: 'Toner Request',
                       index: 5,
                     ),
+
                   _buildDrawerItem(
                     icon: Icons.report,
                     text: 'Reports',

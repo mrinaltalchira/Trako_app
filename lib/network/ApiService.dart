@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:Trako/model/all_clients.dart';
 import 'package:Trako/model/all_machine.dart';
 import 'package:Trako/model/all_supply.dart';
+import 'package:Trako/model/all_toner_request.dart';
 import 'package:Trako/model/all_user.dart';
 import 'package:Trako/model/client_report.dart';
 import 'package:Trako/model/dashboard.dart';
@@ -17,8 +18,10 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../model/acknowledgment.dart';
 import '../model/machines_by_client_id.dart';
+import '../model/toner_colors.dart';
 import '../screens/authFlow/signin.dart';
 import '../screens/customer_acknowledgement/client_acknowledgement.dart';
+import '../screens/toner_request/add_request.dart';
 import '../screens/toner_request/toner_request.dart';
 
 
@@ -109,35 +112,6 @@ class ApiService {
     }
   }
 
-  Future<Toner> getAllToners(String? search) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before getAllClients
-
-      final response = await _dio.get(
-        '$baseUrl/get-profile',
-        queryParameters: {
-          if (search != null && search.isNotEmpty) 'search': search,
-        },
-        options: Options(
-
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        Toner userResponse = Toner.fromJson(data);
-        return userResponse;
-      } else {
-        throw Exception('Failed to load user profile');
-      }
-    } catch (e) {
-      print('Get User Profile API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
 
   //////////////////////////////// AUTH
 
@@ -335,8 +309,6 @@ class ApiService {
     required String model_name,
     required String serial_no,
     required String isActive,
-    required String client_id,
-    required String receive_days,
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addClient
@@ -353,8 +325,6 @@ class ApiService {
         data: json.encode({
           'model_name': model_name,
           'serial_no': serial_no,
-          'client_id' : client_id,
-          'receive_days':receive_days,
           'isActive': isActive,
         }),
       );
@@ -377,8 +347,6 @@ class ApiService {
     required String model_name,
     required String serial_no,
     required String isActive,
-    required String client_id,
-    required String receive_days,
 
 
   }) async {
@@ -398,8 +366,6 @@ class ApiService {
           'id':id,
           'model_name': model_name,
           'serial_no': serial_no,
-          'client_id' : client_id,
-          'receive_days':receive_days,
           'isActive': isActive,
         }),
       );
@@ -693,13 +659,18 @@ class ApiService {
 
   Future<ClientReportResponse> getReport({
     required String client_id,
-    required String to_date,
     required String from_date,
+    required String to_date,
   }) async {
     try {
-      await initializeApiService(); // Ensure token is initialized before addClient
+      await initializeApiService(); // Ensure token is initialized before making the API call
 
       final url = '/get-report'; // Adjust endpoint as per your API
+
+      // Print debugging information
+      print('Sending request to: $baseUrl$url');
+      print('Query parameters: client_id=$client_id, from_date=$from_date, to_date=$to_date');
+
       final response = await _dio.get(
         baseUrl + url,
         queryParameters: {
@@ -710,10 +681,14 @@ class ApiService {
         options: Options(
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
+            'Authorization': 'Bearer $token', // Ensure the token is correctly set
           },
         ),
       );
+
+      // Debugging: Print response details
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
 
       if (response.statusCode == 200) {
         // Parse the response data into ClientReportResponse
@@ -721,9 +696,11 @@ class ApiService {
         var clientReportResponse = ClientReportResponse.fromJson(responseData);
         return clientReportResponse;
       } else {
-        throw Exception('Failed to get report');
+        // Provide more detail in the exception message
+        throw Exception('Failed to get report. Status code: ${response.statusCode}');
       }
     } catch (e) {
+      // Print detailed error information
       print('GET REPORT API error: $e');
       throw Exception('Failed to connect to the server.');
     }
@@ -870,6 +847,122 @@ class ApiService {
       }
     } catch (e) {
       print('Get All MachineByClientId API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+
+// REQUEST TONER
+
+
+  Future<Map<String, dynamic>> sendTonerRequests(List<TonerRequestModel> cart) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before sending requests
+
+      final url = '/add-toner-request'; // Adjust endpoint as per your API
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode({
+          'toner_requests': cart.map((request) => request.toJson()).toList(),
+        }),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return response.data;
+      } else {
+        // Handle non-successful responses
+        print('Unexpected status code: ${response.statusCode}');
+        print('Response body: ${response.data}');
+        throw Exception('Failed to send toner requests: ${response.statusCode}');
+      }
+    } catch (e) {
+      // Print detailed error information
+      print('Send toner requests API error: $e');
+      // Throw a more detailed exception
+      throw Exception('Failed to connect to the server. Error: $e');
+    }
+  }
+
+  Future<List<AllTonerRequest>> getAllTonerRequests() async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before making the API call
+
+      final response = await _dio.get(
+        '$baseUrl/toner-requests', // Updated endpoint
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token', // Use the initialized token
+          },
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        final tonerRequestsJson = responseData['data'] as List<dynamic>; // Adjust based on your API response
+
+        List<AllTonerRequest> tonerRequests = tonerRequestsJson
+            .map((json) => AllTonerRequest.fromJson(json as Map<String, dynamic>))
+            .toList();
+
+        return tonerRequests;
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Invalid token.');
+      } else {
+        throw Exception('Failed to load TonerRequest data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Get TonerRequest API error: $e');
+      throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<TonerColors?> getTonerColors(String serialNo) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized before making the API call
+
+      final url = '$baseUrl/toner-color';
+      print('Sending request to: $url with serial_no: $serialNo');
+
+      final response = await _dio.post(
+        url,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token', // Use the initialized token
+            'Content-Type': 'application/json', // Ensure correct content type
+          },
+        ),
+        data: json.encode({
+          'serial_no': serialNo,
+        }),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        final tonerColorsJson = responseData['data']['toner_colors'];
+
+        if (tonerColorsJson != null) {
+          // Convert the toner_colors object into a TonerColors instance
+          return TonerColors.fromJson(tonerColorsJson);
+        } else {
+          print('No toner colors found for the given serial number.');
+          return null; // Handle no data case
+        }
+      } else if (response.statusCode == 401) {
+        throw Exception('Unauthorized: Invalid token.');
+      } else {
+        throw Exception('Failed to load TonerColors data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Get TonerColors API error: $e');
       throw Exception('Failed to connect to the server.');
     }
   }

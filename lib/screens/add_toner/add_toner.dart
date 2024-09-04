@@ -9,6 +9,7 @@ import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 import '../../model/all_clients.dart';
 import '../../model/machines_by_client_id.dart';
+import '../../pref_manager.dart';
 import 'utils.dart';
 
 /*
@@ -47,17 +48,25 @@ class _AddTonerState extends State<AddToner> {
   TextEditingController controllerCityName = TextEditingController();
   TextEditingController referenceController = TextEditingController();
   DateTime? _selectedDateTime = DateTime.now();
+  bool hideDispatchFields = false;
 
-  // late Future<List<Machine>> machineFuture;
    late Future<List<MachineByClientId>> machineFuture = Future.value([]) ;
 
 
-
+  void _initializeHideDispatchFields() async {
+    String? dispatchModuleValue = await PrefManager().getDispatchModule();
+    setState(() {
+      hideDispatchFields = dispatchModuleValue == "1";
+      if(hideDispatchFields){
+        _selectedDispatchReceive = DispatchReceive.receive;
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
-
+    _initializeHideDispatchFields();
     clientsFuture = getClientsList("only_active");
     scannedCodes = widget.qrData.isNotEmpty ? [widget.qrData] : [];
   }
@@ -136,14 +145,29 @@ class _AddTonerState extends State<AddToner> {
   }
 
   void addCodeManually(String result) {
-    if (!scannedCodes.contains(result)) {
-      setState(() {
-        scannedCodes.add(result);
-      });
-    } else {
-      showSnackBar(context, "Duplicate values are not allowed.");
+    bool isValidFormat(String input) {
+      final parts = input.split('-');
+      return parts.length == 2 &&
+          parts.every((part) => part.isNotEmpty) &&
+          !input.startsWith('-') &&
+          !input.endsWith('-') &&
+          !input.contains('--');
     }
+
+     if(isValidFormat(result)){
+       if (!scannedCodes.contains(result)) {
+         setState(() {
+           scannedCodes.add(result);
+         });
+       } else {
+         showSnackBar(context, "Duplicate values are not allowed.");
+       }
+     }else{
+       showSnackBar(context, "Please add QuarterID-TonerID both together.");
+     }
   }
+
+
 
   void validate() {
     if (_selectedDispatchReceive == DispatchReceive.dispatch) {
@@ -193,8 +217,7 @@ class _AddTonerState extends State<AddToner> {
       String commaSeparatedString = scannedCodes.join(',');
 
       addUserResponse = await apiService.addSupply(
-          dispatch_receive:
-              _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
+          dispatch_receive: _selectedDispatchReceive == DispatchReceive.dispatch ? '0' : '1',
           client_id: selectedClientId.toString(),
           serial_no: selectedSerialNo.toString(),
           date_time: _selectedDateTime.toString(),
@@ -246,6 +269,235 @@ class _AddTonerState extends State<AddToner> {
     });
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "Supply Chain",
+          style: TextStyle(
+            fontSize: 24.0,
+            color: colorMixGrad,
+            fontWeight: FontWeight.w600,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 26.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 10),
+              const Center(
+                child: Text(
+                  "Add Toner",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: colorMixGrad,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              // Hide the DispatchReceiveRadioButton if dispatchModule is "1"
+              if (!hideDispatchFields)
+                DispatchReceiveRadioButton(
+                  onChanged: (DispatchReceive? value) {
+                    setState(() {
+                      _selectedDispatchReceive = value;
+                    });
+                  },
+                ),
+              const SizedBox(height: 15),
+              // Hide the entire Column if dispatchModule is "1"
+              if (!hideDispatchFields &&
+                  _selectedDispatchReceive == DispatchReceive.dispatch)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Client name",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    ClientNameSpinner(
+                      fetchClients: getClientsList,
+                      onChanged: _onClientChanged,
+                    ),
+                    const SizedBox(height: 15),
+                    const Text(
+                      "Serial no.",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    FutureBuilder<List<MachineByClientId>>(
+                      future: machineFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          selectedSerialNo = null;
+                          return CircularProgressIndicator();
+                        } else if (snapshot.hasError) {
+                          selectedSerialNo = null;
+                          return Text('Error: ${snapshot.error}');
+                        } else
+                        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                          selectedSerialNo = null;
+                          return Text('No machines available');
+                        } else {
+                          return MachineByClientIdSpinner(
+                            onChanged: (String? newSerialNo) {
+                              setState(() {
+                                selectedSerialNo = newSerialNo.toString();
+                                print("Selected Serial No: $newSerialNo");
+                              });
+                            },
+                            machinesFuture: Future.value(snapshot.data!),
+                          );
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 15),
+                  ],
+                ),
+              const SizedBox(height: 5),
+              const Text(
+                "Select DateTime",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              DateTimeInputField(
+                initialDateTime: DateTime.now(),
+                onDateTimeChanged: (dateTime) {
+                  _selectedDateTime = dateTime;
+                },
+              ),
+              const SizedBox(height: 15),
+              Padding(
+                padding: const EdgeInsets.only(left: 30, right: 30),
+                child: GradientButton(
+                  gradientColors: const [colorFirstGrad, colorSecondGrad],
+                  height: 45.0,
+                  width: double.infinity,
+                  radius: 25.0,
+                  buttonText: "Scan code",
+                  onPressed: _scanQrCode,
+                ),
+              ),
+              const SizedBox(height: 15),
+              const Row(
+                children: <Widget>[
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey,
+                      thickness: 1,
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Text(
+                      "or add code manually",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: colorMixGrad,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Divider(
+                      color: Colors.grey,
+                      thickness: 1,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              ManualCodeField(
+                controller: manualTonerCode,
+                onAddPressed: addCodeManually,
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                "Ex: QuarterID-TonerID",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.blueGrey
+                ),
+              ),
+
+              const SizedBox(height: 15),
+              const Text(
+                "Scanned QR Codes:",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              ListView.builder(
+                shrinkWrap: true,
+                itemCount: scannedCodes.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(scannedCodes[index]),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.clear, color: Colors.red),
+                      onPressed: () =>
+                          setState(() {
+                            scannedCodes.removeAt(index);
+                          }),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                "Reference",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              ReferenceInputTextField(
+                controller: referenceController,
+              ),
+              const SizedBox(height: 15),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 50, vertical: 20),
+                child: GradientButton(
+                  gradientColors: const [colorFirstGrad, colorSecondGrad],
+                  height: 45.0,
+                  width: double.infinity,
+                  radius: 25.0,
+                  buttonText: "Submit",
+                  onPressed: () {
+                   validate();
+                  },
+                ),
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+/*
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -453,7 +705,7 @@ class _AddTonerState extends State<AddToner> {
         ),
       ),
     );
-  }
+  }*/
 }
 
 class DualQRScannerTracesci extends StatefulWidget {

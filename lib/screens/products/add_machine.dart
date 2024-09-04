@@ -24,14 +24,9 @@ class _AddMachineState extends State<AddMachine> {
    final TextEditingController machine_name_Controller = TextEditingController();
    final TextEditingController machine_code_Controller = TextEditingController();
 
-   String? selectedTimePeriod;
 
    List<SupplyClient> clients = [];
    bool activeChecked = true;
-   String? selectedClientId;
-   String? selectedClientName;
-   String? selectedCityName;
-   String? selectedTonerName;
    final ApiService _apiService = ApiService();
 
    @override
@@ -41,29 +36,10 @@ class _AddMachineState extends State<AddMachine> {
      if (widget.machine != null) {
        machine_name_Controller.text = widget.machine!.modelName!;
        machine_code_Controller.text = widget.machine!.serialNo!;
-       selectedTimePeriod = widget.machine!.receiveDays;
        activeChecked = widget.machine!.isActive == "0";
-       selectedClientId = widget.machine!.clientId.toString();
-       selectedClientName = widget.machine!.clientName;
-     }
-     fetchSpinnerData();
-   }
-
-   Future<void> fetchSpinnerData() async {
-
-     try {
-       SupplySpinnerResponse spinnerResponse =
-       await _apiService.getSpinnerDetails();
-       setState(() {
-         clients = spinnerResponse.data.clients;
-       });
-     } catch (e) {
-       print('Error fetching supply spinner details: $e');
-       setState(() {
-       });
-       // Handle error as needed
      }
    }
+
 
 
 
@@ -191,8 +167,6 @@ class _AddMachineState extends State<AddMachine> {
        return;
      }
 
-     print("fgdfgfdgfgfdgdgf $selectedClientName $selectedTimePeriod");
-
 
 
      showDialog(
@@ -223,8 +197,6 @@ class _AddMachineState extends State<AddMachine> {
            id:widget.machine!.id.toString(),
            model_name: machine_name_Controller.text,
            serial_no: machine_code_Controller.text,
-           client_id : selectedClientName.toString(),
-           receive_days : selectedTimePeriod.toString(),
            isActive: activeChecked ? '0' : '1',
          );
 
@@ -258,8 +230,6 @@ class _AddMachineState extends State<AddMachine> {
          final addMachineResponse = await apiService.addMachine(
            model_name: machine_name_Controller.text,
            serial_no: machine_code_Controller.text,
-           client_id : selectedClientId.toString(),
-           receive_days : selectedTimePeriod.toString(),
            isActive: activeChecked ? '0' : '1',
          );
 

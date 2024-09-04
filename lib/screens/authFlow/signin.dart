@@ -299,6 +299,11 @@ class _AuthProcessState extends State<AuthProcess> {
                 await PrefManager().setClientModule(user.clientModule);
                 await PrefManager().setMachineModule(user.machineModule);
                 await PrefManager().setSupplyChainModule(user.supplyChain);
+                await PrefManager().setAcknowledgeModuleModule(user.acknowledgeModule);
+                await PrefManager().setTonerRequestModule(user.tonerRequestModule);
+                await PrefManager().setDispatchModule(user.dispatchModule);
+                await PrefManager().setReceiveModule(user.receiveModule);
+                await PrefManager().setReceiveModule(user.userRole);
 
                 await PrefManager().setIsLoggedIn(true);
 

@@ -34,7 +34,7 @@ class ClientReportResponse {
 
 class ClientReportData {
   final String message;
-  final List<Report> report;
+  final Report report;
 
   ClientReportData({
     required this.message,
@@ -42,39 +42,36 @@ class ClientReportData {
   });
 
   factory ClientReportData.fromJson(Map<String, dynamic> json) {
-    var list = json['report'] as List;
-    List<Report> reportList = list.map((i) => Report.fromJson(i)).toList();
-
     return ClientReportData(
       message: json['message'],
-      report: reportList,
+      report: Report.fromJson(json['report']),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'message': message,
-      'report': report.map((e) => e.toJson()).toList(),
+      'report': report.toJson(),
     };
   }
 }
 
 class Report {
-  final int reportCount;
-  final String dispatchCount;
-  final String receiveCount;
+  final int? reportCount; // Nullable
+  final int? dispatchCount; // Nullable
+  final int? receiveCount; // Nullable
 
   Report({
-    required this.reportCount,
-    required this.dispatchCount,
-    required this.receiveCount,
+    this.reportCount,
+    this.dispatchCount,
+    this.receiveCount,
   });
 
   factory Report.fromJson(Map<String, dynamic> json) {
     return Report(
-      reportCount: json['report_count'],
-      dispatchCount: json['dispatch_count'],
-      receiveCount: json['receive_count'],
+      reportCount: json['report_count'] != null ? json['report_count'] as int : null,
+      dispatchCount: json['dispatch_count'] != null ? json['dispatch_count'] as int : null,
+      receiveCount: json['receive_count'] != null ? json['receive_count'] as int : null,
     );
   }
 

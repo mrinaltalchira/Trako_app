@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../color/colors.dart';
 import '../../globals.dart';
+import '../../model/all_toner_request.dart';
 import '../../network/ApiService.dart';
 import '../add_toner/add_toner.dart';
 import '../home/client/client.dart';
@@ -15,8 +17,9 @@ class TonerRequest extends StatefulWidget {
 }
 
 
+
 class _TonerRequestState extends State<TonerRequest> {
-  late Future<List<Toner>> tonersFuture;
+  late Future<List<AllTonerRequest>> tonersFuture;
   final ApiService _apiService = ApiService(); // Initialize your ApiService
 
   @override
@@ -25,9 +28,9 @@ class _TonerRequestState extends State<TonerRequest> {
       tonersFuture = getTonersList(null);
   }
 
-   Future<List<Toner>> getTonersList(String? search) async {
+   Future<List<AllTonerRequest>> getTonersList(String? search) async {
     try {
-      List<Toner> toners = (await _apiService.getAllToners(search)) as List<Toner>;
+      List<AllTonerRequest> toners = (await _apiService.getAllTonerRequests());
       // Debug print to check the fetched toners
       print('Fetched toners: $toners');
       return toners;
@@ -131,7 +134,7 @@ class _TonerRequestState extends State<TonerRequest> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      FutureBuilder<List<Toner>>(
+                      FutureBuilder<List<AllTonerRequest>>(
                         future: tonersFuture,
                         builder: (context, snapshot) {
                           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -139,7 +142,7 @@ class _TonerRequestState extends State<TonerRequest> {
                           } else if (snapshot.hasError) {
                             return Center(child: Text('Error: ${snapshot.error}'));
                           } else {
-                            List<Toner> toners = snapshot.data ?? [];
+                            List<AllTonerRequest> toners = snapshot.data ?? [];
                             // Debug print to check the toners before passing to the widget
                             print('Toners to display: $toners');
 
@@ -148,7 +151,7 @@ class _TonerRequestState extends State<TonerRequest> {
                                 onRefresh: refreshTonersList,
                               );
                             } else {
-                              return TonerList(items: toners);
+                              return TonerRequestList(items: toners);
                             }
                           }
                         },
@@ -165,11 +168,10 @@ class _TonerRequestState extends State<TonerRequest> {
   }
 }
 
+class TonerRequestList extends StatelessWidget {
+  final List<AllTonerRequest> items;
 
-class TonerList extends StatelessWidget {
-  final List<Toner> items;
-
-  const TonerList({super.key, required this.items});
+  const TonerRequestList({Key? key, required this.items}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -178,58 +180,51 @@ class TonerList extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       itemCount: items.length,
       itemBuilder: (context, index) {
-        // Determine the background color based on isActive status
-        Color? cardColor = Colors.grey[300];
-
+        final item = items[index];
         return Card(
-          margin: const EdgeInsets.all(8.0),
+          margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           elevation: 2.0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
+            borderRadius: BorderRadius.circular(12.0),
           ),
-          color: cardColor,
-          // Set the color based on isActive status
           child: Padding(
-            padding: const EdgeInsets.only(left: 12.0, bottom: 12.0, right: 12.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Toner name
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${items[index].name[0].toUpperCase()}${items[index].name.substring(1)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                          ),
-                        ],
+                      child: Text(
+                        '${item.color[0].toUpperCase()}${item.color.substring(1)}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          color: colorMixGrad,
+                        ),
                       ),
                     ),
-                    // Edit button
-                    Row(
-                      children: [
-                        Opacity(
-                          opacity: 1,
-                          child: IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: (){
-                              _showEditDialog(context, items[index]);
-                            },
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        'Qty: ${item.quantity}',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: colorMixGrad,
                         ),
-                      ],
-                    )
+                      ),
+                    ),
                   ],
                 ),
-                Text(
-                  items[index].type,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4.0),
+                const SizedBox(height: 12.0),
+                _buildInfoRow('Serial No', item.serialNo ?? 'N/A'),
+                _buildInfoRow('Last Counter', item.lastCounter.toString()),
+                _buildInfoRow('Created At', _formatDate(item.createdAt)),
               ],
             ),
           ),
@@ -238,67 +233,36 @@ class TonerList extends StatelessWidget {
     );
   }
 
-  // Function to show the edit dialog
-  void _showEditDialog(BuildContext context, Toner toner) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Toner'),
-          content: Text('Edit details of ${toner.name}'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              '$label:',
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                color: Colors.grey,
+              ),
             ),
-            TextButton(
-              child: const Text('Edit'),
-              onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => RequestToner(),
-                  ),
-                );
-              },
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 
-  // Function to edit a toner (Placeholder for actual implementation)
-  void _editToner(BuildContext context, Toner toner) {
-    // Implement your logic to edit the toner
-    print('Editing toner: ${toner.name}');
-    // Add your logic here to update toner data
-  }
-}
-
-class Toner {
-  final String id;
-  final String name;
-  final String type;
-  final String color;
-
-  Toner({
-    required this.id,
-    required this.name,
-    required this.type,
-    required this.color,
-  });
-
-  // Factory method to create a Toner object from JSON data
-  factory Toner.fromJson(Map<String, dynamic> json) {
-    return Toner(
-      id: json['id'],
-      name: json['name'],
-      type: json['type'],
-      color: json['color'],
-    );
+  String _formatDate(DateTime date) {
+    return DateFormat('MMM d, yyyy HH:mm').format(date.toLocal());
   }
 }
