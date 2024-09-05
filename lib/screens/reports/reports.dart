@@ -11,6 +11,7 @@ import 'package:Trako/model/supply_fields_data.dart';
 import 'package:Trako/network/ApiService.dart';
 
 import '../../model/all_clients.dart';
+import '../../pref_manager.dart';
 import '../add_toner/utils.dart';
 
 
@@ -33,6 +34,18 @@ class _MyReportScreenState extends State<MyReportScreen> {
   late DateTime _selectedFromDate;
   late DateTime _selectedToDate;
   Client? _selectedClient;
+  String? isUserAdmin;
+  String? adminName;
+
+
+  void _initializeHideDispatchFields() async {
+    String? isadmin = await PrefManager().getUserRole();
+    String? adName = await PrefManager().getUserName();
+    setState(() {
+      isUserAdmin = isadmin;
+      adminName = adName;
+    });
+  }
 
   Future<void> fetchSpinnerData() async {
     setState(() {
@@ -74,6 +87,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
       setState(() {
         _selectedClient = client;
         selectedClientId = client.id.toString();
+        selectedClientName = client.name.toString();
       });
     }
   }
@@ -85,6 +99,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
     super.initState();
     _selectedFromDate = DateTime.now();
     _selectedToDate = DateTime.now();
+    _initializeHideDispatchFields();
     fetchSpinnerData();
   }
 
@@ -158,7 +173,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
               ),
             ),
             SizedBox(height: 5),
-            ClientNameSpinner(
+            if (isUserAdmin == "Admin") ClientNameSpinner(
               fetchClients: getClientsList,
               onChanged: _onClientChanged,
             ),
@@ -182,12 +197,15 @@ class _MyReportScreenState extends State<MyReportScreen> {
             const SizedBox(height: 15),
             if (_isLoading) Center(child: CircularProgressIndicator()),
             if (_showDetails && _reportData != null)
-            TonerDetails(
-            tonerReceived: _reportData!.data.report.dispatchCount.toString(), // Get the value directly
-            tonerDistributed: _reportData!.data.report.receiveCount.toString(), // Get the value directly
-            client: selectedClientName!, // Ensure selectedClientName is not null
-            machine: _reportData!.data.report.reportCount?.toString() ?? '0', // Handle potential null value
-            ),
+
+                 TonerDetails(
+                   tonerReceived: _reportData?.data.report.dispatchCount?.toString() ?? '0',
+                   tonerDistributed: _reportData?.data.report.receiveCount?.toString() ?? '0',
+                   client: selectedClientName ?? 'Unknown Client',
+                   machine: _reportData?.data.report.reportCount?.toString() ?? '0',
+                 ),
+
+
             if (!_isLoading && !_showDetails)
               Center(child: Text('No data available')),
 
@@ -340,7 +358,7 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              client,
+              client.isNotEmpty ? client : 'No client data', // Handle null or empty client
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
@@ -357,8 +375,7 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              tonerReceived
-              ,
+              tonerReceived.isNotEmpty ? tonerReceived : 'No toner received data', // Handle null or empty tonerReceived
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
@@ -374,19 +391,36 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              tonerDistributed,
+              tonerDistributed.isNotEmpty ? tonerDistributed : 'No toner distributed data', // Handle null or empty tonerDistributed
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
               ),
             ),
 
+            SizedBox(height: 12),
+            Text(
+              'Machine:',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colorMixGrad, // Use colorMixGrad here
+              ),
+            ),
+            Text(
+              machine.isNotEmpty ? machine : 'No machine data', // Handle null or empty machine
+              style: TextStyle(
+                fontSize: 16,
+                color: colorMixGrad, // Use colorMixGrad here
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
 
 class DatePickerRow extends StatefulWidget {
   final Function(DateTime) onFromDateChanged;

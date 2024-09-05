@@ -359,7 +359,7 @@ class _AddUserState extends State<AddUser> {
                       tonerRequestModuleChecked = false;
                       acknowledgementModuleChecked = false;
                       dispatchModuleChecked = false;
-                      receiveModuleChecked = false;
+                      receiveModuleChecked = true;
                     } else if (newValue == "Logistics") {
                       isModuleAccessVisible = false;
                       machineModuleChecked = false;
@@ -1029,12 +1029,7 @@ class CheckBoxRow extends StatelessWidget {
                     activeColor: colorMixGrad,
                   ),
                   const Text('Dispatch        '),
-                  CustomCheckbox(
-                    value: receiveModuleChecked,
-                    onChanged: onReceiveModuleChanged,
-                    activeColor: colorMixGrad,
-                  ),
-                  const Text('Receive'),
+
                 ],
               ),
             ],

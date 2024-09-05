@@ -119,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
             PrefManager().getTonerRequestModule(),
             PrefManager().getDispatchModule(),
             PrefManager().getReceiveModule(),
+            PrefManager().getUserRole(),
 
           ]),
           builder: (context, snapshot) {
@@ -132,6 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
               String? tonerRequestModule = snapshot.data![5];
               String? dispatch = snapshot.data![6];
               String? receive = snapshot.data![7];
+              String? isAdmin = snapshot.data![8];
 
               bool showMachinesItem = machineModule != "1";
               bool showClientItem = clientModule != "1";
@@ -141,6 +143,7 @@ class _HomeScreenState extends State<HomeScreen> {
               bool tonerRequestItem = tonerRequestModule != "1";
               bool dispatchItem = dispatch != "1";
               bool receiveItem = receive != "1";
+              String? isUserAdmin = isAdmin;
 
               print("dgdfgubgdbfdkugbdjh "
                   "showMachinesItem: $showMachinesItem, "
@@ -209,7 +212,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       index: 5,
                     ),
 
-                  _buildDrawerItem(
+                 if (isUserAdmin == "Admin" || isUserAdmin == "admin") _buildDrawerItem(
                     icon: Icons.report,
                     text: 'Reports',
                     index: 6,
