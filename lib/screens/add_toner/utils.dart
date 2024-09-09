@@ -236,8 +236,8 @@ class _ClientNameSpinnerState extends State<ClientNameSpinner> {
       } else {
         _filteredClients = _clients
             .where((client) =>
-        client.name.toLowerCase().contains(query.toLowerCase()) ||
-            client.city.toLowerCase().contains(query.toLowerCase()))
+        client.name!.toLowerCase().contains(query.toLowerCase()) ||
+            client.city!.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
     });

@@ -24,14 +24,16 @@ class MachineResponse {
 class MachineData {
   final String message;
   final List<Machine> machines;
+  final Pagination pagination;
 
   MachineData({
     required this.message,
     required this.machines,
+    required this.pagination,
   });
 
   factory MachineData.fromJson(Map<String, dynamic> json) {
-    var machinesList = json['machine'] as List<dynamic>? ?? [];
+    var machinesList = json['machines'] as List<dynamic>? ?? [];
     List<Machine> machines = machinesList
         .map((machineJson) => Machine.fromJson(machineJson as Map<String, dynamic>))
         .toList();
@@ -39,6 +41,7 @@ class MachineData {
     return MachineData(
       message: json['message'] ?? '',
       machines: machines,
+      pagination: Pagination.fromJson(json['pagination'] ?? {}),
     );
   }
 }
@@ -47,11 +50,8 @@ class Machine {
   final String id;
   final String? modelName; // Nullable field
   final String? serialNo;  // Nullable field
-  final String? receiveDays; // Nullable field
-  final int? clientId; // Nullable field
   final String isActive;
   final int? addedBy; // Nullable field
-  final String? clientName; // Nullable field
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -59,11 +59,8 @@ class Machine {
     required this.id,
     this.modelName,
     this.serialNo,
-    this.receiveDays,
-    this.clientId,
     required this.isActive,
     this.addedBy,
-    this.clientName,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -73,13 +70,39 @@ class Machine {
       id: json['id'].toString(),
       modelName: json['model_name'] as String?,
       serialNo: json['serial_no'] as String?,
-      receiveDays: json['receive_days'] as String?,
-      clientName: json['client_name'] as String?,
-      clientId: json['client_id'] != null ? json['client_id'] as int : null,
       isActive: json['isActive'].toString(),
       addedBy: json['added_by'] != null ? json['added_by'] as int : null,
       createdAt: DateTime.parse(json['created_at']),
       updatedAt: DateTime.parse(json['updated_at']),
+    );
+  }
+}
+
+class Pagination {
+  final int total;
+  final int currentPage;
+  final int lastPage;
+  final int perPage;
+  final String? nextPageUrl;
+  final String? prevPageUrl;
+
+  Pagination({
+    required this.total,
+    required this.currentPage,
+    required this.lastPage,
+    required this.perPage,
+    this.nextPageUrl,
+    this.prevPageUrl,
+  });
+
+  factory Pagination.fromJson(Map<String, dynamic> json) {
+    return Pagination(
+      total: json['total'] ?? 0,
+      currentPage: json['current_page'] ?? 0,
+      lastPage: json['last_page'] ?? 0,
+      perPage: json['per_page'] ?? 0,
+      nextPageUrl: json['next_page_url'] as String?,
+      prevPageUrl: json['prev_page_url'] as String?,
     );
   }
 }

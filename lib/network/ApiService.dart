@@ -75,8 +75,8 @@ class LoggerInterceptor extends Interceptor {
 
 class ApiService {
 
-  final String baseUrl = 'https://trako.tracesci.in/api';
-     // final String baseUrl = 'http://192.168.2.169:8080/api';
+  // final String baseUrl = 'https://trako.tracesci.in/api';
+     final String baseUrl = 'http://192.168.2.169:8080/api';
 
   late Dio _dio;
   late String? token;
@@ -266,41 +266,46 @@ class ApiService {
     }
   }
 
-  Future<List<Client>> getAllClients({String? search,String? filter}) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before getAllClients
+       Future<List<Client>> getAllClients({
+         String? search,
+         String? filter,
+         int? perPage,
+         int? page
+       }) async {
+         try {
+           await initializeApiService(); // Ensure token is initialized before calling the API
 
-      final response = await _dio.get(
-        '$baseUrl/all-client',
-        queryParameters: {
-          if (search != null && search.isNotEmpty) 'search': search,
-        },
+           final response = await _dio.get(
+             '$baseUrl/all-client',
+             queryParameters: {
+               if (search != null && search.isNotEmpty) 'search': search, // Add search query if provided
+               if (filter != null && filter.isNotEmpty) 'filter': filter, // Add filter if provided
+               if (perPage != null) 'per_page': perPage, // Add pagination per_page if provided
+               if (page != null) 'page': page, // Add pagination page if provided
+             },
+             options: Options(
+               headers: {
+                 'Authorization': 'Bearer $token', // Pass the auth token
+               },
+             ),
+           );
 
-        data: json.encode({
-          'filter': filter,
-        }),
+           if (response.statusCode == 200) {
+             final data = response.data;
+             final clientsJson = data['data']['clients'] as List;
+             List<Client> clients = clientsJson.map((json) => Client.fromJson(json)).toList();
 
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
+             // Optional: You can also return the pagination details if needed
+             return clients;
+           } else {
+             throw Exception('Failed to load clients');
+           }
+         } catch (e) {
+           print('Get All Clients API error: $e');
+           throw Exception('Failed to connect to the server.');
+         }
+       }
 
-      );
-
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final clientsJson = data['data']['clients'] as List;
-        List<Client> clients = clientsJson.map((json) => Client.fromJson(json)).toList();
-        return clients;
-      } else {
-        throw Exception('Failed to load clients');
-      }
-    } catch (e) {
-      print('Get All Clients API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
 
 
   /////////////////////////////// machine
@@ -381,40 +386,49 @@ class ApiService {
     }
   }
 
+     Future<List<Machine>> getAllMachines({
+       String? search,
+       String? filter,
+       int? perPage , // Default number of items per page
+       int? page,     // Default page number
+     }) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before calling API
 
-  Future<List<Machine>> getAllMachines({String? search,String? filter,}) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before getAllClients
+         final response = await _dio.get(
+           '$baseUrl/all-machine',
+           queryParameters: {
+             if (search != null && search.isNotEmpty) 'search': search,
+             if (filter != null && filter.isNotEmpty) 'filter': filter,
+             if (perPage != null ) 'per_page': perPage,
+             if (page != null )  'page': page,
+           },
+           options: Options(
+             headers: {
+               'Authorization': 'Bearer $token',
+             },
+           ),
+         );
 
-      final response = await _dio.get(
-        '$baseUrl/all-machine',
-        queryParameters: {
-          if (search != null && search.isNotEmpty) 'search': search,
-        },
-        data: json.encode({
-          'filter': filter,
-        }),
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
+         if (response.statusCode == 200) {
+           final data = response.data;
+           final machineJson = data['data']['machines'] as List;
 
-      );
+           List<Machine> machines = machineJson
+               .map((json) => Machine.fromJson(json as Map<String, dynamic>))
+               .toList();
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final machineJson = data['data']['machine'] as List;
-        List<Machine> machine = machineJson.map((json) => Machine.fromJson(json)).toList();
-        return machine;
-      } else {
-        throw Exception('Failed to load machine');
-      }
-    } catch (e) {
-      print('Get All machine API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
+           return machines;
+         } else {
+           throw Exception('Failed to load machines');
+         }
+       } catch (e) {
+         print('Get All machines API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
+
+
 
 
   ////////////////////////////////////  User
@@ -620,39 +634,43 @@ class ApiService {
     }
   }
 
-  Future<SupplyResponse> getAllSupply(String? search) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before making API calls
 
-      final url = '/all-supply'; // Adjust endpoint as per your API
-      final response = await _dio.get(
-        baseUrl + url,
-        queryParameters: {
-          if (search != null && search.isNotEmpty) 'search': search,
-        },
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
+     Future<SupplyResponse> getAllSupply({String? search,String? filter, int page = 1, int perPage = 10}) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before making API calls
 
-      if (response.statusCode == 200) {
-        // Parse the response data into SupplyResponse
-        var responseData = response.data;
-        var supplyResponse = SupplyResponse.fromJson(responseData);
-        return supplyResponse;
-      } else if (response.statusCode == 401) {
-        throw Exception('Unauthorized: Failed to fetch supply details');
-      } else {
-        throw Exception('Failed to fetch supply details');
-      }
-    } catch (e) {
-      print('GET All Supply API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
+         final url = '/all-supply'; // Adjust endpoint as per your API
+         final response = await _dio.get(
+           baseUrl + url,
+           queryParameters: {
+             if (search != null && search.isNotEmpty) 'search': search,
+             'page': page, // Include page parameter for pagination
+             'per_page': perPage, // Include per_page parameter for pagination
+           },
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+         );
+
+         if (response.statusCode == 200) {
+           // Parse the response data into SupplyResponse
+           var responseData = response.data;
+           var supplyResponse = SupplyResponse.fromJson(responseData);
+           return supplyResponse;
+         } else if (response.statusCode == 401) {
+           throw Exception('Unauthorized: Failed to fetch supply details');
+         } else {
+           throw Exception('Failed to fetch supply details');
+         }
+       } catch (e) {
+         print('GET All Supply API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
+
 
 
 ///////////////////////////////// Client Report
@@ -779,8 +797,11 @@ class ApiService {
   }
 
 
-
-  Future<List<AcknowledgementModel>> getAllAcknowledgeList(String? search) async {
+  Future<List<AcknowledgementModel>> getAllAcknowledgeList({
+    String? search,
+    int? perPage, // Number of items per page
+    int? page,   // Page number
+  }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before making the API call
 
@@ -788,6 +809,8 @@ class ApiService {
         '$baseUrl/all-acknowledgement',
         queryParameters: {
           if (search != null && search.isNotEmpty) 'search': search,
+          if (perPage != null) 'per_page': perPage,
+          if (page != null) 'page': page,
         },
         options: Options(
           headers: {
@@ -798,9 +821,9 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = response.data;
-        final acknowledgementsJson = data['data']['acknowledgement'] as List;
+        final acknowledgementsJson = data['data']['acknowledgements'] as List;
         List<AcknowledgementModel> acknowledgements = acknowledgementsJson
-            .map((json) => AcknowledgementModel.fromJson(json))
+            .map((json) => AcknowledgementModel.fromJson(json as Map<String, dynamic>))
             .toList();
         return acknowledgements;
       } else {
@@ -811,6 +834,8 @@ class ApiService {
       throw Exception('Failed to connect to the server.');
     }
   }
+
+
 
 //      Spinner
 

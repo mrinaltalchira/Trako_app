@@ -405,6 +405,7 @@ class _RequestTonerState extends State<RequestToner> {
                       onChanged: (String? newColor) {
                         setState(() {
                           _selectedColor = newColor;
+                          print("sfsdfdsf ${_selectedColor}" );
                         });
                       },
                       colorList: colors,

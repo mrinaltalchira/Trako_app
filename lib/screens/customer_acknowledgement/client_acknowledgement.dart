@@ -30,41 +30,45 @@ class AcknowledgementItem {
   });
 }
 
-
-
-
 class _AcknowledgementState extends State<Acknowledgement> {
 
   late Future<List<AcknowledgementModel>> acknowledgementsFuture;
   final ApiService _apiService = ApiService(); // Initialize your ApiService
 
 
-  Future<List<AcknowledgementModel>> getAcknowledgementDataList(String? search) async {
+  Future<List<AcknowledgementModel>> getAcknowledgementDataList({
+    String? search,
+  }) async {
     try {
-      List<AcknowledgementModel> clients = await _apiService.getAllAcknowledgeList(search);
-      // Debug print to check the fetched clients
-      print('Fetched clients: $clients');
-      return clients;
+      List<AcknowledgementModel> acknowledgements = await _apiService.getAllAcknowledgeList(
+        search: search,
+        page: 1,
+        perPage: 20,
+      );
+
+      // Debug print to check the fetched acknowledgements
+      print('Fetched acknowledgements: $acknowledgements');
+      return acknowledgements;
     } catch (e) {
       // Handle error
-      print('Error fetching clients: $e');
+      print('Error fetching acknowledgements: $e');
       return [];
     }
   }
 
+
   @override
   void initState() {
     super.initState();
-    acknowledgementsFuture = getAcknowledgementDataList(null);
+    acknowledgementsFuture = getAcknowledgementDataList(search: null);
 
   }
 
   Future<void> refreshAcknowledgementsList() async {
     setState(() {
-      acknowledgementsFuture = getAcknowledgementDataList(null);
+      acknowledgementsFuture = getAcknowledgementDataList(search: null);
     });
   }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -80,7 +84,7 @@ class _AcknowledgementState extends State<Acknowledgement> {
                   "Acknowledgements",
                   style: TextStyle(
                     fontSize: 24.0,
-                    color: colorMixGrad, // Replace with your colorSecondGrad
+                    color: colorMixGrad,
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.start,
@@ -88,15 +92,15 @@ class _AcknowledgementState extends State<Acknowledgement> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: CustomSearchField(
                       onSearchChanged: (searchQuery) {
                         setState(() {
-                          acknowledgementsFuture = getAcknowledgementDataList(searchQuery);
+                          acknowledgementsFuture = getAcknowledgementDataList(search: searchQuery);
                         });
                       },
                     ),
@@ -105,7 +109,7 @@ class _AcknowledgementState extends State<Acknowledgement> {
                   Container(
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [colorFirstGrad, colorMixGrad], // Adjust gradient colors
+                        colors: [colorFirstGrad, colorMixGrad],
                       ),
                       borderRadius: BorderRadius.circular(25.0),
                     ),
@@ -114,7 +118,7 @@ class _AcknowledgementState extends State<Acknowledgement> {
                         await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>  AddAcknowledgement(),
+                            builder: (context) => AddAcknowledgement(),
                           ),
                         );
                         refreshAcknowledgementsList();
@@ -130,42 +134,29 @@ class _AcknowledgementState extends State<Acknowledgement> {
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      FutureBuilder<List<AcknowledgementModel>>(
-                        future: acknowledgementsFuture,
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Center(child: CircularProgressIndicator());
-                          } else if (snapshot.hasError) {
-                            return Center(child: Text('Error: ${snapshot.error}'));
-                          } else {
-                            List<AcknowledgementModel> clients = snapshot.data ??
-                                []; // Handle null case if necessary
-                            // Debug print to check the clients before passing to the widget
-                            print('Clients to display: $clients');
-
-                            if (clients.isEmpty) {
-                              return NoDataFoundWidget(
-                                onRefresh: () async {
-                                  // Simulate an API call
-                                  refreshAcknowledgementsList();
-                                },
-                              );
-                            } else {
-                              return AcknowledgementList(items: clients);
-                            }
-                          }
-                        },
-                      ),
-                    ],
-                  ),
-                ),
+              child: FutureBuilder<List<AcknowledgementModel>>(
+                future: acknowledgementsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else {
+                    List<AcknowledgementModel> acknowledgements = snapshot.data ?? [];
+                    if (acknowledgements.isEmpty) {
+                      return NoDataFoundWidget(
+                        onRefresh: refreshAcknowledgementsList,
+                      );
+                    } else {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: AcknowledgementList(
+                          initialAcknowledgements: acknowledgements, onRefresh:refreshAcknowledgementsList,
+                        ),
+                      );
+                    }
+                  }
+                },
               ),
             ),
           ],
@@ -173,74 +164,176 @@ class _AcknowledgementState extends State<Acknowledgement> {
       ),
     );
   }
+
 }
 
-class AcknowledgementList extends StatelessWidget {
-  final List<AcknowledgementModel> items;
+class AcknowledgementList extends StatefulWidget {
+  final List<AcknowledgementModel> initialAcknowledgements;
+  final String? search;
+  final Future<void> Function() onRefresh;
 
-  const AcknowledgementList({Key? key, required this.items}) : super(key: key);
+  const AcknowledgementList({
+    Key? key,
+    required this.initialAcknowledgements,
+    this.search,
+    required this.onRefresh,
+  }) : super(key: key);
+
+  @override
+  _AcknowledgementListState createState() => _AcknowledgementListState();
+}
+
+class _AcknowledgementListState extends State<AcknowledgementList> {
+  final ScrollController _scrollController = ScrollController();
+  late List<AcknowledgementModel> _acknowledgements;
+  bool _isLoading = false;
+  int _currentPage = 2;  // Start from page 2 as we already have the first page
+  bool _hasMoreData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _acknowledgements = List.from(widget.initialAcknowledgements);
+
+    // Listen to scroll changes
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+        if (!_isLoading && _hasMoreData) {
+          _loadMoreAcknowledgements();
+        }
+      }
+    });
+
+    print('Reaching init state');
+  }
+
+  @override
+  void didUpdateWidget(AcknowledgementList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialAcknowledgements != oldWidget.initialAcknowledgements) {
+      setState(() {
+        _acknowledgements = List.from(widget.initialAcknowledgements);
+        _currentPage = 2;
+        _hasMoreData = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMoreAcknowledgements() async {
+    if (_isLoading || !_hasMoreData) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final newAcknowledgements = await ApiService().getAllAcknowledgeList(
+        search: widget.search,
+        page: _currentPage,
+        perPage: 20,  // Fetching 20 items per page
+      );
+
+      setState(() {
+        _acknowledgements.addAll(newAcknowledgements);
+        _currentPage++;
+        _isLoading = false;
+        _hasMoreData = newAcknowledgements.isNotEmpty;
+      });
+    } catch (e) {
+      print('Error loading more acknowledgements: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        // Determine the background color based on isAcknowledged status
-
-
-        return Card(
-          margin: const EdgeInsets.all(8.0),
-          elevation: 2.0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Acknowledgement name
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'QR - ${items[index].qrCode.toUpperCase()}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Edit button
-
-                  ],
-                ),
-                const SizedBox(height: 10.0),
-
-                Text(
-                  'Date: ${items[index].dateTime}',
-                  style: const TextStyle(color: Colors.black54),
-                ),
-              ],
-            ),
-          ),
-        );
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (!_isLoading &&
+            scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+            _hasMoreData) {
+          print('Reached the bottom of the list');
+          _loadMoreAcknowledgements();
+          return true;
+        }
+        return false;
       },
+      child: ListView.builder(
+        controller: _scrollController,
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _acknowledgements.length + (_hasMoreData ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == _acknowledgements.length) {
+            return _buildLoaderIndicator();
+          }
+
+          return _buildAcknowledgementCard(_acknowledgements[index]);
+        },
+      ),
     );
   }
 
-  void _showEditDialog(BuildContext context, AcknowledgementItem item) {
+  Widget _buildAcknowledgementCard(AcknowledgementModel acknowledgement) {
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'QR - ${acknowledgement.qrCode.toUpperCase()}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                  ),
+                ),
+             Opacity(opacity: 0,child:    IconButton(
+               icon: const Icon(Icons.edit),
+               onPressed: () {
+                 _showEditDialog(context, acknowledgement);
+               },
+             ),)
+              ],
+            ),
+            const SizedBox(height: 10.0),
+            Text(
+              'Date: ${acknowledgement.dateTime}',
+              style: const TextStyle(color: Colors.black54),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoaderIndicator() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Container();
+  }
+
+  void _showEditDialog(BuildContext context, AcknowledgementModel acknowledgement) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('Edit Acknowledgement'),
-          content: Text('Edit details of ${item.name}'),
+          content: Text('Edit details of ${acknowledgement.qrCode}'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
@@ -252,7 +345,7 @@ class AcknowledgementList extends StatelessWidget {
               child: const Text('Edit'),
               onPressed: () {
                 Navigator.of(context).pop();  // Close the dialog
-
+                // Implement the navigation to an edit page or functionality
               },
             ),
           ],
@@ -260,11 +353,5 @@ class AcknowledgementList extends StatelessWidget {
       },
     );
   }
-
-  void _editAcknowledgement(BuildContext context, AcknowledgementItem item) {
-    // Implement your logic to edit the acknowledgement
-    print('Editing acknowledgement: ${item.name}');
-    // Add your logic here to update item data
-  }
-
 }
+

@@ -36,15 +36,15 @@ class _AddClientState extends State<AddClient> {
     super.initState();
     machineFuture = getMachineList("only_active");
     if (widget.client != null) {
-      nameController.text = widget.client!.name;
-      cityController.text = widget.client!.city;
-      emailController.text = widget.client!.email;
+      nameController.text = widget.client!.name.toString();
+      cityController.text = widget.client!.city.toString();
+      emailController.text = widget.client!.email.toString();
       fullPhoneNumber = widget.client!.phone;
-      assignedMachines = widget.client!.machines.split(",");
+      assignedMachines = widget.client!.machines!.split(",");
       String? phone = widget.client?.phone; // Access phone property safely
       List<String> phNumber = phone?.split(" ") ?? [];
       phoneController.text = phNumber[1];
-      addressController.text = widget.client!.address;
+      addressController.text = widget.client!.address.toString();
       contactPersonController.text = widget.client!.contactPerson ?? '';
       activeChecked = widget.client!.isActive == "0";
       // assignedMachines.addAll(widget.client!.machines); // Assuming `machines` is a list of machine IDs
@@ -296,7 +296,7 @@ class _AddClientState extends State<AddClient> {
       if (widget.client != null) {
         // Update existing client
         final updateClientResponse = await apiService.updateClient(
-          id: widget.client!.id,
+          id: widget.client!.id.toString(),
           name: nameController.text,
           city: cityController.text,
           email: emailController.text,

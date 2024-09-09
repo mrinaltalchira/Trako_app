@@ -855,7 +855,7 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
 
   void _returnScannedData() {
     if (firstResult != null && secondResult != null) {
-      String combinedResult = '${firstResult!.code} - ${secondResult!.code}';
+      String combinedResult = '${firstResult!.code}-${secondResult!.code}';
       Navigator.pop(context, combinedResult);
     }
   }
