@@ -25,7 +25,6 @@ class _AddUserState extends State<AddUser> {
   TextEditingController phoneController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
   TextEditingController confirmPasswordController = TextEditingController();
-  TextEditingController authorityController = TextEditingController();
   TextEditingController activeStatusController = TextEditingController();
 
   bool machineModuleChecked = false;
@@ -52,14 +51,18 @@ class _AddUserState extends State<AddUser> {
       String? phone = widget.user?.phone; // Access phone property safely
       List<String> phNumber = phone?.split(" ") ?? [];
       phoneController.text = phNumber[1];
-      authorityController.text = widget.user!.userRole;
       activeStatusController.text = widget.user!.isActive;
-
+      selectedUserRole = widget.user!.userRole;
       machineModuleChecked = widget.user!.machineModule == '0';
-      supplyChainModuleChecked = widget.user!.supply_chain_module == '0';
+      supplyChainModuleChecked = widget.user!.supplyChainModule == '0';
       clientModuleChecked = widget.user!.clientModule == '0';
       userPrivilegeChecked = widget.user!.userModule == '0';
       activeChecked = widget.user!.isActive == '0';
+      acknowledgementModuleChecked = widget.user!.acknowledgeModule == '0';
+      tonerRequestModuleChecked = widget.user!.tonerRequestModule == '0';
+      dispatchModuleChecked = widget.user!.dispatchModule == '0';
+      receiveModuleChecked = widget.user!.receiveModule == '0';
+      print( receiveModuleChecked.toString() + dispatchModuleChecked.toString() + tonerRequestModuleChecked.toString());
     }
   }
 
@@ -177,7 +180,11 @@ class _AddUserState extends State<AddUser> {
             machineModule: machineModuleChecked ? '0' : '1',
             clientModule: clientModuleChecked ? '0' : '1',
             userModule: userPrivilegeChecked ? '0' : '1',
-            supplyChainModule: supplyChainModuleChecked ? '0' : '1');
+            supplyChainModule: supplyChainModuleChecked ? '0' : '1',
+            acknowledgeModule: acknowledgementModuleChecked ? '0' : '1',
+            tonerRequestModule: tonerRequestModuleChecked ? '0' : '1',
+            dispatchModule: dispatchModuleChecked ? '0' : '1',
+            receiveModule: receiveModuleChecked ? '0' : '1');
 
         // Dismiss loading indicator
         Navigator.of(context).pop();
@@ -233,7 +240,11 @@ class _AddUserState extends State<AddUser> {
             machineModule: machineModuleChecked ? '0' : '1',
             clientModule: clientModuleChecked ? '0' : '1',
             userModule: userPrivilegeChecked ? '0' : '1',
-            supplyChainModule: supplyChainModuleChecked ? '0' : '1');
+            supplyChainModule: supplyChainModuleChecked ? '0' : '1',
+            acknowledgeModule: acknowledgementModuleChecked ? '0' : '1',
+            tonerRequestModule: tonerRequestModuleChecked ? '0' : '1',
+            dispatchModule: dispatchModuleChecked ? '0' : '1',
+            receiveModule: receiveModuleChecked ? '0' : '1');
 
         // Dismiss loading indicator
         Navigator.of(context).pop();
@@ -312,9 +323,9 @@ class _AddUserState extends State<AddUser> {
               const SizedBox(height: 20),
               UserFormHeader(
                 user: widget.user,
-                tooltipMessage: "Rolls have Access:- \nAdmin : All Module \nClient : Toner Request, Acknowledgement \nUser : Custom module \nLogistics : SupplyChain(Dispatch, Receive) \nEngineer : SupplyChain(Receive) ",
+                tooltipMessage:
+                    "Rolls have Access:- \nAdmin : All Module \nClient : Toner Request, Acknowledgement \nUser : Custom module \nLogistics : SupplyChain(Dispatch, Receive) \nEngineer : SupplyChain(Receive) ",
               ),
-
               const SizedBox(height: 20),
               Text(
                 "User Roles ",
@@ -672,7 +683,7 @@ class UserRolesSpinner extends StatelessWidget {
     return DropdownButtonFormField<String>(
       value: selectedValue,
       hint: const Text('Select Role'),
-      items: ['Admin', 'Client', 'User', 'Logistics', 'Engineer/Technician']
+      items: ['supplyChainModuleChecked', 'Client', 'User', 'Logistics', 'Engineer/Technician']
           .map((String value) {
         return DropdownMenuItem<String>(
           value: value,
@@ -714,11 +725,10 @@ class NameInputTextField extends StatelessWidget {
         FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')),
         // Allow only letters
       ],
-      keyboardType: TextInputType.emailAddress,
+      keyboardType: TextInputType.text,
       decoration: InputDecoration(
         hintText: 'Name',
         counterText: '',
-
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
         border: OutlineInputBorder(
@@ -755,7 +765,7 @@ class EmailInputTextField extends StatelessWidget {
         FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')),
         // Allow only email characters
       ],
-      keyboardType: TextInputType.text,
+      keyboardType: TextInputType.emailAddress,
       decoration: InputDecoration(
         hintText: 'Email',
         counterText: '',
@@ -1029,7 +1039,6 @@ class CheckBoxRow extends StatelessWidget {
                     activeColor: colorMixGrad,
                   ),
                   const Text('Dispatch        '),
-
                 ],
               ),
             ],
@@ -1109,7 +1118,6 @@ class CustomRadio extends StatelessWidget {
   }
 }
 
-
 class UserFormHeader extends StatelessWidget {
   final User? user;
   final String tooltipMessage;
@@ -1142,7 +1150,8 @@ class UserFormHeader extends StatelessWidget {
           icon: Icon(Icons.info_outline, color: colorMixGrad),
           onPressed: () {
             final RenderBox button = context.findRenderObject() as RenderBox;
-            final Offset topRight = button.localToGlobal(button.size.topRight(Offset.zero));
+            final Offset topRight =
+                button.localToGlobal(button.size.topRight(Offset.zero));
             final screenSize = MediaQuery.of(context).size;
 
             showDialog(
@@ -1157,7 +1166,10 @@ class UserFormHeader extends StatelessWidget {
                       child: Container(
                         constraints: BoxConstraints(
                           maxWidth: 300,
-                          maxHeight: screenSize.height - topRight.dy - button.size.height - 20,
+                          maxHeight: screenSize.height -
+                              topRight.dy -
+                              button.size.height -
+                              20,
                         ),
                         child: Card(
                           color: Colors.black.withOpacity(0.8),
@@ -1178,9 +1190,13 @@ class UserFormHeader extends StatelessWidget {
                                       children: [
                                         TextSpan(
                                           text: parts[0] + ":",
-                                          style: TextStyle(fontWeight: FontWeight.bold),
+                                          style: TextStyle(
+                                              fontWeight: FontWeight.bold),
                                         ),
-                                        TextSpan(text: parts.length > 1 ? parts[1] : ""),
+                                        TextSpan(
+                                            text: parts.length > 1
+                                                ? parts[1]
+                                                : ""),
                                       ],
                                     ),
                                   ),

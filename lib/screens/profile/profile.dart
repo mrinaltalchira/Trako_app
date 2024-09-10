@@ -154,7 +154,7 @@ class MapScreenState extends State<ProfilePage> with SingleTickerProviderStateMi
                                 mainAxisAlignment: MainAxisAlignment.end,
                                 mainAxisSize: MainAxisSize.min,
                                 children: <Widget>[
-                                  _status ? _getEditIcon() : Container(),
+                                  _status ? Opacity(opacity: 0,child: _getEditIcon(),) : Container(),
                                 ],
                               ),
                             ],
@@ -275,69 +275,69 @@ class MapScreenState extends State<ProfilePage> with SingleTickerProviderStateMi
                             ],
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 25.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: <Widget>[
-                              const Expanded(
-                                flex: 2,
-                                child: Text(
-                                  'Role',
-                                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Container(
-                                  child: const Text(
-                                    'Status',
-                                    style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 2.0),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.max,
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: <Widget>[
-                              Flexible(
-                                flex: 2,
-                                child: Padding(
-                                  padding: EdgeInsets.only(right: 10.0),
-                                  child: TextField(
-                                    controller: _roleController,
-                                    decoration: const InputDecoration(
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(color: colorMixGrad), // Border color when focused
-                                      ),
-                                      hintText: "Role",
-                                    ),
-                                    enabled: false,
-                                  ),
-                                ),
-                              ),
-                              Flexible(
-                                flex: 2,
-                                child: TextField(
-                                  controller: _userStatusController,
-                                  decoration: const InputDecoration(
-                                    focusedBorder: OutlineInputBorder(
-                                      borderSide: BorderSide(color: colorMixGrad), // Border color when focused
-                                    ),
-                                    hintText: "Status",
-                                  ),
-                                  enabled: false,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                       Opacity(opacity: 0,child:  Padding(
+                         padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 25.0),
+                         child: Row(
+                           mainAxisSize: MainAxisSize.max,
+                           mainAxisAlignment: MainAxisAlignment.start,
+                           children: <Widget>[
+                             const Expanded(
+                               flex: 2,
+                               child: Text(
+                                 'Role',
+                                 style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+                               ),
+                             ),
+                             Expanded(
+                               flex: 2,
+                               child: Container(
+                                 child: const Text(
+                                   'Status',
+                                   style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),
+                                 ),
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),),
+                       Opacity(opacity: 0,child:  Padding(
+                         padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 2.0),
+                         child: Row(
+                           mainAxisSize: MainAxisSize.max,
+                           mainAxisAlignment: MainAxisAlignment.start,
+                           children: <Widget>[
+                             Flexible(
+                               flex: 2,
+                               child: Padding(
+                                 padding: EdgeInsets.only(right: 10.0),
+                                 child: TextField(
+                                   controller: _roleController,
+                                   decoration: const InputDecoration(
+                                     focusedBorder: OutlineInputBorder(
+                                       borderSide: BorderSide(color: colorMixGrad), // Border color when focused
+                                     ),
+                                     hintText: "Role",
+                                   ),
+                                   enabled: false,
+                                 ),
+                               ),
+                             ),
+                             Flexible(
+                               flex: 2,
+                               child: TextField(
+                                 controller: _userStatusController,
+                                 decoration: const InputDecoration(
+                                   focusedBorder: OutlineInputBorder(
+                                     borderSide: BorderSide(color: colorMixGrad), // Border color when focused
+                                   ),
+                                   hintText: "Status",
+                                 ),
+                                 enabled: false,
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),),
                         !_status ? _getActionButtons() : Container(),
                       ],
                     ),

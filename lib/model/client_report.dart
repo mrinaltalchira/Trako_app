@@ -1,24 +1,19 @@
-import 'dart:convert';
-
 class ClientReportResponse {
   final bool error;
   final String message;
-  final int status;
-  final ClientReportData data;
+  final ClientReportData? data; // Nullable
 
   ClientReportResponse({
     required this.error,
     required this.message,
-    required this.status,
-    required this.data,
+    this.data,
   });
 
   factory ClientReportResponse.fromJson(Map<String, dynamic> json) {
     return ClientReportResponse(
-      error: json['error'],
-      message: json['message'],
-      status: json['status'],
-      data: ClientReportData.fromJson(json['data']),
+      error: json['error'] ?? false,
+      message: json['message'] ?? '',
+      data: json['data'] != null ? ClientReportData.fromJson(json['data']) : null, // Null check for data
     );
   }
 
@@ -26,58 +21,57 @@ class ClientReportResponse {
     return {
       'error': error,
       'message': message,
-      'status': status,
-      'data': data.toJson(),
+      'data': data?.toJson(), // Null-aware operator for data
     };
   }
 }
 
 class ClientReportData {
   final String message;
-  final Report report;
+  final Report? report; // Nullable
 
   ClientReportData({
     required this.message,
-    required this.report,
+    this.report,
   });
 
   factory ClientReportData.fromJson(Map<String, dynamic> json) {
     return ClientReportData(
-      message: json['message'],
-      report: Report.fromJson(json['report']),
+      message: json['message'] ?? '',
+      report: json['report'] != null ? Report.fromJson(json['report']) : null, // Null check for report
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'message': message,
-      'report': report.toJson(),
+      'report': report?.toJson(), // Null-aware operator for report
     };
   }
 }
 
 class Report {
-  final int? reportCount; // Nullable
-  final int? dispatchCount; // Nullable
-  final int? receiveCount; // Nullable
+  final String totalMachinesAssigned; // Using String to handle both int and String values
+  final String dispatchCount; // Using String to handle both int and String values
+  final String receiveCount; // Using String to handle both int and String values
 
   Report({
-    this.reportCount,
-    this.dispatchCount,
-    this.receiveCount,
+    required this.totalMachinesAssigned,
+    required this.dispatchCount,
+    required this.receiveCount,
   });
 
   factory Report.fromJson(Map<String, dynamic> json) {
     return Report(
-      reportCount: json['report_count'] != null ? json['report_count'] as int : null,
-      dispatchCount: json['dispatch_count'] != null ? json['dispatch_count'] as int : null,
-      receiveCount: json['receive_count'] != null ? json['receive_count'] as int : null,
+      totalMachinesAssigned: (json['totalMachinesAssigned'] != null ? json['totalMachinesAssigned'].toString() : '0'), // Null check and conversion to String
+      dispatchCount: (json['dispatch_count'] != null ? json['dispatch_count'].toString() : '0'), // Null check and conversion to String
+      receiveCount: (json['receive_count'] != null ? json['receive_count'].toString() : '0'), // Null check and conversion to String
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'report_count': reportCount,
+      'totalMachinesAssigned': totalMachinesAssigned,
       'dispatch_count': dispatchCount,
       'receive_count': receiveCount,
     };

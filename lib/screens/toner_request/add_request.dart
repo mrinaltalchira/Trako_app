@@ -55,11 +55,6 @@ class _RequestTonerState extends State<RequestToner> {
   }
 
 
-  final List<String> _colorOptions = ['Magenta', 'Black', 'Yellow', 'White', 'Clear'];
-
-
-
-
   Future<void> submitRequest() async {
     try {
       // Show the loader before starting the request
@@ -78,6 +73,7 @@ class _RequestTonerState extends State<RequestToner> {
 
       if (response['success']) {
         showSnackBar(context,"Order placed successfully");
+        Navigator.pop(context, true);
         // You can clear the cart or perform any other action after successful submission
         _cart.clear();
       } else {
@@ -99,7 +95,7 @@ class _RequestTonerState extends State<RequestToner> {
 
   void _addToCart() {
 
-    if (selected_serial_no != null && _selectedColor != null) {
+    if (selected_serial_no != null && _counterController.text.isNotEmpty && _selectedColor != null) {
       final tonerRequest = TonerRequestModel(
         serial_no: selected_serial_no!,
         color: _selectedColor!,
@@ -110,7 +106,7 @@ class _RequestTonerState extends State<RequestToner> {
       setState(() {
         _cart.add(tonerRequest);
         quantity = 1;
-        _selectedColor = null;
+        _selectedColor = _selectedColor;
         _counterController.text = "";
 
       });
@@ -396,9 +392,6 @@ class _RequestTonerState extends State<RequestToner> {
                     final List<String> colors = tonerColors.color.split(",");
 
                     // Update the color list and selected color
-                    if (colors.isNotEmpty) {
-                      _selectedColor = colors[0]; // Set the default selected color
-                    }
 
                     return ColorSpinner(
                       selectedValue: _selectedColor,
@@ -412,11 +405,7 @@ class _RequestTonerState extends State<RequestToner> {
                     );
                   }
                 },
-              )
-,
-
-              SizedBox(height: 24.0),
-
+              ),SizedBox(height: 24.0),
               // Toner Quantity
               _buildSectionTitle('Toner Quantity'),
           QuantitySelector(

@@ -443,7 +443,13 @@ class ApiService {
     required String password,
     required String machineModule,
     required String clientModule,
-    required String userModule, required String supplyChainModule,
+    required String userModule,
+     required String supplyChainModule,
+    required String acknowledgeModule,
+    required String tonerRequestModule,
+    required String dispatchModule,
+    required String receiveModule,
+
   }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before addUser
@@ -468,7 +474,10 @@ class ApiService {
           "client_module": clientModule,
           "user_module": userModule,
           "supply_chain_module": supplyChainModule,
-
+          "acknowledge_module": acknowledgeModule,
+          "toner_request_module": tonerRequestModule,
+          "dispatch_module": dispatchModule,
+          "receive_module": receiveModule,
         }),
       );
 
@@ -483,87 +492,104 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> updateUser({
-    required String name,
-    required String user_id,
-    required String email,
-    required String phone,
-    required String isActive,
-    required String userRole,
-    required String password,
-    required String machineModule,
-    required String clientModule,
-    required String userModule,
-    required String supplyChainModule,
-  }) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before addUser
+     Future<Map<String, dynamic>> updateUser({
+       required String name,
+       required String user_id,
+       required String email,
+       required String phone,
+       required String isActive,
+       required String userRole,
+       required String password,
+       required String machineModule,
+       required String clientModule,
+       required String userModule,
+       required String supplyChainModule,
+       required String acknowledgeModule,
+       required String tonerRequestModule,
+       required String dispatchModule,
+       required String receiveModule,
+     }) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before updateUser
 
-      final url = '/update-user'; // Adjust endpoint as per your API
-      final response = await _dio.post(
-        baseUrl + url,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ),
-        data: json.encode({
-          "name": name,
-          "user_id":user_id,
-          "email": email,
-          "phone": phone,
-          "is_active": isActive,
-          "user_role": userRole,
-          "password": password,
-          "machine_module": machineModule,
-          "client_module": clientModule,
-          "user_module": userModule,
-          "supply_chain_module": supplyChainModule,
-        }),
-      );
+         final url = '/update-user'; // Adjust endpoint as per your API
+         final response = await _dio.post(
+           baseUrl + url,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+           data: json.encode({
+             "name": name,
+             "user_id": user_id,
+             "email": email,
+             "phone": phone,
+             "is_active": isActive,
+             "user_role": userRole,
+             "password": password,
+             "machine_module": machineModule,
+             "client_module": clientModule,
+             "user_module": userModule,
+             "supply_chain_module": supplyChainModule,
+             "acknowledge_module": acknowledgeModule,
+             "toner_request_module": tonerRequestModule,
+             "dispatch_module": dispatchModule,
+             "receive_module": receiveModule,
+           }),
+         );
 
-      if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        throw Exception('Failed to update user');
-      }
-    } catch (e) {
-      print('Add user API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
+         if (response.statusCode == 200) {
+           return response.data as Map<String, dynamic>;
+         } else {
+           throw Exception('Failed to update user');
+         }
+       } catch (e) {
+         print('Update user API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
 
 
-  Future<List<User>> getAllUsers(String? search) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before getAllClients
+     Future<List<User>> getAllUsers({String? search, int? perPage, int? page}) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before making the API call
 
-      final response = await _dio.get(
-        '$baseUrl/all-user',
-        queryParameters: {
-          if (search != null && search.isNotEmpty) 'search': search,
-        },
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-          },
-        ),
-      );
+         final response = await _dio.get(
+           '$baseUrl/all-user',
+           queryParameters: {
+             if (search != null && search.isNotEmpty) 'search': search,
+             if (perPage != null) 'per_page': perPage,
+             if (page != null) 'page': page,
+           },
+           options: Options(
+             headers: {
+               'Authorization': 'Bearer $token', // Use the initialized token
+             },
+           ),
+         );
 
-      if (response.statusCode == 200) {
-        final data = response.data;
-        final userJson = data['data']['user'] as List;
-        List<User> user = userJson.map((json) => User.fromJson(json)).toList();
-        return user;
-      } else {
-        throw Exception('Failed to load user');
-      }
-    } catch (e) {
-      print('Get All user API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
+         if (response.statusCode == 200) {
+           final responseData = response.data;
+           final usersJson = responseData['data']['users'] as List<dynamic>; // Adjust based on nested structure
+
+           List<User> users = usersJson
+               .map((json) => User.fromJson(json as Map<String, dynamic>))
+               .toList();
+
+           return users;
+         } else if (response.statusCode == 401) {
+           throw Exception('Unauthorized: Invalid token.');
+         } else {
+           throw Exception('Failed to load user data: ${response.statusCode}');
+         }
+       } catch (e) {
+         print('Get Users API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
+
 
   ////////////////////////////////////   Supply
 
@@ -914,12 +940,21 @@ class ApiService {
     }
   }
 
-  Future<List<AllTonerRequest>> getAllTonerRequests() async {
+  Future<List<AllTonerRequest>> getAllTonerRequests({
+    String? search, // Search query
+    int? perPage,   // Number of items per page
+    int? page,      // Page number
+  }) async {
     try {
       await initializeApiService(); // Ensure token is initialized before making the API call
 
       final response = await _dio.get(
-        '$baseUrl/toner-requests', // Updated endpoint
+        '$baseUrl/toner-requests',
+        queryParameters: {
+          if (search != null && search.isNotEmpty) 'search': search,
+          if (perPage != null) 'per_page': perPage,
+          if (page != null) 'page': page,
+        },
         options: Options(
           headers: {
             'Authorization': 'Bearer $token', // Use the initialized token
@@ -929,7 +964,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final responseData = response.data;
-        final tonerRequestsJson = responseData['data'] as List<dynamic>; // Adjust based on your API response
+        final tonerRequestsJson = responseData['data']['toner_requests'] as List<dynamic>; // Adjust based on nested structure
 
         List<AllTonerRequest> tonerRequests = tonerRequestsJson
             .map((json) => AllTonerRequest.fromJson(json as Map<String, dynamic>))
@@ -946,6 +981,7 @@ class ApiService {
       throw Exception('Failed to connect to the server.');
     }
   }
+
 
   Future<TonerColors?> getTonerColors(String serialNo) async {
     try {

@@ -154,17 +154,28 @@ class _AddTonerState extends State<AddToner> {
           !input.contains('--');
     }
 
-     if(isValidFormat(result)){
-       if (!scannedCodes.contains(result)) {
-         setState(() {
-           scannedCodes.add(result);
-         });
-       } else {
-         showSnackBar(context, "Duplicate values are not allowed.");
-       }
-     }else{
-       showSnackBar(context, "Please add QuarterID-TonerID both together.");
-     }
+    if(_selectedDispatchReceive == DispatchReceive.dispatch){
+      if(isValidFormat(result)){
+        if (!scannedCodes.contains(result)) {
+          setState(() {
+            scannedCodes.add(result);
+          });
+        } else {
+          showSnackBar(context, "Duplicate values are not allowed.");
+        }
+      }else{
+        showSnackBar(context, "Please add QuarterID-TonerID both together.");
+      }
+    }else{
+      if (!scannedCodes.contains(result)) {
+        setState(() {
+          scannedCodes.add(result);
+        });
+      } else {
+        showSnackBar(context, "Duplicate values are not allowed.");
+      }
+    }
+
   }
 
 
@@ -430,14 +441,15 @@ class _AddTonerState extends State<AddToner> {
                 onAddPressed: addCodeManually,
               ),
               const SizedBox(height: 5),
-              const Text(
-                "Ex: QuarterID-TonerID",
+              Text(
+                _selectedDispatchReceive == DispatchReceive.dispatch
+                    ? "Ex: QuarterID-TonerID"
+                    : "Ex: TonerID",
                 style: TextStyle(
                   fontSize: 13,
-                  color: Colors.blueGrey
+                  color: Colors.blueGrey,
                 ),
               ),
-
               const SizedBox(height: 15),
               const Text(
                 "Scanned QR Codes:",

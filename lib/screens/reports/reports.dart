@@ -199,10 +199,10 @@ class _MyReportScreenState extends State<MyReportScreen> {
             if (_showDetails && _reportData != null)
 
                  TonerDetails(
-                   tonerReceived: _reportData?.data.report.dispatchCount?.toString() ?? '0',
-                   tonerDistributed: _reportData?.data.report.receiveCount?.toString() ?? '0',
+                   tonerReceived: _reportData?.data!.report!.dispatchCount.toString() ?? '0',
+                   tonerDistributed: _reportData?.data!.report!.receiveCount.toString() ?? '0',
                    client: selectedClientName ?? 'Unknown Client',
-                   machine: _reportData?.data.report.reportCount?.toString() ?? '0',
+                   machine: _reportData?.data!.report!.totalMachinesAssigned.toString() ?? '0',
                  ),
 
 
@@ -295,15 +295,15 @@ class _TonerDetailsPageState extends State<TonerDetailsPage> {
               return CircularProgressIndicator();
             } else if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
-            } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.data.report.toString().isEmpty) {
+            } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.data!.report.toString().isEmpty) {
               return Text('No data available');
             } else {
-              var data = snapshot.data!.data.report;
+              var data = snapshot.data!.data?.report;
               return TonerDetails(
-                tonerReceived: data.dispatchCount.toString(),
+                tonerReceived: data!.dispatchCount.toString(),
                 tonerDistributed: data.receiveCount.toString(),
                 client: widget.clientId,
-                machine: data.reportCount.toString(),
+                machine: data.totalMachinesAssigned.toString(),
               );
             }
           },
