@@ -10,6 +10,10 @@ import 'package:Trako/model/client_report.dart';
 import 'package:Trako/model/supply_fields_data.dart';
 import 'package:Trako/network/ApiService.dart';
 
+import '../../model/all_clients.dart';
+import '../../pref_manager.dart';
+import '../add_toner/utils.dart';
+
 
 class MyReportScreen extends StatefulWidget {
   @override
@@ -29,6 +33,19 @@ class _MyReportScreenState extends State<MyReportScreen> {
   String? selectedClientId;
   late DateTime _selectedFromDate;
   late DateTime _selectedToDate;
+  Client? _selectedClient;
+  String? isUserAdmin;
+  String? adminName;
+
+
+  void _initializeHideDispatchFields() async {
+    String? isadmin = await PrefManager().getUserRole();
+    String? adName = await PrefManager().getUserName();
+    setState(() {
+      isUserAdmin = isadmin;
+      adminName = adName;
+    });
+  }
 
   Future<void> fetchSpinnerData() async {
     setState(() {
@@ -52,11 +69,37 @@ class _MyReportScreenState extends State<MyReportScreen> {
     }
   }
 
+  Future<List<Client>> getClientsList(String? filter) async {
+    try {
+      List<Client> clients = await _apiService.getAllClients(search:null);
+      // Debug print to check the fetched clients
+      print('Fetched clients: $clients');
+      return clients;
+    } catch (e) {
+      // Handle error
+      print('Error fetching clients: $e');
+      return [];
+    }
+  }
+
+  void _onClientChanged(Client? client){
+    if (client != null) {
+      setState(() {
+        _selectedClient = client;
+        selectedClientId = client.id.toString();
+        selectedClientName = client.name.toString();
+      });
+    }
+  }
+
+
+
   @override
   void initState() {
     super.initState();
     _selectedFromDate = DateTime.now();
     _selectedToDate = DateTime.now();
+    _initializeHideDispatchFields();
     fetchSpinnerData();
   }
 
@@ -84,6 +127,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
           from_date: DateFormat('yyyy-MM-dd').format(_selectedFromDate),
           to_date: DateFormat('yyyy-MM-dd').format(_selectedToDate),
         );
+        print("d3r3rdsfdsfdf");
         setState(() {
           _reportData = report;
           _showDetails = true;
@@ -129,15 +173,9 @@ class _MyReportScreenState extends State<MyReportScreen> {
               ),
             ),
             SizedBox(height: 5),
-            ClientNameSpinner(
-              onChanged: (SupplyClient? newClient) {
-                setState(() {
-                  selectedClientName = newClient?.name;
-                  selectedCityName = newClient?.city;
-                  selectedClientId = newClient?.id.toString();
-                });
-              },
-              clients: clients,
+            if (isUserAdmin == "Admin") ClientNameSpinner(
+              fetchClients: getClientsList,
+              onChanged: _onClientChanged,
             ),
             const SizedBox(height: 15),
             DatePickerRow(
@@ -159,12 +197,15 @@ class _MyReportScreenState extends State<MyReportScreen> {
             const SizedBox(height: 15),
             if (_isLoading) Center(child: CircularProgressIndicator()),
             if (_showDetails && _reportData != null)
-              TonerDetails(
-                tonerReceived: _reportData!.data.report[0].dispatchCount,
-                tonerDistributed: _reportData!.data.report[0].receiveCount,
-                client: selectedClientName!,
-                machine: _reportData!.data.report[0].reportCount.toString(),
-              ),
+
+                 TonerDetails(
+                   tonerReceived: _reportData?.data!.report!.dispatchCount.toString() ?? '0',
+                   tonerDistributed: _reportData?.data!.report!.receiveCount.toString() ?? '0',
+                   client: selectedClientName ?? 'Unknown Client',
+                   machine: _reportData?.data!.report!.totalMachinesAssigned.toString() ?? '0',
+                 ),
+
+
             if (!_isLoading && !_showDetails)
               Center(child: Text('No data available')),
 
@@ -254,15 +295,15 @@ class _TonerDetailsPageState extends State<TonerDetailsPage> {
               return CircularProgressIndicator();
             } else if (snapshot.hasError) {
               return Text('Error: ${snapshot.error}');
-            } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.data.report.isEmpty) {
+            } else if (!snapshot.hasData || snapshot.data == null || snapshot.data!.data!.report.toString().isEmpty) {
               return Text('No data available');
             } else {
-              var data = snapshot.data!.data.report[0];
+              var data = snapshot.data!.data?.report;
               return TonerDetails(
-                tonerReceived: data.dispatchCount,
-                tonerDistributed: data.receiveCount,
+                tonerReceived: data!.dispatchCount.toString(),
+                tonerDistributed: data.receiveCount.toString(),
                 client: widget.clientId,
-                machine: data.reportCount.toString(),
+                machine: data.totalMachinesAssigned.toString(),
               );
             }
           },
@@ -317,7 +358,7 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              client,
+              client.isNotEmpty ? client : 'No client data', // Handle null or empty client
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
@@ -334,8 +375,7 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              tonerReceived
-              ,
+              tonerReceived.isNotEmpty ? tonerReceived : 'No toner received data', // Handle null or empty tonerReceived
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
@@ -351,19 +391,36 @@ class TonerDetails extends StatelessWidget {
               ),
             ),
             Text(
-              tonerDistributed,
+              tonerDistributed.isNotEmpty ? tonerDistributed : 'No toner distributed data', // Handle null or empty tonerDistributed
               style: TextStyle(
                 fontSize: 16,
                 color: colorMixGrad, // Use colorMixGrad here
               ),
             ),
 
+            SizedBox(height: 12),
+            Text(
+              'Machine:',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: colorMixGrad, // Use colorMixGrad here
+              ),
+            ),
+            Text(
+              machine.isNotEmpty ? machine : 'No machine data', // Handle null or empty machine
+              style: TextStyle(
+                fontSize: 16,
+                color: colorMixGrad, // Use colorMixGrad here
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
 
 class DatePickerRow extends StatefulWidget {
   final Function(DateTime) onFromDateChanged;
@@ -551,6 +608,7 @@ class PieChartSample2 extends StatelessWidget {
     );
   }
 }
+/*
 
 class ClientNameSpinner extends StatelessWidget {
   final ValueChanged<SupplyClient?> onChanged;
@@ -594,4 +652,5 @@ class ClientNameSpinner extends StatelessWidget {
     );
   }
 }
+*/
 

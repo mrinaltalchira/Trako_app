@@ -5,6 +5,10 @@ import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_machine.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/home/home.dart';
+import 'package:flutter/services.dart';
+
+import '../../model/supply_fields_data.dart';
+import '../add_toner/utils.dart';
 
 class AddMachine extends StatefulWidget {
   final Machine? machine;
@@ -16,19 +20,27 @@ class AddMachine extends StatefulWidget {
 
 
 class _AddMachineState extends State<AddMachine> {
+
    final TextEditingController machine_name_Controller = TextEditingController();
    final TextEditingController machine_code_Controller = TextEditingController();
+
+
+   List<SupplyClient> clients = [];
    bool activeChecked = true;
+   final ApiService _apiService = ApiService();
 
    @override
    void initState() {
      super.initState();
+
      if (widget.machine != null) {
-       machine_name_Controller.text = widget.machine!.modelName;
-       machine_code_Controller.text = widget.machine!.modelCode;
+       machine_name_Controller.text = widget.machine!.modelName!;
+       machine_code_Controller.text = widget.machine!.serialNo!;
        activeChecked = widget.machine!.isActive == "0";
      }
    }
+
+
 
 
    @override
@@ -93,7 +105,7 @@ class _AddMachineState extends State<AddMachine> {
                       height: 20,
                     ),
                     Text(
-                      "Model Code",
+                      "Serial no.",
                       // Dynamic text, removed const
                       style: TextStyle(
                         fontSize: 16,
@@ -105,6 +117,7 @@ class _AddMachineState extends State<AddMachine> {
                     const SizedBox(
                       height: 20,
                     ),
+
                     SizedBox(height: 10),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -150,9 +163,11 @@ class _AddMachineState extends State<AddMachine> {
      }
 
      if (machine_code_Controller.text.isEmpty) {
-       showSnackBar(context, "Model Code is required.");
+       showSnackBar(context, "Serial no is required.");
        return;
      }
+
+
 
      showDialog(
        context: context,
@@ -181,7 +196,7 @@ class _AddMachineState extends State<AddMachine> {
          final addMachineResponse = await apiService.updateMachine(
            id:widget.machine!.id.toString(),
            model_name: machine_name_Controller.text,
-           model_code: machine_code_Controller.text,
+           serial_no: machine_code_Controller.text,
            isActive: activeChecked ? '0' : '1',
          );
 
@@ -214,7 +229,7 @@ class _AddMachineState extends State<AddMachine> {
 
          final addMachineResponse = await apiService.addMachine(
            model_name: machine_name_Controller.text,
-           model_code: machine_code_Controller.text,
+           serial_no: machine_code_Controller.text,
            isActive: activeChecked ? '0' : '1',
          );
 
@@ -234,7 +249,7 @@ class _AddMachineState extends State<AddMachine> {
              }
            } else {
              showSnackBar(
-                 context, "Failed to add machine. Please check your details.");
+                 context, addMachineResponse['message']);
            }
          } else {
            showSnackBar(context,
@@ -307,7 +322,7 @@ class _MachineCodeInputTextFieldState extends State<MachineCodeInputTextField> {
       keyboardType: TextInputType.emailAddress,
 
       decoration: InputDecoration(
-        hintText: 'Model Code',
+        hintText: 'Serial no.',
 
         // Changed hintText to 'Email'
         hintStyle: TextStyle(color: Colors.grey),
@@ -329,6 +344,9 @@ class _MachineCodeInputTextFieldState extends State<MachineCodeInputTextField> {
     );
   }
 }
+
+
+
 
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -506,6 +524,55 @@ class CustomRadio extends StatelessWidget {
       groupValue: groupValue,
       onChanged: onChanged,
       activeColor: activeColor,
+    );
+  }
+}
+
+class TimePeriodDropdown extends StatelessWidget {
+  final List<String> timePeriods = [
+    '7 days',
+    '15 days',
+    '1 month',
+    '3 months',
+    '6 months',
+    '1 year',
+  ];
+
+  final String? selectedValue;
+  final ValueChanged<String?> onChanged;
+
+  TimePeriodDropdown({Key? key, required this.selectedValue, required this.onChanged}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      value: selectedValue,
+      onChanged: onChanged,
+      hint: Text('e.g. 15 days or 1 month'),
+      decoration: InputDecoration(
+        hintStyle: TextStyle(color: Colors.grey),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+        ),
+
+
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.black),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10.0),
+          borderSide: BorderSide(color: colorMixGrad),
+        ),
+        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
+
+      ),
+      items: timePeriods.map((String timePeriod) {
+        return DropdownMenuItem<String>(
+          value: timePeriod,
+          child: Text(timePeriod),
+        );
+      }).toList(),
     );
   }
 }

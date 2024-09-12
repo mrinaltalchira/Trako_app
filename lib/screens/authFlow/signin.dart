@@ -129,7 +129,7 @@ class _AuthProcessState extends State<AuthProcess> {
                             style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.normal,
-                                color: Colors.blueAccent),
+                                color: colorMixGrad),
                           ),
                         ),
                       ],
@@ -199,7 +199,7 @@ class _AuthProcessState extends State<AuthProcess> {
                 // Removed const from SizedBox
                 SizedBox(
                   child: GradientButton(
-                      gradientColors: [colorMixGrad, colorMixGrad],
+                      gradientColors: [colorFirstGrad, colorSecondGrad],
                       // Removed const from gradientColors
                       height: 45.0,
                       width: 10.0,
@@ -228,7 +228,7 @@ class _AuthProcessState extends State<AuthProcess> {
   }
 
   Future<void> validateAndSignIn() async {
-    // Validate phone number
+    // Validate phone number or email
     if (isPhoneInput) {
       if (phoneController.text.isEmpty) {
         showSnackBar(context, "Phone number is required.");
@@ -238,14 +238,11 @@ class _AuthProcessState extends State<AuthProcess> {
         showSnackBar(context, "Phone number is invalid.");
         return;
       }
-      // Additional phone number validation can be added here
     } else {
-      // Validate email
       if (emailController.text.isEmpty) {
         showSnackBar(context, "Email is required.");
         return;
       }
-      // Additional email validation can be added here
     }
 
     // Validate password
@@ -254,6 +251,7 @@ class _AuthProcessState extends State<AuthProcess> {
       return;
     }
 
+    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -262,7 +260,6 @@ class _AuthProcessState extends State<AuthProcess> {
       },
     );
 
-    // Call the login API
     try {
       final ApiService apiService = ApiService();
       late final Map<String, dynamic> loginResponse;
@@ -279,66 +276,71 @@ class _AuthProcessState extends State<AuthProcess> {
       // Dismiss loading indicator
       Navigator.of(context).pop();
 
-      // Check if the login was successful based on the response structure
+      // Check response structure
       if (loginResponse.containsKey('error') &&
           loginResponse.containsKey('status')) {
+
         if (!loginResponse['error'] && loginResponse['status'] == 200) {
-          // Successful login
-
-          // Check specific success message
           if (loginResponse['message'] == 'Success') {
-            // Extract token and handle it
-            User user = User.fromJson(loginResponse['data']['user']);
-            String token = user.token;
-            if (token.isNotEmpty) {
-              PrefManager().setToken(token.toString());
-              PrefManager().setUserName(user.name.toString());
-              PrefManager().setUserEmail(user.email.toString());
-              PrefManager().setUserPhone(user.phone.toString());
-              PrefManager().setUserRole(user.userRole.toString());
-              PrefManager().setUserStatus(user.isActive.toString());
+            try {
+              // Extract and handle user data
+              User user = User.fromJson(loginResponse['data']['user']);
 
-              PrefManager().setUserModule(user.userModule.toString());
-              PrefManager().setClientModule(user.clientModule.toString());
-              PrefManager().setMachineModule(user.machineModule.toString());
+              String token = user.token;
+              if (token.isNotEmpty) {
+                // Save user details to preferences
+                await PrefManager().setToken(token);
+                await PrefManager().setUserName(user.name);
+                await PrefManager().setUserEmail(user.email);
+                await PrefManager().setUserPhone(user.phone);
+                await PrefManager().setUserRole(user.userRole);
+                await PrefManager().setUserStatus(user.isActive);
+                await PrefManager().setUserModule(user.userModule);
+                await PrefManager().setClientModule(user.clientModule);
+                await PrefManager().setMachineModule(user.machineModule);
+                await PrefManager().setSupplyChainModule(user.supplyChain);
+                await PrefManager().setAcknowledgeModuleModule(user.acknowledgeModule);
+                await PrefManager().setTonerRequestModule(user.tonerRequestModule);
+                await PrefManager().setDispatchModule(user.dispatchModule);
+                await PrefManager().setReceiveModule(user.receiveModule);
+                await PrefManager().setReceiveModule(user.userRole);
 
+                await PrefManager().setIsLoggedIn(true);
 
-              print('showMachinesItem: ${user.userModule.toString()}');
-              print('showClientItem: ${user.clientModule.toString()}');
-              print('showUserItem: ${user.machineModule.toString()}');
+                // Navigate to home screen
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => const HomeScreen(),
+                  ),
+                );
+              } else {
+                showSnackBar(context, "Token not found in response.");
+              }
 
-              PrefManager().setIsLoggedIn(true);
-              // Navigate to home screen
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const HomeScreen(),
-                ),
-              );
-            } else {
-              showSnackBar(context, "Token not found in response.");
+            } catch (e) {
+              showSnackBar(context, "Error parsing user data.");
+              print("User Parsing Error: $e");
             }
+
           } else {
             showSnackBar(context, loginResponse['message']);
           }
         } else {
-          // Login failed
           showSnackBar(context, "Login failed. Please check your credentials.");
         }
       } else {
-        // Unexpected response structure
-        showSnackBar(context,
-            "Unexpected response from server. Please try again later.");
+        showSnackBar(context, "Unexpected response from server. Please try again later.");
       }
     } catch (e) {
       // Dismiss loading indicator
       Navigator.of(context).pop();
 
       // Handle API errors
-      showSnackBar(
-          context, "Failed to connect to the server. Please try again later.");
+      showSnackBar(context, "Failed to connect to the server. Please try again later.");
       print("Login API Error: $e");
     }
   }
+
 
   }
 

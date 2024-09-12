@@ -19,17 +19,21 @@ class SupplyChain extends StatefulWidget {
 class _SupplyChainState extends State<SupplyChain> {
   late Future<List<Supply>> supplyFuture;
   final ApiService _apiService = ApiService();
+  String? _searchQuery;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the supplyFuture with the initial data load
-    supplyFuture = getSupplyList(null);
+    supplyFuture = getSupplyList(search: _searchQuery);
+
   }
 
-  Future<List<Supply>> getSupplyList(String? search) async {
+  Future<List<Supply>> getSupplyList({String? search, int page = 1, int perPage = 20}) async {
     try {
-      List<Supply> supplies = await _apiService.getAllSupply(search);
+      // Fetch paginated supply data from the API
+      SupplyResponse response = await _apiService.getAllSupply(search: search, page: page, perPage: perPage);
+      List<Supply> supplies = response.data.supply;
+
       // Debug print to check the fetched supplies
       print('Fetched supplies: $supplies');
       return supplies;
@@ -39,11 +43,10 @@ class _SupplyChainState extends State<SupplyChain> {
       return [];
     }
   }
-
   Future<void> refreshSupplyList() async {
     // Update the supplyFuture with refreshed data
     setState(() {
-      supplyFuture = getSupplyList(null);
+      supplyFuture = getSupplyList(search: _searchQuery);
     });
   }
 
@@ -52,179 +55,282 @@ class _SupplyChainState extends State<SupplyChain> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: refreshSupplyList,
-        child: ListView(
-          physics: AlwaysScrollableScrollPhysics(),
-          children: [
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  "Supply Chain",
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    color: colorMixGrad,
-                    fontWeight: FontWeight.w600,
+        child: LayoutBuilder( // Added LayoutBuilder for safe sizing
+          builder: (context, constraints) {
+            return ListView(
+              physics: AlwaysScrollableScrollPhysics(),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Supply Chain",
+                      style: TextStyle(
+                        fontSize: 24.0,
+                        color: colorMixGrad,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(25.0, 10, 25.0, 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: CustomSearchField(
-                      onSearchChanged: (searchQuery) {
-                        setState(() {
-                          supplyFuture = getSupplyList(searchQuery);
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(width: 20.0),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(25.0, 10, 25.0, 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: CustomSearchField(
+                          onSearchChanged: (searchQuery) {
+                            setState(() {
+                              _searchQuery = searchQuery;
+                              supplyFuture = getSupplyList(search: searchQuery);
+                            });
+                          },
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(25.0),
-                    ),
-                    child: IconButton(
-                      onPressed: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const AddToner(),
+                      SizedBox(width: 20.0),
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [colorFirstGrad, colorSecondGrad],
                           ),
-                        );
-                        refreshSupplyList();
-                        // Navigate to add machine screen
-                        // Navigator.pushNamed(context, '/add_machine');
-                      },
-                      icon: Icon(
-                        Icons.add,
-                        color: Colors.white,
+                          borderRadius: BorderRadius.circular(25.0),
+                        ),
+                        child: IconButton(
+                          onPressed: () async {
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const AddToner(),
+                              ),
+                            );
+                            refreshSupplyList();
+                          },
+                          icon: Icon(
+                            Icons.add,
+                            color: Colors.white,
+                          ),
+                          iconSize: 30.0,
+                        ),
                       ),
-                      iconSize: 30.0,
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: FutureBuilder<List<Supply>>(
+                    future: supplyFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return Center(child: CircularProgressIndicator());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('Error: ${snapshot.error}'));
+                      } else {
+                        List<Supply> supplies = snapshot.data ?? [];
+                        if (supplies.isEmpty) {
+                          return NoDataFoundWidget(
+                            onRefresh: refreshSupplyList,
+                          );
+                        } else {
+                          return Container( // Wrap the SupplyChainList with Container
+                            height: constraints.maxHeight, // Ensure valid height
+                            child: SupplyChainList(
+                              search: _searchQuery,
+                              onRefresh: refreshSupplyList,
+                              initialItems: supplies,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+}
+
+class SupplyChainList extends StatefulWidget {
+  final List<Supply> initialItems;
+  final Future<void> Function() onRefresh;
+  final String? search;
+  final String? filter;
+
+  const SupplyChainList({
+    Key? key,
+    required this.initialItems,
+    required this.onRefresh,
+    this.search,
+    this.filter,
+  }) : super(key: key);
+
+  @override
+  _SupplyChainListState createState() => _SupplyChainListState();
+}
+
+class _SupplyChainListState extends State<SupplyChainList> {
+  final ScrollController _scrollController = ScrollController();
+  late List<Supply> _items;
+  bool _isLoading = false;
+  int _currentPage = 2; // Start from page 2
+  bool _hasMoreData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _items = List.from(widget.initialItems);
+  }
+
+  @override
+  void didUpdateWidget(SupplyChainList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialItems != oldWidget.initialItems) {
+      setState(() {
+        _items = List.from(widget.initialItems);
+        _currentPage = 2;
+        _hasMoreData = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMoreSupplies() async {
+    if (_isLoading || !_hasMoreData) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Fetch the SupplyResponse from the API service
+      final response = await ApiService().getAllSupply(
+        search: widget.search,
+        filter: widget.filter,
+        page: _currentPage,
+        perPage: 20, // Fetching 2 items per page
+      );
+
+      // Extract the list of supplies from the response
+      final newSupplies = response.data.supply;
+
+      setState(() {
+        _items.addAll(newSupplies);
+        _currentPage++;
+        _isLoading = false;
+        _hasMoreData = newSupplies.isNotEmpty;
+      });
+    } catch (e) {
+      print('Error loading more supplies: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (!_isLoading &&
+            scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+            _hasMoreData) {
+          _loadMoreSupplies(); // Load more data when scrolling to the bottom
+          return true;
+        }
+        return false;
+      },
+      child: RefreshIndicator(
+        onRefresh: widget.onRefresh, // Pull-to-refresh functionality
+        child: LayoutBuilder( // Using LayoutBuilder to handle widget sizing
+          builder: (context, constraints) {
+            return Container( // Added a Container to ensure proper layout sizing
+              height: constraints.maxHeight, // Ensure the Stack has a valid height
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: _items.length + (_hasMoreData ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _items.length) {
+                          return _buildLoaderIndicator(); // Loader at the end of the list
+                        }
+                        return _buildSupplyCard(_items[index]); // Build each supply card
+                      },
                     ),
                   ),
                 ],
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: FutureBuilder<List<Supply>>(
-                future: supplyFuture,
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator());
-                  } else if (snapshot.hasError) {
-                    return Center(child: Text('Error: ${snapshot.error}'));
-                  } else {
-                    List<Supply> supplies = snapshot.data ?? [];
-                    // Debug print to check the supplies before passing to the widget
-                    print('Supplies to display: $supplies');
+            );
+          },
+        ),
+      ),
+    );
+  }
 
-                    if (supplies.isEmpty) {
-                      return NoDataFoundWidget(
-                        onRefresh: refreshSupplyList,
-                      );
-                    } else {
-                      return SupplyChainList(items: supplies);
-                    }
-                  }
-                },
-              ),
+
+
+  Widget _buildSupplyCard(Supply item) {
+    Color? cardColor = item.isAcknowledged == "0" ? Colors.red[10] : Colors.grey[300];
+
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      color: cardColor,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    'QR: ${item.qrCode}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                  ),
+                ),
+               Opacity(opacity: 0,
+               child:  IconButton(
+                 icon: const Icon(Icons.edit),
+                 onPressed: () {
+                   _showEditDialog(context, item);
+                 },
+               ),)
+              ],
             ),
+
+            Text(
+              'Date: ${item.dateTime}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4.0),
           ],
         ),
       ),
     );
   }
-}
 
-class SupplyChainList extends StatelessWidget {
-  final List<Supply> items;
-
-  const SupplyChainList({Key? key, required this.items}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        return Card(
-          margin: const EdgeInsets.all(8.0),
-          elevation: 1.0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          color: Colors.red[10],
-          child: Padding(
-            padding:
-                const EdgeInsets.only(left: 12.0, bottom: 12.0, right: 12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Client name
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${items[index].qrCode}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Edit and delete buttons
-                    Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: items[index].dispatchReceive == "0"
-                              ? createTextWidget("Dispatched", Colors.pink)
-                              : createTextWidget("Received", Colors.blue),
-                        ),
-/*
-                        items[index].dispatchReceive == "0"
-                            ? Icon(Icons.arrow_forward,color: Colors.red,)
-                            : Icon(Icons.arrow_back,color: Colors.green,),
-*/
-                      ],
-                    ),
-                  ],
-                ),
-                Text(items[index].clientName,
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4.0),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget createTextWidget(String text, Color color) {
-    return Text(
-      text,
-      style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.bold),
-    );
+  Widget _buildLoaderIndicator() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Container();
   }
 
   void _showEditDialog(BuildContext context, Supply item) {
@@ -232,20 +338,19 @@ class SupplyChainList extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Product'),
+          title: Text('Edit Supply Item'),
           content: Text('Edit details of ${item.qrCode}'),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Edit'),
+              child: const Text('Edit'),
               onPressed: () {
-                // Perform edit action
-                _editItem(item.id);
+                _editItem(item.id.toString());
                 Navigator.of(context).pop(); // Close dialog
               },
             ),
@@ -256,10 +361,11 @@ class SupplyChainList extends StatelessWidget {
   }
 
   void _editItem(String id) {
-    // Implement your edit logic here, such as updating item details
-    print('Editing item: ${id}');
+    print('Editing supply item: $id');
+    // Implement your edit logic here
   }
 }
+
 
 class QRViewTracesci extends StatefulWidget {
   const QRViewTracesci({Key? key}) : super(key: key);

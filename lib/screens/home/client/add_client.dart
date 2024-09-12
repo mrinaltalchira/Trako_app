@@ -5,6 +5,9 @@ import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_clients.dart';
 import 'package:Trako/network/ApiService.dart';
 
+import '../../../model/all_machine.dart';
+import '../../add_toner/utils.dart';
+import '../../authFlow/utils.dart';
 
 class AddClient extends StatefulWidget {
   final Client? client;
@@ -16,6 +19,7 @@ class AddClient extends StatefulWidget {
 }
 
 class _AddClientState extends State<AddClient> {
+
   bool activeChecked = true;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
@@ -23,19 +27,48 @@ class _AddClientState extends State<AddClient> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController addressController = TextEditingController();
   final TextEditingController contactPersonController = TextEditingController();
+  late  List<String> assignedMachines = []; // List to store assigned machine IDs
+  String? fullPhoneNumber;
+  late Future<List<Machine>> machineFuture;
 
   @override
   void initState() {
     super.initState();
+    machineFuture = getMachineList("only_active");
     if (widget.client != null) {
-      nameController.text = widget.client!.name;
-      cityController.text = widget.client!.city;
-      emailController.text = widget.client!.email;
-      phoneController.text = widget.client!.phone;
-      addressController.text = widget.client!.address;
+      nameController.text = widget.client!.name.toString();
+      cityController.text = widget.client!.city.toString();
+      emailController.text = widget.client!.email.toString();
+      fullPhoneNumber = widget.client!.phone;
+      assignedMachines = widget.client!.machines!.split(",");
+      String? phone = widget.client?.phone; // Access phone property safely
+      List<String> phNumber = phone?.split(" ") ?? [];
+      phoneController.text = phNumber[1];
+      addressController.text = widget.client!.address.toString();
       contactPersonController.text = widget.client!.contactPerson ?? '';
       activeChecked = widget.client!.isActive == "0";
+      // assignedMachines.addAll(widget.client!.machines); // Assuming `machines` is a list of machine IDs
     }
+    // Fetch available machines for dropdown
+  }
+
+  Future<List<Machine>> getMachineList(String? filter) async {
+    try {
+      List<Machine> machines = await ApiService().getAllMachines(search: null,filter :filter.toString());
+      // Debug print to check the fetched machines
+      print('Fetched machines: $machines');
+      return machines;
+    } catch (e) {
+      // Handle error
+      print('Error fetching machines: $e');
+      return [];
+    }
+  }
+
+  void _handlePhoneNumberChanged(String phoneNumber) {
+    setState(() {
+      fullPhoneNumber = phoneNumber;
+    });
   }
 
   @override
@@ -95,7 +128,39 @@ class _AddClientState extends State<AddClient> {
               SizedBox(height: 20),
               buildFieldTitle("Phone"),
               SizedBox(height: 5),
-              PhoneInputTextField(controller: phoneController),
+              IntlPhoneInputTextField(
+                controller: phoneController,
+                onPhoneNumberChanged: _handlePhoneNumberChanged,
+              ),
+              SizedBox(height: 20),
+              SizedBox(height: 5),
+              buildFieldTitle("Assign Machines"),
+              SizedBox(height: 5),
+              SerialNoSpinner(
+                onChanged: (String? newSerialNo) {
+                  setState(() {
+                    if (newSerialNo != null && !assignedMachines.contains(newSerialNo)) {
+                      List<String> parts = newSerialNo.split(" - ");
+                      assignedMachines.add(parts[0]);
+                    }
+                  });
+                },
+                machines: machineFuture, // Pass the future of the machines list
+              ),
+              SizedBox(height: 20),
+              buildFieldTitle("Assigned Machines"),
+              SizedBox(height: 5),
+              ...assignedMachines.map((machine) => ListTile(
+                title: Text(machine),
+                trailing: IconButton(
+                  icon: Icon(Icons.remove_circle),
+                  onPressed: () {
+                    setState(() {
+                      assignedMachines.remove(machine);
+                    });
+                  },
+                ),
+              )),
               SizedBox(height: 20),
               buildFieldTitle("Address"),
               SizedBox(height: 5),
@@ -104,6 +169,7 @@ class _AddClientState extends State<AddClient> {
               buildFieldTitle("Contact Name"),
               SizedBox(height: 5),
               ContactPersonInputTextField(controller: contactPersonController),
+
               SizedBox(height: 20),
               CheckBoxRow(
                 activeChecked: activeChecked,
@@ -114,19 +180,17 @@ class _AddClientState extends State<AddClient> {
                 },
               ),
               SizedBox(height: 20),
-              SizedBox(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
-                  child: GradientButton(
-                    gradientColors: [colorFirstGrad, colorSecondGrad],
-                    height: 45.0,
-                    width: 10.0,
-                    radius: 25.0,
-                    buttonText: "Submit",
-                    onPressed: () {
-                      validate();
-                    },
-                  ),
+              Padding(
+                padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
+                child: GradientButton(
+                  gradientColors: [colorFirstGrad, colorSecondGrad],
+                  height: 45.0,
+                  width: double.infinity,
+                  radius: 25.0,
+                  buttonText: "Submit",
+                  onPressed: () {
+                    validate();
+                  },
                 ),
               ),
               SizedBox(height: 100),
@@ -147,6 +211,11 @@ class _AddClientState extends State<AddClient> {
     );
   }
 
+  bool isValidPhoneNumber(String phone) {
+    final phoneRegExp = RegExp(r'^[0-9]{7,15}$'); // Example: valid phone numbers with 7 to 15 digits
+    return phoneRegExp.hasMatch(phone);
+  }
+
   bool isValidEmail(String email) {
     final emailRegExp = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
@@ -154,8 +223,10 @@ class _AddClientState extends State<AddClient> {
     return emailRegExp.hasMatch(email);
   }
 
-  bool isValidPhoneNumber(String phone) {
-    final phoneRegExp = RegExp(r'^[0-9]{7,15}$'); // Example: valid phone numbers with 7 to 15 digits
+  bool isValidPhone(String phone) {
+    final phoneRegExp = RegExp(
+      r'^\d{10}$',
+    );
     return phoneRegExp.hasMatch(phone);
   }
 
@@ -194,6 +265,10 @@ class _AddClientState extends State<AddClient> {
       showSnackBar(context, "Address is required.");
       return;
     }
+    if (assignedMachines.isEmpty) {
+      showSnackBar(context, "Add some machines to Client.");
+      return;
+    }
 
     showDialog(
       context: context,
@@ -221,14 +296,15 @@ class _AddClientState extends State<AddClient> {
       if (widget.client != null) {
         // Update existing client
         final updateClientResponse = await apiService.updateClient(
-          id: widget.client!.id,
+          id: widget.client!.id.toString(),
           name: nameController.text,
           city: cityController.text,
           email: emailController.text,
-          phone: phoneController.text,
+          phone: fullPhoneNumber.toString(),
           address: addressController.text,
           isActive: activeChecked ? '0' : '1',
           contactPerson: contactPersonController.text,
+            machines: assignedMachines.join(', ')
         );
 
         Navigator.of(context).pop();
@@ -252,10 +328,11 @@ class _AddClientState extends State<AddClient> {
           name: nameController.text,
           city: cityController.text,
           email: emailController.text,
-          phone: phoneController.text,
+          phone: fullPhoneNumber.toString(),
           address: addressController.text,
           isActive: activeChecked ? '0' : '1',
           contactPerson: contactPersonController.text,
+            machines: assignedMachines.join(', ')
         );
 
         Navigator.of(context).pop();
@@ -285,8 +362,8 @@ class _AddClientState extends State<AddClient> {
       showSnackBar(context, "An error occurred. Please try again later.");
     }
   }
-}
 
+}
 
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
@@ -529,46 +606,7 @@ class _EmailInputTextFieldState extends State<EmailInputTextField> {
   }
 }
 
-class PhoneInputTextField extends StatefulWidget {
-  final TextEditingController controller;
 
-  const PhoneInputTextField({Key? key, required this.controller})
-      : super(key: key);
-
-  @override
-  _PhoneInputTextFieldState createState() => _PhoneInputTextFieldState();
-}
-
-class _PhoneInputTextFieldState extends State<PhoneInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      keyboardType: TextInputType.number,
-      maxLength: 15,
-      decoration: InputDecoration(
-        hintText: 'Phone',
-        counterText: '',
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
 
 class AddressInputTextField extends StatefulWidget {
   final TextEditingController controller;

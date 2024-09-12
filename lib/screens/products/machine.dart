@@ -15,7 +15,6 @@ class _MachineModuleState extends State<MachineModule> {
   late Future<List<Machine>> machineFuture;
   final ApiService _apiService = ApiService(); // Initialize your ApiService
 
-
   @override
   void initState() {
     super.initState();
@@ -24,12 +23,14 @@ class _MachineModuleState extends State<MachineModule> {
 
   Future<List<Machine>> getMachineList(String? search) async {
     try {
-      List<Machine> machines = await _apiService.getAllMachines(search);
-      // Debug print to check the fetched machines
-      print('Fetched machines: $machines');
+      List<Machine> machines = await _apiService.getAllMachines(
+        search: search,
+        filter: null,
+        page: 1,      // Fetching the first page
+        perPage: 20,  // Fetching 20 items per page
+      );
       return machines;
     } catch (e) {
-      // Handle error
       print('Error fetching machines: $e');
       return [];
     }
@@ -46,249 +47,291 @@ class _MachineModuleState extends State<MachineModule> {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: refreshMachineList,
-        child: Container(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(left: 25.0, top: 10, bottom: 10),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Machine",
-                    style: TextStyle(
-                      fontSize: 24.0,
-                      color: colorMixGrad, // Replace with your colorSecondGrad
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.start,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 25.0, top: 10, bottom: 10),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  "Machine",
+                  style: TextStyle(
+                    fontSize: 24.0,
+                    color: colorMixGrad,
+                    fontWeight: FontWeight.w600,
                   ),
+                  textAlign: TextAlign.start,
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 25.0, right: 25.0, top: 10, bottom: 10),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(
-                      child: CustomSearchField(
-                        onSearchChanged: (searchQuery) {
-                          setState(() {
-                            machineFuture = getMachineList(searchQuery);
-                          });
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 20.0), // Spacer between search and add button
-                    Container(
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [colorFirstGrad,colorMixGrad], // Adjust gradient colors
-                        ),
-                        borderRadius: BorderRadius.circular(25.0),
-                      ),
-                      child: IconButton(
-                        onPressed: () async{
-
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddMachine(),
-                            ),
-                          );
-                          refreshMachineList();
-                          // Navigate to add machine screen
-                          // Navigator.pushNamed(context, '/add_machine');
-                        },
-                        icon: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                        ),
-                        iconSize: 30.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: AlwaysScrollableScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        FutureBuilder<List<Machine>>(
-                          future: machineFuture,
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return Center(child: CircularProgressIndicator());
-                            } else if (snapshot.hasError) {
-                              return Center(child: Text('Error: ${snapshot.error}'));
-                            } else {
-                              List<Machine> machines = snapshot.data ?? [];
-                              // Debug print to check the machines before passing to the widget
-                              print('Machines to display: $machines');
-
-                              if (machines.isEmpty) {
-                                return NoDataFoundWidget(
-                                  onRefresh: refreshMachineList,
-                                );
-                              } else {
-                                return ScannedHistoryList(items: machines  );
-                              }
-                            }
-                          },
-                        ),
-                      ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Expanded(
+                    child: CustomSearchField(
+                      onSearchChanged: (searchQuery) {
+                        setState(() {
+                          machineFuture = getMachineList(searchQuery);
+                        });
+                      },
                     ),
                   ),
+                  const SizedBox(width: 20.0),
+                  Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [colorFirstGrad, colorMixGrad],
+                      ),
+                      borderRadius: BorderRadius.circular(25.0),
+                    ),
+                    child: IconButton(
+                      onPressed: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => AddMachine(),
+                          ),
+                        );
+                        refreshMachineList();
+                      },
+                      icon: Icon(
+                        Icons.add,
+                        color: Colors.white,
+                      ),
+                      iconSize: 30.0,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: FutureBuilder<List<Machine>>(
+                  future: machineFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else {
+                      List<Machine> machines = snapshot.data ?? [];
+
+                      if (machines.isEmpty) {
+                        return NoDataFoundWidget(
+                          onRefresh: refreshMachineList,
+                        );
+                      } else {
+                        return MachineList(
+                          initialMachines: machines,
+                          onRefresh: refreshMachineList,
+                        );
+                      }
+                    }
+                  },
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-
 }
 
-class ScannedHistoryList extends StatelessWidget {
-  final List<Machine> items;
 
-  const ScannedHistoryList({Key? key, required this.items }) : super(key: key);
+class MachineList extends StatefulWidget {
+  final List<Machine> initialMachines;
+  final String? search;
+  final String? filter;
+  final Future<void> Function() onRefresh;
+
+  const MachineList({
+    Key? key,
+    required this.initialMachines,
+    this.search,
+    this.filter,
+    required this.onRefresh,
+  }) : super(key: key);
+
+  @override
+  _MachineListState createState() => _MachineListState();
+}
+
+class _MachineListState extends State<MachineList> {
+  final ScrollController _scrollController = ScrollController();
+  late List<Machine> _machines;
+  bool _isLoading = false;
+  int _currentPage = 2; // Start from page 2 as we already have the first page
+  bool _hasMoreData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _machines = List.from(widget.initialMachines);
+    print('Reaching init state');
+  }
+
+  @override
+  void didUpdateWidget(MachineList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialMachines != oldWidget.initialMachines) {
+      setState(() {
+        _machines = List.from(widget.initialMachines);
+        _currentPage = 2;
+        _hasMoreData = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMoreMachines() async {
+    if (_isLoading || !_hasMoreData) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final newMachines = await ApiService().getAllMachines(
+        search: widget.search,
+        filter: widget.filter,
+        page: _currentPage,
+        perPage: 20, // Fetching 20 items per page
+      );
+
+      setState(() {
+        _machines.addAll(newMachines);
+        _currentPage++;
+        _isLoading = false;
+        _hasMoreData = newMachines.isNotEmpty;
+      });
+    } catch (e) {
+      print('Error loading more machines: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        Color? cardColor =
-        items[index].isActive == "0" ? Colors.red[10] : Colors.grey[300];
-
-        return Card(
-          margin: const EdgeInsets.only(left: 8.0,right: 8.0,bottom: 8.0),
-          elevation: 1.0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
+    return Column(
+      children: [
+        Expanded(
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (!_isLoading &&
+                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                  _hasMoreData) {
+                print('Reached the bottom of the list');
+                _loadMoreMachines();
+                return true;
+              }
+              return false;
+            },
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return ListView.builder(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  itemCount: _machines.length + (_hasMoreData ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index == _machines.length) {
+                      return _buildLoaderIndicator();
+                    }
+                    return _buildMachineCard(_machines[index]);
+                  },
+                );
+              },
+            ),
           ),
-          color: cardColor,
-          child: Padding(
-            padding: const EdgeInsets.only(left: 12.0,right: 12.0, bottom: 12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Client name
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${items[index].modelName[0].toUpperCase()}${items[index].modelName.substring(1)}',
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                          ),
+        ),
+      ],
+    );
+  }
 
-                        ],
-                      ),
-                    ),
-                    // Edit and delete buttons
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.edit),
-                          onPressed: () {
-                            // Handle edit action
-                            _showEditDialog(context, items[index] );
-                          },
-                        ),
-                        /* IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            // Show delete confirmation dialog
-                            _showDeleteDialog(context, index);
-                          },
-                        ),*/
-                      ],
-                    ),
-                  ],
+  Widget _buildMachineCard(Machine machine) {
+    Color? cardColor = machine.isActive == "0" ? Colors.red[10] : Colors.grey[300];
+
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      color: cardColor,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    '${machine.modelName?[0].toUpperCase()}${machine.modelName?.substring(1)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                  ),
                 ),
-                Text(
-                  '${items[index].modelCode[0].toUpperCase()}${items[index].modelCode.substring(1)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    _showEditDialog(context, machine);
+                  },
                 ),
-                const SizedBox(height: 4.0),
               ],
             ),
-          ),
-        );
-      },
-    );
-  }
-
-
-  void _showDeleteDialog(BuildContext context, int index) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Confirm Delete'),
-          content: Text('Are you sure you want to delete this item?'),
-          actions: <Widget>[
-            TextButton(
-              child: Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+            Text(
+              'Serial No: ${machine.serialNo?[0].toUpperCase()}${machine.serialNo?.substring(1)}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
-            TextButton(
-              child: Text('Delete'),
-              onPressed: () {
-                // Perform delete action
-                _deleteItem(index);
-                Navigator.of(context).pop(); // Close dialog
-              },
-            ),
+            const SizedBox(height: 4.0),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
-  void _deleteItem(int index) {
-    // Implement your delete logic here, such as deleting item from a list or database
-    print('Deleting item at index $index');
+  Widget _buildLoaderIndicator() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Container();
   }
 
-  void _showEditDialog(BuildContext context, Machine item, ) {
+  void _showEditDialog(BuildContext context, Machine machine) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Edit Product'),
-          content: Text('Edit details of ${item.modelName}'),
+          title: const Text('Edit Machine'),
+          content: Text('Edit details of ${machine.modelName}'),
           actions: <Widget>[
             TextButton(
-              child: Text('Cancel'),
+              child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(context).pop();
               },
             ),
             TextButton(
-              child: Text('Edit'),
-              onPressed: () async  {
+              child: const Text('Edit'),
+              onPressed: () {
                 Navigator.of(context).pop(); // Close the dialog
-                await  Navigator.push(
+                Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => AddMachine(machine: item),
+                    builder: (context) => AddMachine(machine: machine),
                   ),
-                );/*.then((_) => refreshMachineList()); */// Access the function using the state instance
+                );
               },
             ),
           ],
@@ -296,9 +339,9 @@ class ScannedHistoryList extends StatelessWidget {
       },
     );
   }
-
-
 }
+
+
 
 class NameInputTextField extends StatelessWidget {
   const NameInputTextField({Key? key}) : super(key: key);

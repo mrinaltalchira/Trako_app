@@ -162,6 +162,79 @@ class PrefManager {
   }
 
 
+
+  // supplyChain module
+
+  Future<String?> getSupplyChainModule() async {
+    final prefs = await _prefs;
+    return prefs.getString('supply_chain_module');
+  }
+
+  Future<void> setSupplyChainModule(String machineModule) async {
+    final prefs = await _prefs;
+    await prefs.setString('supply_chain_module', machineModule);
+  }
+
+
+
+  // acknowledge_module
+
+  Future<String?> getAcknowledgeModuleModule() async {
+    final prefs = await _prefs;
+    return prefs.getString('acknowledge_module');
+  }
+
+  Future<void> setAcknowledgeModuleModule(String machineModule) async {
+    final prefs = await _prefs;
+    await prefs.setString('acknowledge_module', machineModule);
+  }
+
+
+
+
+  // toner_request_module
+
+  Future<String?> getTonerRequestModule() async {
+    final prefs = await _prefs;
+    return prefs.getString('toner_request_module');
+  }
+
+  Future<void> setTonerRequestModule(String machineModule) async {
+    final prefs = await _prefs;
+    await prefs.setString('toner_request_module', machineModule);
+  }
+
+
+
+    // dispatch_module
+
+    Future<String?> getDispatchModule() async {
+      final prefs = await _prefs;
+      return prefs.getString('dispatch_module');
+    }
+
+    Future<void> setDispatchModule(String machineModule) async {
+      final prefs = await _prefs;
+      await prefs.setString('dispatch_module', machineModule);
+    }
+
+
+    // receive_module
+
+    Future<String?> getReceiveModule() async {
+      final prefs = await _prefs;
+      return prefs.getString('receive_module');
+    }
+
+    Future<void> setReceiveModule(String machineModule) async {
+      final prefs = await _prefs;
+      await prefs.setString('receive_module', machineModule);
+    }
+
+
+
+
+
   // user module
 
   Future<String?> getUserModule() async {

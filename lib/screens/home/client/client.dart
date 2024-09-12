@@ -6,9 +6,10 @@ import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_clients.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/home/client/add_client.dart';
+import 'package:flutter/material.dart';
 
 class ClientModule extends StatefulWidget {
-  const ClientModule({super.key});
+  const ClientModule({Key? key}) : super(key: key);
 
   @override
   _ClientModuleState createState() => _ClientModuleState();
@@ -16,7 +17,8 @@ class ClientModule extends StatefulWidget {
 
 class _ClientModuleState extends State<ClientModule> {
   late Future<List<Client>> clientsFuture;
-  final ApiService _apiService = ApiService(); // Initialize your ApiService
+  final ApiService _apiService = ApiService();
+  String? _searchQuery;
 
   @override
   void initState() {
@@ -26,31 +28,32 @@ class _ClientModuleState extends State<ClientModule> {
 
   Future<List<Client>> getClientsList(String? search) async {
     try {
-      List<Client> clients = await _apiService.getAllClients(search);
-      // Debug print to check the fetched clients
+      List<Client> clients = await _apiService.getAllClients(
+        search: search,
+        filter: null,
+        page: 1,  // Fetching the first page
+        perPage: 20,  // Fetching only 2 items per page
+      );
       print('Fetched clients: $clients');
       return clients;
     } catch (e) {
-      // Handle error
       print('Error fetching clients: $e');
       return [];
     }
   }
 
-    Future<void> refreshClientsList() async {
-      setState(() {
-        clientsFuture = getClientsList(null);
-      });
-      await clientsFuture; // Await the future to complete
-    }
+  Future<void> refreshClientsList() async {
+    setState(() {
+      clientsFuture = getClientsList(_searchQuery);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: refreshClientsList,
-        child: ListView(
-          physics: AlwaysScrollableScrollPhysics(),
+        child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.only(left: 25.0, top: 10, bottom: 10),
@@ -60,7 +63,7 @@ class _ClientModuleState extends State<ClientModule> {
                   "Client",
                   style: TextStyle(
                     fontSize: 24.0,
-                    color: colorMixGrad, // Replace with your colorSecondGrad
+                    color: colorMixGrad,
                     fontWeight: FontWeight.w600,
                   ),
                   textAlign: TextAlign.start,
@@ -68,8 +71,7 @@ class _ClientModuleState extends State<ClientModule> {
               ),
             ),
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -77,6 +79,7 @@ class _ClientModuleState extends State<ClientModule> {
                     child: CustomSearchField(
                       onSearchChanged: (searchQuery) {
                         setState(() {
+                          _searchQuery = searchQuery;
                           clientsFuture = getClientsList(searchQuery);
                         });
                       },
@@ -85,8 +88,7 @@ class _ClientModuleState extends State<ClientModule> {
                   const SizedBox(width: 20.0),
                   GradientIconButton(
                     icon: Icons.add,
-                    onPressed: () async{
-
+                    onPressed: () async {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
@@ -94,45 +96,39 @@ class _ClientModuleState extends State<ClientModule> {
                         ),
                       );
                       refreshClientsList();
-                      // Navigate to add machine screen
-                      // Navigator.pushNamed(context, '/add_machine');
                     },
                   ),
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  FutureBuilder<List<Client>>(
-                    future: clientsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(child: CircularProgressIndicator());
-                      } else if (snapshot.hasError) {
-                        return Center(child: Text('Error: ${snapshot.error}'));
-                      } else {
-                        List<Client> clients = snapshot.data ??
-                            []; // Handle null case if necessary
-                        // Debug print to check the clients before passing to the widget
-                        print('Clients to display: $clients');
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: FutureBuilder<List<Client>>(
+                  future: clientsFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    } else if (snapshot.hasError) {
+                      return Center(child: Text('Error: ${snapshot.error}'));
+                    } else {
+                      List<Client> initialClients = snapshot.data ?? [];
+                      print('Clients to display: $initialClients');
 
-                        if (clients.isEmpty) {
-                         return NoDataFoundWidget(
-                           onRefresh: () async {
-                             // Simulate an API call
-                             refreshClientsList();
-                           },
-                         );
-                        } else {
-                          return ClientList(items: clients);
-                        }
+                      if (initialClients.isEmpty) {
+                        return NoDataFoundWidget(
+                          onRefresh: refreshClientsList,
+                        );
+                      } else {
+                        return ClientList(
+                          initialClients: initialClients,
+                          search: _searchQuery,
+                          onRefresh: refreshClientsList,
+                        );
                       }
-                    },
-                  ),
-                ],
+                    }
+                  },
+                ),
               ),
             ),
           ],
@@ -140,7 +136,213 @@ class _ClientModuleState extends State<ClientModule> {
       ),
     );
   }
+
+
 }
+
+
+class ClientList extends StatefulWidget {
+  final List<Client> initialClients;
+  final String? search;
+  final String? filter;
+  final Future<void> Function() onRefresh;
+
+  const ClientList({
+    Key? key,
+    required this.initialClients,
+    this.search,
+    this.filter,
+    required this.onRefresh,
+  }) : super(key: key);
+
+  @override
+  _ClientListState createState() => _ClientListState();
+}
+
+class _ClientListState extends State<ClientList> {
+  final ScrollController _scrollController = ScrollController();
+  late List<Client> _clients;
+  bool _isLoading = false;
+  int _currentPage = 2;  // Start from page 2 as we already have the first page
+  bool _hasMoreData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _clients = List.from(widget.initialClients);
+    print('Reaching init state');
+  }
+
+  @override
+  void didUpdateWidget(ClientList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialClients != oldWidget.initialClients) {
+      setState(() {
+        _clients = List.from(widget.initialClients);
+        _currentPage = 2;
+        _hasMoreData = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _loadMoreClients() async {
+    if (_isLoading || !_hasMoreData) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final newClients = await ApiService().getAllClients(
+        search: widget.search,
+        filter: widget.filter,
+        page: _currentPage,
+        perPage: 20,  // Fetching only 2 items per page
+      );
+
+      setState(() {
+        _clients.addAll(newClients);
+        _currentPage++;
+        _isLoading = false;
+        _hasMoreData = newClients.isNotEmpty;
+      });
+    } catch (e) {
+      print('Error loading more clients: $e');
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (ScrollNotification scrollInfo) {
+        if (!_isLoading &&
+            scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+            _hasMoreData) {
+          print('Reached the bottom of the list');
+          _loadMoreClients();
+          return true;
+        }
+        return false;
+      },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return ListView.builder(
+            controller: _scrollController,
+            physics: const AlwaysScrollableScrollPhysics(),
+            itemCount: _clients.length + (_hasMoreData ? 1 : 0),
+            itemBuilder: (context, index) {
+              if (index == _clients.length) {
+                return _buildLoaderIndicator();
+              }
+
+              return _buildClientCard(_clients[index]);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+
+
+  Widget _buildClientCard(Client client) {
+    Color? cardColor = client.isActive == "0" ? Colors.red[10] : Colors.grey[300];
+
+    return Card(
+      margin: const EdgeInsets.all(8.0),
+      elevation: 2.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10.0),
+      ),
+      color: cardColor,
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    '${client.name![0].toUpperCase()}${client.name!.substring(1)}',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: () {
+                    _showEditDialog(context, client);
+                  },
+                ),
+              ],
+            ),
+            Text(
+              'City: ${client.city![0].toUpperCase()}${client.city!.substring(1)}',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 4.0),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoaderIndicator() {
+    return _isLoading
+        ? const Center(child: CircularProgressIndicator())
+        : Container();
+  }
+
+  void _showEditDialog(BuildContext context, Client client) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Client'),
+          content: Text('Edit details of ${client.name}'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: const Text('Edit'),
+              onPressed: () {
+                Navigator.of(context).pop();  // Close the dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddClient(client: client),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _editClient(BuildContext context, Client client) {
+    // Implement your logic to edit the client
+    print('Editing client: ${client.id}');
+    // Add your logic here to update client data
+  }
+}
+
+
 
 class CustomSearchField extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;
@@ -300,105 +502,7 @@ class CustomInputTextField extends StatelessWidget {
   }
 }
 
-class ClientList extends StatelessWidget {
-  final List<Client> items;
 
-  const ClientList({Key? key, required this.items}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        Color? cardColor =
-            items[index].isActive == "0" ? Colors.red[10] : Colors.grey[300];
-
-        print('Items length: ${items[index].isActive}');
-        return Card(
-          margin: const EdgeInsets.all(8.0),
-          elevation: 2.0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.0),
-          ),
-          color: cardColor,
-          // Assign the color based on isActive status
-          child: Padding(
-            padding:
-                const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '${items[index].name[0].toUpperCase()}${items[index].name.substring(1)}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 19),
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () {
-                        _showEditDialog(context, items[index]);
-                      },
-                    ),
-                  ],
-                ),
-                Text(
-                  'City: ${items[index].city[0].toUpperCase()}${items[index].city.substring(1)}',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4.0),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showEditDialog(BuildContext context, Client client) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Edit Client'),
-          content: Text('Edit details of ${client.name}'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Edit'),
-              onPressed: () {
-                Navigator.of(context).pop();  // Close the dialog
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddClient(client: client),
-                  ),
-                );
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _editClient(BuildContext context, Client client) {
-    // Implement your logic to edit the client
-    print('Editing client: ${client.id}');
-    // Add your logic here to update client data
-  }
-}
 
 class LinearGradientDivider extends StatelessWidget {
   final double height;

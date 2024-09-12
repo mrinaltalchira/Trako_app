@@ -29,6 +29,47 @@ void showSnackBar(BuildContext context, String message) {
   );
 }
 
+void showSnackBar1(BuildContext context, String message, {bool isSuccess = true}) {
+  final snackBar = SnackBar(
+    content: Row(
+      children: [
+        Icon(
+          isSuccess ? Icons.check_circle : Icons.error,
+          color: Colors.white,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    ),
+    backgroundColor: isSuccess ? Colors.green.shade800 : Colors.red.shade800,
+    duration: const Duration(seconds: 4),
+    behavior: SnackBarBehavior.floating,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(16),
+    ),
+    margin: const EdgeInsets.all(16),
+    elevation: 6,
+    action: SnackBarAction(
+      label: 'DISMISS',
+      textColor: Colors.white,
+      onPressed: () {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      },
+    ),
+  );
+
+  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+}
+
 class CustomImageWidget extends StatelessWidget {
   final String? imageUrl;
   final IconData? iconData;
