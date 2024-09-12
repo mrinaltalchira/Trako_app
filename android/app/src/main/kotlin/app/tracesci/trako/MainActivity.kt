@@ -1,4 +1,4 @@
-package com.example.tonner_app
+package app.tracesci.trako
 
 import io.flutter.embedding.android.FlutterActivity
 

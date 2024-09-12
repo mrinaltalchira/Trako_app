@@ -184,7 +184,7 @@ void main() {
           "current_page": 1,
           "last_page": 3,
           "per_page": 10,
-          "next_page_url": "http://example.com/api/toner-requests?page=2",
+          "next_page_url": "http://tracesci.app/api/toner-requests?page=2",
           "prev_page_url": null
         }
     }
