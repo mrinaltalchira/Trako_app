@@ -359,7 +359,7 @@ class MapScreenState extends State<ProfilePage> with SingleTickerProviderStateMi
       leading: IconButton(
         icon: Icon(Icons.arrow_back),
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+          Navigator.pop(context);
         },
       ),
     );
