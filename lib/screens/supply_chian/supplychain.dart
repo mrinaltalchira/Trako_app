@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:Trako/color/colors.dart';
 import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_supply.dart';
@@ -283,7 +283,22 @@ class _SupplyChainListState extends State<SupplyChainList> {
 
 
   Widget _buildSupplyCard(Supply item) {
-    Color? cardColor = item.isAcknowledged == "0" ? Colors.red[10] : Colors.grey[300];
+    Color? cardColor =  Colors.red[10];
+    String status = '';
+    Color? statusColor = Colors.grey[300];
+
+
+    if (item.dispatchReceive == "0") {
+      status = 'Dispatched';
+      statusColor = Colors.red;
+      if (item.isAcknowledged == "1") {
+        status = 'Acknowledged';
+        statusColor = Colors.orange[400];
+      }
+    } else if (item.dispatchReceive == "1") {
+      status = 'Received';
+      statusColor = Colors.green[300];
+    }
 
     return Card(
       margin: const EdgeInsets.all(8.0),
@@ -306,16 +321,13 @@ class _SupplyChainListState extends State<SupplyChainList> {
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
                   ),
                 ),
-               Opacity(opacity: 0,
-               child:  IconButton(
-                 icon: const Icon(Icons.edit),
-                 onPressed: () {
-                   _showEditDialog(context, item);
-                 },
+               Opacity(opacity: 1,
+               child:  Padding(
+                 padding: const EdgeInsets.all(10.0),
+                 child: Text(status,style: TextStyle(color: statusColor,fontSize: 12),),
                ),)
               ],
             ),
-
             Text(
               'Date: ${item.dateTime}',
               style: const TextStyle(fontWeight: FontWeight.bold),
@@ -366,7 +378,6 @@ class _SupplyChainListState extends State<SupplyChainList> {
   }
 }
 
-
 class QRViewTracesci extends StatefulWidget {
   const QRViewTracesci({Key? key}) : super(key: key);
 
@@ -375,19 +386,9 @@ class QRViewTracesci extends StatefulWidget {
 }
 
 class _QRViewTracesciState extends State<QRViewTracesci> {
-  Barcode? result;
-  QRViewController? controller;
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  String? result;
   bool flashOn = false;
-
-  @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      controller!.pauseCamera();
-    }
-    controller!.resumeCamera();
-  }
+  MobileScannerController cameraController = MobileScannerController();
 
   @override
   Widget build(BuildContext context) {
@@ -414,7 +415,23 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
         children: [
           Column(
             children: <Widget>[
-              Expanded(flex: 4, child: _buildQrView(context)),
+              Expanded(
+                flex: 4,
+                child: MobileScanner(
+                  controller: cameraController,
+                  onDetect: (BarcodeCapture barcodeCapture) {
+                    final List<Barcode> barcodes = barcodeCapture.barcodes;
+                    if (barcodes.isNotEmpty) {
+                      if (result == null) {
+                        setState(() {
+                          result = barcodes.first.rawValue;
+                        });
+                        _navigateToAddToner();
+                      }
+                    }
+                  },
+                ),
+              ),
             ],
           ),
           Align(
@@ -423,7 +440,7 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
               padding: const EdgeInsets.all(16.0),
               child: FloatingActionButton(
                 onPressed: () async {
-                  await controller?.toggleFlash();
+                  await cameraController.toggleTorch();
                   setState(() {
                     flashOn = !flashOn;
                   });
@@ -437,62 +454,19 @@ class _QRViewTracesciState extends State<QRViewTracesci> {
     );
   }
 
-  Widget _buildQrView(BuildContext context) {
-    var scanArea = _calculateScanArea(context);
-    return QRView(
-      key: qrKey,
-      onQRViewCreated: _onQRViewCreated,
-      overlay: QrScannerOverlayShape(
-        borderColor: Colors.red,
-        borderRadius: 10,
-        borderLength: 30,
-        borderWidth: 10,
-        cutOutSize: 200,
-      ),
-      onPermissionSet: (ctrl, p) => _onPermissionSet(context, ctrl, p),
-    );
-  }
-
-  EdgeInsets _calculateScanArea(BuildContext context) {
-    double scanAreaSize = MediaQuery.of(context).size.shortestSide * 0.75;
-    return EdgeInsets.all(
-        (MediaQuery.of(context).size.shortestSide - scanAreaSize) / 2);
-  }
-
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() {
-      this.controller = controller;
-    });
-    controller.scannedDataStream.listen((scanData) {
-      if (result == null) {
-        setState(() {
-          result = scanData;
-        });
-        _navigateToAddToner();
-      }
-    });
-  }
-
   void _navigateToAddToner() {
     if (result != null) {
-      Navigator.pop(context, result!.code);
-    }
-  }
-
-  void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
-    if (!p) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No camera permission')),
-      );
+      Navigator.pop(context, result);
     }
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    cameraController.dispose();
     super.dispose();
   }
 }
+
 
 class CustomSearchField extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;

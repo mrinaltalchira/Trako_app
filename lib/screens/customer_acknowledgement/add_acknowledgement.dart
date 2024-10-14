@@ -126,8 +126,6 @@ class _AddAcknowledgementState extends State<AddAcknowledgement> {
       // Check if the response contains the required keys
       if (addAckResponse.containsKey('error') && addAckResponse.containsKey('status')) {
         if (!addAckResponse['error'] && addAckResponse['status'] == 200) {
-          // Show a success message
-          showSnackBar(context, addAckResponse['message']);
 
           if (addAckResponse['message'] == 'Success') {
             // Check if the acknowledgment.dart was added successfully

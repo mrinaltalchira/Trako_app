@@ -201,50 +201,59 @@ class _NoDataFoundWidgetState extends State<NoDataFoundWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const SizedBox(height: 100),
-          // Image
-          Image.asset(
-            'assets/images/ic_no_data.jpg', // Replace with your image asset
-            width: 120,
-            height: 120,
-          ),
-          // Text
-          Text(
-            'No Data Found',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[700],
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.1),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 50), // Adjusted for better vertical spacing
+            // Image
+            Image.asset(
+              'assets/images/ic_no_data.jpg', // Replace with your image asset
+              width: screenWidth * 0.3, // Responsive width
+              height: screenWidth * 0.3, // Responsive height
+              fit: BoxFit.cover,
             ),
-          ),
-          // Subtext
-          Text(
-            'It looks like there is no data available for this request.',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
+            // Text
+            const SizedBox(height: 20),
+            Text(
+              'No Data Found',
+              style: TextStyle(
+                fontSize: screenWidth * 0.06, // Responsive font size
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
             ),
-          ),
-          // Button (optional)
-          const SizedBox(height: 20),
-          _isLoading
-              ? const CircularProgressIndicator()
-              : SizedBox(
-            width: 120,
-            child: GradientButton(
-              gradientColors: const [colorMixGrad, colorMixGrad],
-              height: 45.0,
-              width: 10.0,
-              radius: 25.0,
-              buttonText: "Try Again",
-              onPressed: _handleRefresh,
+            // Subtext
+            const SizedBox(height: 10),
+            Text(
+              'It looks like there is no data available for this request.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: screenWidth * 0.04, // Responsive font size
+                color: Colors.grey[500],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : SizedBox(
+              width: screenWidth * 0.4, // Responsive button width
+              child: GradientButton(
+                gradientColors: const [colorMixGrad, colorMixGrad],
+                height: 45.0,
+                width: 10.0,
+                radius: 25.0,
+                buttonText: "Try Again",
+                onPressed: _handleRefresh,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -269,7 +278,6 @@ class _NoDataFoundWidgetState extends State<NoDataFoundWidget> {
     }
   }
 }
-
 
 class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
