@@ -34,7 +34,7 @@ dependencies:
   pinput: ^3.0.0
   cupertino_icons: ^1.0.6
   fluttertoast: ^8.0.8
-  qr_code_scanner: ^1.0.1
+  mobile_scanner: ^5.2.1
   fl_chart: ^0.65.0
   intl: ^0.17.0
   build_runner: ^2.1.0

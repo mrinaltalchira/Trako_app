@@ -5,8 +5,7 @@ import 'package:Trako/globals.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/supply_chian/supplychain.dart';
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
-
+import 'package:mobile_scanner/mobile_scanner.dart';
 import '../../model/all_clients.dart';
 import '../../model/machines_by_client_id.dart';
 import '../../pref_manager.dart';
@@ -720,6 +719,8 @@ class _AddTonerState extends State<AddToner> {
   }*/
 }
 
+
+
 class DualQRScannerTracesci extends StatefulWidget {
   const DualQRScannerTracesci({Key? key}) : super(key: key);
 
@@ -728,21 +729,11 @@ class DualQRScannerTracesci extends StatefulWidget {
 }
 
 class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
-  Barcode? firstResult;
-  Barcode? secondResult;
-  QRViewController? controller;
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  String? firstResult;
+  String? secondResult;
   bool flashOn = false;
   bool isScanningSecondQR = false;
-
-  @override
-  void reassemble() {
-    super.reassemble();
-    if (Platform.isAndroid) {
-      controller!.pauseCamera();
-    }
-    controller!.resumeCamera();
-  }
+  MobileScannerController cameraController = MobileScannerController();
 
   @override
   Widget build(BuildContext context) {
@@ -769,7 +760,27 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
         children: [
           Column(
             children: <Widget>[
-              Expanded(flex: 4, child: _buildQrView(context)),
+              Expanded(
+                flex: 4,
+                child: MobileScanner(
+                  controller: cameraController,
+                  onDetect: (BarcodeCapture barcodeCapture) {
+                    final List<Barcode> barcodes = barcodeCapture.barcodes;
+                    if (barcodes.isNotEmpty) {
+                      if (firstResult == null && !isScanningSecondQR) {
+                        setState(() {
+                          firstResult = barcodes.first.rawValue;
+                        });
+                      } else if (secondResult == null && isScanningSecondQR) {
+                        setState(() {
+                          secondResult = barcodes.first.rawValue;
+                        });
+                        _returnScannedData();
+                      }
+                    }
+                  },
+                ),
+              ),
               if (firstResult != null && !isScanningSecondQR)
                 Padding(
                   padding: const EdgeInsets.all(16.0),
@@ -787,7 +798,7 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
                         },
                         child: Text(
                           'Scan Second QR Code',
-                          style: TextStyle(color: colorMixGrad),
+                          style: TextStyle(color: Colors.blue), // Replace with your color
                         ),
                       ),
                     ],
@@ -811,7 +822,7 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
               padding: const EdgeInsets.all(16.0),
               child: FloatingActionButton(
                 onPressed: () async {
-                  await controller?.toggleFlash();
+                  await cameraController.toggleTorch();
                   setState(() {
                     flashOn = !flashOn;
                   });
@@ -825,64 +836,16 @@ class _DualQRScannerTracesciState extends State<DualQRScannerTracesci> {
     );
   }
 
-  Widget _buildQrView(BuildContext context) {
-    var scanArea = _calculateScanArea(context);
-    return QRView(
-      key: qrKey,
-      onQRViewCreated: _onQRViewCreated,
-      overlay: QrScannerOverlayShape(
-        borderColor: Colors.red,
-        borderRadius: 10,
-        borderLength: 30,
-        borderWidth: 10,
-        cutOutSize: 200,
-      ),
-      onPermissionSet: (ctrl, p) => _onPermissionSet(context, ctrl, p),
-    );
-  }
-
-  EdgeInsets _calculateScanArea(BuildContext context) {
-    double scanAreaSize = MediaQuery.of(context).size.shortestSide * 0.75;
-    return EdgeInsets.all(
-        (MediaQuery.of(context).size.shortestSide - scanAreaSize) / 2);
-  }
-
-  void _onQRViewCreated(QRViewController controller) {
-    setState(() {
-      this.controller = controller;
-    });
-    controller.scannedDataStream.listen((scanData) {
-      if (firstResult == null && !isScanningSecondQR) {
-        setState(() {
-          firstResult = scanData;
-        });
-      } else if (secondResult == null && isScanningSecondQR) {
-        setState(() {
-          secondResult = scanData;
-        });
-        _returnScannedData();
-      }
-    });
-  }
-
   void _returnScannedData() {
     if (firstResult != null && secondResult != null) {
-      String combinedResult = '${firstResult!.code}-${secondResult!.code}';
+      String combinedResult = '$firstResult-$secondResult';
       Navigator.pop(context, combinedResult);
-    }
-  }
-
-  void _onPermissionSet(BuildContext context, QRViewController ctrl, bool p) {
-    if (!p) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('No camera permission')),
-      );
     }
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    cameraController.dispose();
     super.dispose();
   }
 }
