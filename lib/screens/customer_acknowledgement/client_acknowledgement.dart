@@ -183,28 +183,23 @@ class AcknowledgementList extends StatefulWidget {
   _AcknowledgementListState createState() => _AcknowledgementListState();
 }
 
-class _AcknowledgementListState extends State<AcknowledgementList> {
+class _AcknowledgementListState extends State<AcknowledgementList> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late List<AcknowledgementModel> _acknowledgements;
   bool _isLoading = false;
-  int _currentPage = 2;  // Start from page 2 as we already have the first page
+  int _currentPage = 2;
   bool _hasMoreData = true;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _acknowledgements = List.from(widget.initialAcknowledgements);
-
-    // Listen to scroll changes
-    _scrollController.addListener(() {
-      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-        if (!_isLoading && _hasMoreData) {
-          _loadMoreAcknowledgements();
-        }
-      }
-    });
-
-    print('Reaching init state');
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -221,8 +216,16 @@ class _AcknowledgementListState extends State<AcknowledgementList> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      _loadMoreAcknowledgements();
+    }
   }
 
   Future<void> _loadMoreAcknowledgements() async {
@@ -236,7 +239,7 @@ class _AcknowledgementListState extends State<AcknowledgementList> {
       final newAcknowledgements = await ApiService().getAllAcknowledgeList(
         search: widget.search,
         page: _currentPage,
-        perPage: 20,  // Fetching 20 items per page
+        perPage: 20,
       );
 
       setState(() {
@@ -255,76 +258,135 @@ class _AcknowledgementListState extends State<AcknowledgementList> {
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (!_isLoading &&
-            scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-            _hasMoreData) {
-          print('Reached the bottom of the list');
-          _loadMoreAcknowledgements();
-          return true;
-        }
-        return false;
-      },
-      child: ListView.builder(
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: _acknowledgements.length + (_hasMoreData ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == _acknowledgements.length) {
-            return _buildLoaderIndicator();
-          }
-
-          return _buildAcknowledgementCard(_acknowledgements[index]);
-        },
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
       ),
-    );
-  }
-
-  Widget _buildAcknowledgementCard(AcknowledgementModel acknowledgement) {
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'QR - ${acknowledgement.qrCode.toUpperCase()}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                  ),
-                ),
-             Opacity(opacity: 0,child:    IconButton(
-               icon: const Icon(Icons.edit),
-               onPressed: () {
-                 _showEditDialog(context, acknowledgement);
-               },
-             ),)
-              ],
+      child: RefreshIndicator(
+        onRefresh: widget.onRefresh,
+        color: Theme.of(context).primaryColor,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (!_isLoading &&
+                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                  _hasMoreData) {
+                _loadMoreAcknowledgements();
+                return true;
+              }
+              return false;
+            },
+            child: ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              itemCount: _acknowledgements.length + (_hasMoreData ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _acknowledgements.length) {
+                  return _buildLoaderIndicator();
+                }
+                return _buildAcknowledgementCard(_acknowledgements[index], index);
+              },
             ),
-            const SizedBox(height: 10.0),
-            Text(
-              'Date: ${acknowledgement.dateTime}',
-              style: const TextStyle(color: Colors.black54),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
+  Widget _buildAcknowledgementCard(AcknowledgementModel acknowledgement, int index) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Card(
+              child: Row(
+                children: [
+                  // Custom height for the colored bar
+                  Container(
+                    width: 4, // Width of the border
+                    height: 50, // Set desired height for the border
+                    color: Theme.of(context).primaryColor,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'QR - ${acknowledgement.qrCode.toUpperCase()}',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Date: ${acknowledgement.dateTime}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 
   Widget _buildLoaderIndicator() {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Container();
+    if (!_isLoading) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).primaryColor,
+          ),
+        ),
+      ),
+    );
   }
 
   void _showEditDialog(BuildContext context, AcknowledgementModel acknowledgement) {
@@ -332,20 +394,38 @@ class _AcknowledgementListState extends State<AcknowledgementList> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Acknowledgement'),
-          content: Text('Edit details of ${acknowledgement.qrCode}'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Edit Acknowledgement',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Edit details of ${acknowledgement.qrCode}',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
               child: const Text('Edit'),
               onPressed: () {
-                Navigator.of(context).pop();  // Close the dialog
-                // Implement the navigation to an edit page or functionality
+                Navigator.of(context).pop();
+                // Implement navigation to edit page
               },
             ),
           ],

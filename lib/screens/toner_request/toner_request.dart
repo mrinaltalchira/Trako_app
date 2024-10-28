@@ -189,29 +189,47 @@ class TonerRequestList extends StatefulWidget {
   _TonerRequestListState createState() => _TonerRequestListState();
 }
 
-class _TonerRequestListState extends State<TonerRequestList> {
+class _TonerRequestListState extends State<TonerRequestList> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late List<AllTonerRequest> _items;
   bool _isLoading = false;
   int _currentPage = 2;
   bool _hasMoreData = true;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _items = List.from(widget.initialItems);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(TonerRequestList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialItems != oldWidget.initialItems) {
+      setState(() {
+        _items = List.from(widget.initialItems);
+        _currentPage = 2;
+        _hasMoreData = true;
+      });
+    }
   }
 
   @override
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent && _hasMoreData && !_isLoading) {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
       _loadMoreToners();
     }
   }
@@ -224,7 +242,6 @@ class _TonerRequestListState extends State<TonerRequestList> {
     });
 
     try {
-      // Fetch more toner requests from API
       List<AllTonerRequest> newToners = await ApiService().getAllTonerRequests(
         search: widget.search,
         page: _currentPage,
@@ -247,93 +264,153 @@ class _TonerRequestListState extends State<TonerRequestList> {
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (!_isLoading &&
-            scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-            _hasMoreData) {
-          _loadMoreToners();
-          return true;
-        }
-        return false;
-      },
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+      ),
       child: RefreshIndicator(
         onRefresh: widget.onRefresh,
-        child: ListView.builder(
-          controller: _scrollController,
-          physics: const AlwaysScrollableScrollPhysics(),
-          itemCount: _items.length + (_hasMoreData ? 1 : 0),
-          itemBuilder: (context, index) {
-            if (index == _items.length) {
-              return _buildLoaderIndicator(); // Show loader at the end of the list
-            }
-            return _buildTonerCard(_items[index]); // Build each toner card
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTonerCard(AllTonerRequest item) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    '${item.color[0].toUpperCase()}${item.color.substring(1)}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                      color: colorMixGrad,
-                    ),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-                  decoration: BoxDecoration(
-                    color: Colors.blue.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Qty: ${item.quantity}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: colorMixGrad,
-                    ),
-                  ),
-                ),
-              ],
+        color: Theme.of(context).primaryColor,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (!_isLoading &&
+                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                  _hasMoreData) {
+                _loadMoreToners();
+                return true;
+              }
+              return false;
+            },
+            child: ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              itemCount: _items.length + (_hasMoreData ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _items.length) {
+                  return _buildLoaderIndicator();
+                }
+                return _buildTonerCard(_items[index], index);
+              },
             ),
-            const SizedBox(height: 12.0),
-            _buildInfoRow('Serial No', item.serialNo ?? 'N/A'),
-            _buildInfoRow('Last Counter', item.lastCounter.toString()),
-            _buildInfoRow('Created At', _formatDate(item.createdAt)),
-          ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildLoaderIndicator() {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Container();
+  Widget _buildTonerCard(AllTonerRequest item, int index) {
+    // Determine status color based on your business logic
+    final Color statusColor = Colors.blue; // You can adjust this based on your needs
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Card(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 120, // Adjusted height for toner card content
+                      color: statusColor,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${item.color[0].toUpperCase()}${item.color.substring(1)}',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                _buildQuantityChip(item.quantity),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            _buildInfoRow(
+                              context,
+                              'Serial No',
+                              item.serialNo ?? 'N/A',
+                            ),
+                            _buildInfoRow(
+                              context,
+                              'Last Counter',
+                              item.lastCounter.toString(),
+                            ),
+                            _buildInfoRow(
+                              context,
+                              'Created',
+                              _formatDate(item.createdAt),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildQuantityChip(int quantity) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        'Qty: $quantity',
+        style: TextStyle(
+          color: Theme.of(context).primaryColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(BuildContext context, String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -341,16 +418,16 @@ class _TonerRequestListState extends State<TonerRequestList> {
             width: 100,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -360,8 +437,26 @@ class _TonerRequestListState extends State<TonerRequestList> {
     );
   }
 
+  Widget _buildLoaderIndicator() {
+    if (!_isLoading) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).primaryColor,
+          ),
+        ),
+      ),
+    );
+  }
+
   String _formatDate(DateTime date) {
     return DateFormat('MMM d, yyyy HH:mm').format(date.toLocal());
   }
 }
-

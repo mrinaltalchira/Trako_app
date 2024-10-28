@@ -161,18 +161,23 @@ class MachineList extends StatefulWidget {
   _MachineListState createState() => _MachineListState();
 }
 
-class _MachineListState extends State<MachineList> {
+class _MachineListState extends State<MachineList> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late List<Machine> _machines;
   bool _isLoading = false;
-  int _currentPage = 2; // Start from page 2 as we already have the first page
+  int _currentPage = 2;
   bool _hasMoreData = true;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _machines = List.from(widget.initialMachines);
-    print('Reaching init state');
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -189,8 +194,16 @@ class _MachineListState extends State<MachineList> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      _loadMoreMachines();
+    }
   }
 
   Future<void> _loadMoreMachines() async {
@@ -205,7 +218,7 @@ class _MachineListState extends State<MachineList> {
         search: widget.search,
         filter: widget.filter,
         page: _currentPage,
-        perPage: 20, // Fetching 20 items per page
+        perPage: 20,
       );
 
       setState(() {
@@ -224,88 +237,153 @@ class _MachineListState extends State<MachineList> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Expanded(
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+      ),
+      child: RefreshIndicator(
+        onRefresh: widget.onRefresh,
+        color: Theme.of(context).primaryColor,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
               if (!_isLoading &&
                   scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
                   _hasMoreData) {
-                print('Reached the bottom of the list');
                 _loadMoreMachines();
                 return true;
               }
               return false;
             },
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                return ListView.builder(
-                  controller: _scrollController,
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  itemCount: _machines.length + (_hasMoreData ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == _machines.length) {
-                      return _buildLoaderIndicator();
-                    }
-                    return _buildMachineCard(_machines[index]);
-                  },
-                );
+            child: ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              itemCount: _machines.length + (_hasMoreData ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _machines.length) {
+                  return _buildLoaderIndicator();
+                }
+                return _buildMachineCard(_machines[index], index);
               },
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 
-  Widget _buildMachineCard(Machine machine) {
-    Color? cardColor = machine.isActive == "0" ? Colors.red[10] : Colors.grey[300];
+  Widget _buildMachineCard(Machine machine, int index) {
+    final bool isActive = machine.isActive == "1";
+    final Color statusColor = isActive ? Colors.green : Colors.red;
 
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      color: cardColor,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    '${machine.modelName?[0].toUpperCase()}${machine.modelName?.substring(1)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                  ),
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Card(
+              child: InkWell(
+                onTap: () => _showEditDialog(context, machine),
+                borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  children: [
+                    // Custom height for the colored bar
+                    Container(
+                      width: 4, // Width of the border
+                      height: 50, // Set desired height for the border
+                      color: statusColor,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${machine.modelName?[0].toUpperCase()}${machine.modelName?.substring(1)}',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, size: 20),
+                                      onPressed: () => _showEditDialog(context, machine),
+                                      tooltip: 'Edit Machine',
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Serial No: ${machine.serialNo?[0].toUpperCase()}${machine.serialNo?.substring(1)}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    _showEditDialog(context, machine);
-                  },
-                ),
-              ],
+              ),
             ),
-            Text(
-              'Serial No: ${machine.serialNo?[0].toUpperCase()}${machine.serialNo?.substring(1)}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4.0),
-          ],
+          ),
+        );
+      },
+    );
+  }
+
+
+  Widget _buildLoaderIndicator() {
+    if (!_isLoading) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).primaryColor,
+          ),
         ),
       ),
     );
-  }
-
-  Widget _buildLoaderIndicator() {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Container();
   }
 
   void _showEditDialog(BuildContext context, Machine machine) {
@@ -313,19 +391,37 @@ class _MachineListState extends State<MachineList> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Machine'),
-          content: Text('Edit details of ${machine.modelName}'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Edit Machine',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Edit details of ${machine.modelName}',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
               child: const Text('Edit'),
               onPressed: () {
-                Navigator.of(context).pop(); // Close the dialog
+                Navigator.of(context).pop();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -340,8 +436,6 @@ class _MachineListState extends State<MachineList> {
     );
   }
 }
-
-
 
 class NameInputTextField extends StatelessWidget {
   const NameInputTextField({Key? key}) : super(key: key);

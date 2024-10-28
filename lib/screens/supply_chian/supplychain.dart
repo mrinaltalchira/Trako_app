@@ -174,17 +174,23 @@ class SupplyChainList extends StatefulWidget {
   _SupplyChainListState createState() => _SupplyChainListState();
 }
 
-class _SupplyChainListState extends State<SupplyChainList> {
+class _SupplyChainListState extends State<SupplyChainList> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late List<Supply> _items;
   bool _isLoading = false;
-  int _currentPage = 2; // Start from page 2
+  int _currentPage = 2;
   bool _hasMoreData = true;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _items = List.from(widget.initialItems);
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -201,8 +207,16 @@ class _SupplyChainListState extends State<SupplyChainList> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      _loadMoreSupplies();
+    }
   }
 
   Future<void> _loadMoreSupplies() async {
@@ -213,15 +227,13 @@ class _SupplyChainListState extends State<SupplyChainList> {
     });
 
     try {
-      // Fetch the SupplyResponse from the API service
       final response = await ApiService().getAllSupply(
         search: widget.search,
         filter: widget.filter,
         page: _currentPage,
-        perPage: 20, // Fetching 2 items per page
+        perPage: 20,
       );
 
-      // Extract the list of supplies from the response
       final newSupplies = response.data.supply;
 
       setState(() {
@@ -240,109 +252,177 @@ class _SupplyChainListState extends State<SupplyChainList> {
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (!_isLoading &&
-            scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-            _hasMoreData) {
-          _loadMoreSupplies(); // Load more data when scrolling to the bottom
-          return true;
-        }
-        return false;
-      },
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+      ),
       child: RefreshIndicator(
-        onRefresh: widget.onRefresh, // Pull-to-refresh functionality
-        child: LayoutBuilder( // Using LayoutBuilder to handle widget sizing
-          builder: (context, constraints) {
-            return Container( // Added a Container to ensure proper layout sizing
-              height: constraints.maxHeight, // Ensure the Stack has a valid height
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: ListView.builder(
-                      controller: _scrollController,
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: _items.length + (_hasMoreData ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == _items.length) {
-                          return _buildLoaderIndicator(); // Loader at the end of the list
-                        }
-                        return _buildSupplyCard(_items[index]); // Build each supply card
-                      },
-                    ),
-                  ),
-                ],
+        onRefresh: widget.onRefresh,
+        color: Theme.of(context).primaryColor,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
               ),
-            );
-          },
+            ],
+          ),
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (!_isLoading &&
+                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent) {
+                _loadMoreSupplies();
+                return true;
+              }
+              return false;
+            },
+            child: ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              itemCount: _items.length + (_hasMoreData ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _items.length) {
+                  return _buildLoaderIndicator();
+                }
+                return _buildSupplyCard(_items[index], index);
+              },
+            ),
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildSupplyCard(Supply item, int index) {
+    final CardStatus status = _getCardStatus(item);
 
-
-  Widget _buildSupplyCard(Supply item) {
-    Color? cardColor =  Colors.red[10];
-    String status = '';
-    Color? statusColor = Colors.grey[300];
-
-
-    if (item.dispatchReceive == "0") {
-      status = 'Dispatched';
-      statusColor = Colors.red;
-      if (item.isAcknowledged == "1") {
-        status = 'Acknowledged';
-        statusColor = Colors.orange[400];
-      }
-    } else if (item.dispatchReceive == "1") {
-      status = 'Received';
-      statusColor = Colors.green[300];
-    }
-
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      color: cardColor,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    'QR: ${item.qrCode}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                  ),
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Card(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  children: [
+                    // Custom height for the colored bar
+                    Container(
+                      width: 4, // Width of the border
+                      height: 50, // Set desired height for the border
+                      color: status.color,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    item.qrCode.toString(),
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                _buildStatusChip(status),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Date: ${item.dateTime}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-               Opacity(opacity: 1,
-               child:  Padding(
-                 padding: const EdgeInsets.all(10.0),
-                 child: Text(status,style: TextStyle(color: statusColor,fontSize: 12),),
-               ),)
-              ],
+              ),
             ),
-            Text(
-              'Date: ${item.dateTime}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4.0),
-          ],
+          ),
+        );
+      },
+    );
+  }
+
+
+  Widget _buildStatusChip(CardStatus status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: status.color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        status.label,
+        style: TextStyle(
+          color: status.color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
   Widget _buildLoaderIndicator() {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Container();
+    if (!_isLoading) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).primaryColor,
+          ),
+        ),
+      ),
+    );
+  }
+
+  CardStatus _getCardStatus(Supply item) {
+    if (item.dispatchReceive == "0") {
+      if (item.isAcknowledged == "1") {
+        return CardStatus(
+          label: 'Acknowledged',
+          color: Colors.orange[400] ?? Colors.orange,
+        );
+      }
+      return CardStatus(
+        label: 'Dispatched',
+        color: Colors.red,
+      );
+    }
+    return CardStatus(
+      label: 'Received',
+      color: Colors.green[400] ?? Colors.green,
+    );
   }
 
   void _showEditDialog(BuildContext context, Supply item) {
@@ -350,20 +430,26 @@ class _SupplyChainListState extends State<SupplyChainList> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: Text('Edit Supply Item'),
           content: Text('Edit details of ${item.qrCode}'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: const Text('Edit'),
               onPressed: () {
                 _editItem(item.id.toString());
-                Navigator.of(context).pop(); // Close dialog
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -376,6 +462,16 @@ class _SupplyChainListState extends State<SupplyChainList> {
     print('Editing supply item: $id');
     // Implement your edit logic here
   }
+}
+
+class CardStatus {
+  final String label;
+  final Color color;
+
+  CardStatus({
+    required this.label,
+    required this.color,
+  });
 }
 
 class QRViewTracesci extends StatefulWidget {

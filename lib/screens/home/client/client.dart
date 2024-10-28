@@ -159,18 +159,23 @@ class ClientList extends StatefulWidget {
   _ClientListState createState() => _ClientListState();
 }
 
-class _ClientListState extends State<ClientList> {
+class _ClientListState extends State<ClientList> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late List<Client> _clients;
   bool _isLoading = false;
-  int _currentPage = 2;  // Start from page 2 as we already have the first page
+  int _currentPage = 2;
   bool _hasMoreData = true;
+  late AnimationController _animationController;
 
   @override
   void initState() {
     super.initState();
     _clients = List.from(widget.initialClients);
-    print('Reaching init state');
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    _scrollController.addListener(_onScroll);
   }
 
   @override
@@ -187,8 +192,16 @@ class _ClientListState extends State<ClientList> {
 
   @override
   void dispose() {
+    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _animationController.dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+      _loadMoreClients();
+    }
   }
 
   Future<void> _loadMoreClients() async {
@@ -203,7 +216,7 @@ class _ClientListState extends State<ClientList> {
         search: widget.search,
         filter: widget.filter,
         page: _currentPage,
-        perPage: 20,  // Fetching only 2 items per page
+        perPage: 20,
       );
 
       setState(() {
@@ -222,85 +235,169 @@ class _ClientListState extends State<ClientList> {
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (ScrollNotification scrollInfo) {
-        if (!_isLoading &&
-            scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
-            _hasMoreData) {
-          print('Reached the bottom of the list');
-          _loadMoreClients();
-          return true;
-        }
-        return false;
-      },
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return ListView.builder(
-            controller: _scrollController,
-            physics: const AlwaysScrollableScrollPhysics(),
-            itemCount: _clients.length + (_hasMoreData ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (index == _clients.length) {
-                return _buildLoaderIndicator();
+    return Theme(
+      data: Theme.of(context).copyWith(
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        ),
+      ),
+      child: RefreshIndicator(
+        onRefresh: widget.onRefresh,
+        color: Theme.of(context).primaryColor,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).scaffoldBackgroundColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (ScrollNotification scrollInfo) {
+              if (!_isLoading &&
+                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                  _hasMoreData) {
+                _loadMoreClients();
+                return true;
               }
-
-              return _buildClientCard(_clients[index]);
+              return false;
             },
-          );
-        },
+            child: ListView.builder(
+              controller: _scrollController,
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              itemCount: _clients.length + (_hasMoreData ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (index == _clients.length) {
+                  return _buildLoaderIndicator();
+                }
+                return _buildClientCard(_clients[index], index);
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
 
+  Widget _buildClientCard(Client client, int index) {
+    final bool isActive = client.isActive == "1";
+    final Color statusColor = isActive ? Colors.red : Colors.green;
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Card(
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                child: Row(
+                  children: [
+                    // Custom height for the colored bar
+                    Container(
+                      width: 4, // Width of the border
+                      height: 50, // Set desired height for the border
+                      color: statusColor,
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '${client.name![0].toUpperCase()}${client.name!.substring(1)}',
+                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const SizedBox(width: 8),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit, size: 20),
+                                      onPressed: () => _showEditDialog(context, client),
+                                      tooltip: 'Edit Client',
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Text(
+                              'City: ${client.city![0].toUpperCase()}${client.city!.substring(1)}',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[700],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
 
-  Widget _buildClientCard(Client client) {
-    Color? cardColor = client.isActive == "0" ? Colors.red[10] : Colors.grey[300];
-
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      elevation: 2.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
+  Widget _buildStatusChip(String label, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
       ),
-      color: cardColor,
-      child: Padding(
-        padding: const EdgeInsets.only(left: 12.0, right: 12.0, bottom: 12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    '${client.name![0].toUpperCase()}${client.name!.substring(1)}',
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 19),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    _showEditDialog(context, client);
-                  },
-                ),
-              ],
-            ),
-            Text(
-              'City: ${client.city![0].toUpperCase()}${client.city!.substring(1)}',
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4.0),
-          ],
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );
   }
 
   Widget _buildLoaderIndicator() {
-    return _isLoading
-        ? const Center(child: CircularProgressIndicator())
-        : Container();
+    if (!_isLoading) return const SizedBox.shrink();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      alignment: Alignment.center,
+      child: SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            Theme.of(context).primaryColor,
+          ),
+        ),
+      ),
+    );
   }
 
   void _showEditDialog(BuildContext context, Client client) {
@@ -308,19 +405,37 @@ class _ClientListState extends State<ClientList> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Edit Client'),
-          content: Text('Edit details of ${client.name}'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Text(
+            'Edit Client',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Edit details of ${client.name}',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey[600]),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-            TextButton(
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              ),
               child: const Text('Edit'),
               onPressed: () {
-                Navigator.of(context).pop();  // Close the dialog
+                Navigator.of(context).pop();
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -334,14 +449,7 @@ class _ClientListState extends State<ClientList> {
       },
     );
   }
-
-  void _editClient(BuildContext context, Client client) {
-    // Implement your logic to edit the client
-    print('Editing client: ${client.id}');
-    // Add your logic here to update client data
-  }
 }
-
 
 
 class CustomSearchField extends StatefulWidget {
