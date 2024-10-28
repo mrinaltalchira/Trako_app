@@ -319,6 +319,7 @@ class _AddTonerState extends State<AddToner> {
                   onChanged: (DispatchReceive? value) {
                     setState(() {
                       _selectedDispatchReceive = value;
+                      scannedCodes.clear();
                     });
                   },
                 ),
