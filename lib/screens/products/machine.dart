@@ -291,7 +291,7 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
   }
 
   Widget _buildMachineCard(Machine machine, int index) {
-    final bool isActive = machine.isActive == "1";
+    final bool isActive = machine.isActive == "0";
     final Color statusColor = isActive ? Colors.green : Colors.red;
 
     return TweenAnimationBuilder<double>(
