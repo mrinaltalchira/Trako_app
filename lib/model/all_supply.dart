@@ -64,12 +64,15 @@ class SupplyData {
 
 class Supply {
   final String? id;
-  final String? dispatchReceive;
+  final String? clientId;
+  final String? dispatch;
   final String? serialNo;
   final String? dateTime;
   final String? quarterId;
   final String? qrCode;
   final String? isAcknowledged;
+  final String? isReceived;
+  final String? receiveType;
   final String? reference;
   final String? addBy;
   final String? createdAt;
@@ -77,12 +80,15 @@ class Supply {
 
   Supply({
     this.id,
-    this.dispatchReceive,
+    this.clientId,
+    this.dispatch,
     this.serialNo,
     this.dateTime,
     this.quarterId,
     this.qrCode,
     this.isAcknowledged,
+    this.isReceived,
+    this.receiveType,
     this.reference,
     this.addBy,
     this.createdAt,
@@ -91,29 +97,35 @@ class Supply {
 
   factory Supply.fromJson(Map<String, dynamic> json) {
     return Supply(
-      id: json['id'].toString(),
-      dispatchReceive: json['dispatch_receive'].toString(),
-      serialNo: json['serial_no'].toString(),
-      dateTime: json['date_time'].toString(),
-      quarterId: json['quarter_id'].toString(),
-      qrCode: json['qr_code'].toString(),
-      isAcknowledged: json['is_acknowledged'].toString(),
-      reference: json['reference'].toString(),
-      addBy: json['add_by'].toString(),
-      createdAt: json['created_at'].toString(),
-      updatedAt: json['updated_at'].toString(),
+      id: json['id']?.toString(),
+      clientId: json['client_id']?.toString(),
+      dispatch: json['dispatch']?.toString(), // mapped from dispatch
+      serialNo: json['serial_no']?.toString(),
+      dateTime: json['date_time']?.toString(),
+      quarterId: json['quarter_id']?.toString(),
+      qrCode: json['qr_code']?.toString(),
+      isAcknowledged: json['acknowledge']?.toString(),
+      isReceived: json['receive']?.toString(),
+      receiveType: json['receive_type']?.toString(),
+      reference: json['reference']?.toString(),
+      addBy: json['add_by']?.toString(),
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'dispatch_receive': dispatchReceive,
+      'client_id': clientId,
+      'dispatch': dispatch,
       'serial_no': serialNo,
       'date_time': dateTime,
       'quarter_id': quarterId,
       'qr_code': qrCode,
-      'is_acknowledged': isAcknowledged,
+      'acknowledge': isAcknowledged,
+      'receive': isReceived,
+      'receive_type': receiveType,
       'reference': reference,
       'add_by': addBy,
       'created_at': createdAt,
@@ -121,6 +133,7 @@ class Supply {
     };
   }
 }
+
 
 class Pagination {
   final int? total;

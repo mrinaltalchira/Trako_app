@@ -75,8 +75,8 @@ class LoggerInterceptor extends Interceptor {
 
 class ApiService {
 
-  final String baseUrl = 'https://trako.tracesci.in/api';
-     // final String baseUrl = 'http://192.168.2.21:8000/api';
+  // final String baseUrl = 'https://trako.tracesci.in/api';
+     final String baseUrl = 'http://192.168.2.58:8000/api';
 
   late Dio _dio;
   late String? token;
@@ -84,6 +84,7 @@ class ApiService {
   ApiService() {
     initializeApiService();
   }
+
 
   Future<void> initializeApiService() async {
     try {
@@ -223,7 +224,6 @@ class ApiService {
   Future<Map<String, dynamic>> updateClient({
     required String id,
     required String name,
-    required String city,
     required String email,
     required String phone,
     required String address,
@@ -244,7 +244,6 @@ class ApiService {
         ),
         data: json.encode({
           'name': name,
-          'city': city,
           'email': email,
           'phone': phone,
           "isActive": isActive,
@@ -266,49 +265,56 @@ class ApiService {
     }
   }
 
-       Future<List<Client>> getAllClients({
-         String? search,
-         String? filter,
-         int? perPage,
-         int? page
-       }) async {
-         try {
-           await initializeApiService(); // Ensure token is initialized before calling the API
+     Future<List<Map<String, dynamic>>> getAllClients({
+       String? search,
+       String? filter,
+       int? perPage,
+       int? page,
+       String? state,
+       String? city,
+     }) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before calling the API
 
-           final response = await _dio.get(
-             '$baseUrl/all-client',
-             queryParameters: {
-               if (search != null && search.isNotEmpty) 'search': search, // Add search query if provided
-               if (filter != null && filter.isNotEmpty) 'filter': filter, // Add filter if provided
-               if (perPage != null) 'per_page': perPage, // Add pagination per_page if provided
-               if (page != null) 'page': page, // Add pagination page if provided
+         final response = await _dio.get(
+           '$baseUrl/all-client',
+           queryParameters: {
+             if (search != null && search.isNotEmpty) 'search': search,
+             if (filter != null && filter.isNotEmpty) 'filter': filter,
+             if (state != null && state.isNotEmpty) 'state': state,
+             if (city != null && city.isNotEmpty) 'city': city,
+             if (perPage != null) 'per_page': perPage,
+             if (page != null) 'page': page,
+           },
+           options: Options(
+             headers: {
+               'Authorization': 'Bearer $token',
              },
-             options: Options(
-               headers: {
-                 'Authorization': 'Bearer $token', // Pass the auth token
-               },
-             ),
-           );
+           ),
+         );
 
-           if (response.statusCode == 200) {
-             final data = response.data;
-             final clientsJson = data['data']['clients'] as List;
-             List<Client> clients = clientsJson.map((json) => Client.fromJson(json)).toList();
+         if (response.statusCode == 200) {
+           final data = response.data;
+           final clientsJson = data['data']['clients'] as List;
 
-             // Optional: You can also return the pagination details if needed
-             return clients;
-           } else {
-             throw Exception('Failed to load clients');
-           }
-         } catch (e) {
-           print('Get All Clients API error: $e');
-           throw Exception('Failed to connect to the server.');
+           // Convert the list of clients to List<Map<String, dynamic>>
+           List<Map<String, dynamic>> clients = clientsJson
+               .map<Map<String, dynamic>>((json) => Map<String, dynamic>.from(json))
+               .toList();
+
+           return clients;
+         } else {
+           throw Exception('Failed to load clients');
          }
+       } catch (e) {
+         print('Get All Clients API error: $e');
+         throw Exception('Failed to connect to the server.');
        }
+     }
 
 
 
-  /////////////////////////////// machine
+     /////////////////////////////// machine
 
   Future<Map<String, dynamic>> addMachine({
     required String model_name,
@@ -328,7 +334,7 @@ class ApiService {
           },
         ),
         data: json.encode({
-          'model_name': model_name,
+          'model_no': model_name,
           'serial_no': serial_no,
           'isActive': isActive,
         }),
@@ -345,6 +351,78 @@ class ApiService {
     }
   }
 
+
+     Future<Map<String, dynamic>> addMachineModel({
+       required String model_no,
+       required bool isActive,
+       required List<String> colors,
+     }) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before API call
+
+         final url = '/add-Model-no';
+
+         // Create the request data
+         Map<String, dynamic> requestData = {
+           'model_no': model_no,
+           'isActive': isActive,
+           'colors': colors.join(','), // Convert list to comma-separated string
+         };
+
+         final response = await _dio.post(
+           baseUrl + url,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+           data: requestData,
+         );
+
+         if (response.statusCode == 200) {
+           return response.data;
+         } else {
+           throw Exception('Failed to add machine model');
+         }
+       } catch (e) {
+         print('Add machine model API error: $e');
+         return {
+           'error': true,
+           'message': 'Failed to connect to the server.',
+           'status': 500
+         };
+       }
+     }
+
+
+     Future<Map<String, dynamic>> softDeleteClient({required String clientId}) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before making API requests
+
+         final deleteUrl = '/delete-clients/$clientId'; // Soft delete API endpoint
+
+         final response = await _dio.delete(
+           baseUrl + deleteUrl,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+         );
+
+         if (response.statusCode == 200) {
+           print('Client soft deleted successfully');
+           return response.data;
+         } else {
+           throw Exception('Failed to soft delete client');
+         }
+       } catch (e) {
+         print('Soft delete API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
 
 
   Future<Map<String, dynamic>> updateMachine({
@@ -369,7 +447,7 @@ class ApiService {
         ),
         data: json.encode({
           'id':id,
-          'model_name': model_name,
+          'model_no': model_name,
           'serial_no': serial_no,
           'isActive': isActive,
         }),
@@ -386,11 +464,11 @@ class ApiService {
     }
   }
 
-     Future<List<Machine>> getAllMachines({
+     Future<List<Map<String, dynamic>>> getAllMachines({
        String? search,
        String? filter,
-       int? perPage , // Default number of items per page
-       int? page,     // Default page number
+       int? perPage, // Default number of items per page
+       int? page,    // Default page number
      }) async {
        try {
          await initializeApiService(); // Ensure token is initialized before calling API
@@ -400,8 +478,8 @@ class ApiService {
            queryParameters: {
              if (search != null && search.isNotEmpty) 'search': search,
              if (filter != null && filter.isNotEmpty) 'filter': filter,
-             if (perPage != null ) 'per_page': perPage,
-             if (page != null )  'page': page,
+             if (perPage != null) 'per_page': perPage,
+             if (page != null) 'page': page,
            },
            options: Options(
              headers: {
@@ -414,8 +492,9 @@ class ApiService {
            final data = response.data;
            final machineJson = data['data']['machines'] as List;
 
-           List<Machine> machines = machineJson
-               .map((json) => Machine.fromJson(json as Map<String, dynamic>))
+           // Convert each item to Map<String, dynamic> directly without using Machine model
+           List<Map<String, dynamic>> machines = machineJson
+               .map((json) => json as Map<String, dynamic>)
                .toList();
 
            return machines;
@@ -429,9 +508,48 @@ class ApiService {
      }
 
 
+     Future<Map<String, dynamic>> getAllModels({
+       String? search,
+       String? filter,
+       int? page = 1,
+       int? perPage = 20,
+     }) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before calling API
+
+         final response = await _dio.get(
+           '$baseUrl/get-all-model',
+           queryParameters: {
+             if (search != null && search.isNotEmpty) 'search': search,
+             if (filter != null && filter.isNotEmpty) 'filter': filter,
+             'per_page': perPage,
+             'page': page,
+           },
+           options: Options(
+             headers: {
+               'Authorization': 'Bearer $token',
+             },
+           ),
+         );
+
+         if (response.statusCode == 200) {
+           // Return the entire response data directly without conversion
+           return response.data;
+         } else {
+           throw Exception('Failed to load machines');
+         }
+       } catch (e) {
+         print('Get All Machines API error: $e');
+         return {
+           'error': true,
+           'message': 'Failed to connect to the server.',
+           'data': null
+         };
+       }
+     }
 
 
-  ////////////////////////////////////  User
+     ////////////////////////////////////  User
 
 
   Future<Map<String, dynamic>> addUser({
@@ -594,11 +712,12 @@ class ApiService {
   ////////////////////////////////////   Supply
 
   Future<Map<String, dynamic>> addSupply({
-    required String dispatch_receive,
+    required String supply_type,
     required String client_id,
     required String serial_no,
     required String date_time,
     required String qr_code,
+    required int receive_type,
     String? reference,
   }) async {
     try {
@@ -614,11 +733,12 @@ class ApiService {
           },
         ),
         data: json.encode({
-          "dispatch_receive": dispatch_receive,
+          "supply_type": supply_type,
           "serial_no": serial_no,
           "client_id": client_id,
           "date_time": date_time,
           "qr_code": qr_code,
+          "receive_type": receive_type,
           if (reference!= null && reference.isNotEmpty) 'reference': reference,
         }),
       );
@@ -865,8 +985,7 @@ class ApiService {
 
 //      Spinner
 
-
-  Future<List<MachineByClientId>> getMachineByClientIdList(String clientId) async {
+  Future<List<Map<String, dynamic>>> getMachineByClientIdList(String clientId) async {
     try {
       await initializeApiService(); // Ensure token is initialized before making the API call
 
@@ -886,8 +1005,9 @@ class ApiService {
         final responseData = response.data;
         final machinesJson = responseData['data']['machines'] as List<dynamic>;
 
-        List<MachineByClientId> machines = machinesJson
-            .map((json) => MachineByClientId.fromJson(json as Map<String, dynamic>))
+        // Convert each item to Map<String, dynamic> directly
+        List<Map<String, dynamic>> machines = machinesJson
+            .map((json) => json as Map<String, dynamic>)
             .toList();
 
         return machines;

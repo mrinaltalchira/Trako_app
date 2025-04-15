@@ -8,6 +8,10 @@ import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/home/client/add_client.dart';
 import 'package:flutter/material.dart';
 
+import '../../../utils/buttons.dart';
+import '../../../utils/custome_search_field.dart';
+import '../../../utils/utils.dart';
+
 class ClientModule extends StatefulWidget {
   const ClientModule({Key? key}) : super(key: key);
 
@@ -16,21 +20,25 @@ class ClientModule extends StatefulWidget {
 }
 
 class _ClientModuleState extends State<ClientModule> {
-  late Future<List<Client>> clientsFuture;
+  late Future<List<Map<String, dynamic>>> clientsFuture;
   final ApiService _apiService = ApiService();
   String? _searchQuery;
+  String? _selectedState;
+  String? _selectedCity;
 
   @override
   void initState() {
     super.initState();
-    clientsFuture = getClientsList(null);
+    clientsFuture = getClientsList(null,null,null);
   }
 
-  Future<List<Client>> getClientsList(String? search) async {
+  Future<List<Map<String, dynamic>>> getClientsList(String? search, String? selectedState, String? selectedCity) async {
     try {
-      List<Client> clients = await _apiService.getAllClients(
+      List<Map<String, dynamic>> clients = await _apiService.getAllClients(
         search: search,
         filter: null,
+        city: selectedCity,
+        state: selectedState,
         page: 1,  // Fetching the first page
         perPage: 20,  // Fetching only 2 items per page
       );
@@ -44,8 +52,22 @@ class _ClientModuleState extends State<ClientModule> {
 
   Future<void> refreshClientsList() async {
     setState(() {
-      clientsFuture = getClientsList(_searchQuery);
+      clientsFuture = getClientsList(_searchQuery,_selectedState,_selectedCity);
     });
+  }
+
+  void softDeleteClient(String? clientId) async {
+    try {
+      _apiService.softDeleteClient(
+          clientId: clientId.toString() // Fetching only 2 items per page
+      );
+      setState(() {
+        clientsFuture = getClientsList(_searchQuery,_selectedState,_selectedCity);
+      });
+
+    } catch (e) {
+      print('Error fetching clients: $e');
+    }
   }
 
   @override
@@ -80,12 +102,59 @@ class _ClientModuleState extends State<ClientModule> {
                       onSearchChanged: (searchQuery) {
                         setState(() {
                           _searchQuery = searchQuery;
-                          clientsFuture = getClientsList(searchQuery);
+                          clientsFuture = getClientsList(searchQuery, _selectedState, _selectedCity);
                         });
                       },
                     ),
                   ),
-                  const SizedBox(width: 20.0),
+                  const SizedBox(width: 10.0),
+                  InkWell(
+                    onTap: _showLocationSelectDialog,
+                    child: Container(
+                      padding: const EdgeInsets.all(12.0),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _selectedState != null || _selectedCity != null
+                              ? colorFirstGrad
+                              : Colors.grey[300]!,
+                        ),
+                        color: _selectedState != null || _selectedCity != null
+                            ? colorFirstGrad.withOpacity(0.1)
+                            : Colors.white,
+                      ),
+                      child: Stack(
+                        children: [
+                          Icon(
+                            Icons.filter_alt,
+                            color: _selectedState != null || _selectedCity != null
+                                ? colorFirstGrad
+                                : Colors.grey[600],
+                          ),
+                          if (_selectedState != null || _selectedCity != null)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: colorFirstGrad,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Text(
+                                  '•',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 8,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10.0),
                   GradientIconButton(
                     icon: Icons.add,
                     onPressed: () async {
@@ -104,7 +173,7 @@ class _ClientModuleState extends State<ClientModule> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: FutureBuilder<List<Client>>(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
                   future: clientsFuture,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -112,7 +181,7 @@ class _ClientModuleState extends State<ClientModule> {
                     } else if (snapshot.hasError) {
                       return Center(child: Text('Error: ${snapshot.error}'));
                     } else {
-                      List<Client> initialClients = snapshot.data ?? [];
+                      List<Map<String, dynamic>> initialClients = snapshot.data ?? [];
                       print('Clients to display: $initialClients');
 
                       if (initialClients.isEmpty) {
@@ -124,6 +193,11 @@ class _ClientModuleState extends State<ClientModule> {
                           initialClients: initialClients,
                           search: _searchQuery,
                           onRefresh: refreshClientsList,
+                          onDelete: (String? clientId, int index) async {
+                             softDeleteClient(clientId);
+                            // Refresh the list after deletion
+                            refreshClientsList();
+                          },
                         );
                       }
                     }
@@ -137,15 +211,43 @@ class _ClientModuleState extends State<ClientModule> {
     );
   }
 
+  void _showLocationSelectDialog() async {
+    final result = await showDialog<Map<String, String?>>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: IntrinsicWidth(
+          child: IntrinsicHeight(
+            child: LocationSelectDialog(
+              selectedState: _selectedState,
+              selectedCity: _selectedCity,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedState = result['state'];
+        _selectedCity = result['phone'];
+        clientsFuture = getClientsList(_searchQuery,_selectedState,_selectedCity);
+
+      });
+    }
+  }
 
 }
 
-
 class ClientList extends StatefulWidget {
-  final List<Client> initialClients;
+  final List<Map<String, dynamic>> initialClients;
   final String? search;
   final String? filter;
   final Future<void> Function() onRefresh;
+  final Function(String?, int)? onDelete; // Added onDelete parameter
 
   const ClientList({
     Key? key,
@@ -153,6 +255,7 @@ class ClientList extends StatefulWidget {
     this.search,
     this.filter,
     required this.onRefresh,
+    this.onDelete, // Added onDelete parameter
   }) : super(key: key);
 
   @override
@@ -161,7 +264,7 @@ class ClientList extends StatefulWidget {
 
 class _ClientListState extends State<ClientList> with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
-  late List<Client> _clients;
+  late List<Map<String, dynamic>> _clients;
   bool _isLoading = false;
   int _currentPage = 2;
   bool _hasMoreData = true;
@@ -288,8 +391,8 @@ class _ClientListState extends State<ClientList> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildClientCard(Client client, int index) {
-    final bool isActive = client.isActive == "1";
+  Widget _buildClientCard(Map<String, dynamic> client, int index) {
+    final bool isActive = client['isActive'] == "0";
     final Color statusColor = isActive ? Colors.red : Colors.green;
 
     return TweenAnimationBuilder<double>(
@@ -300,84 +403,142 @@ class _ClientListState extends State<ClientList> with SingleTickerProviderStateM
           offset: Offset(0, 20 * (1 - value)),
           child: Opacity(
             opacity: value,
-            child: Card(
-              child: InkWell(
-                borderRadius: BorderRadius.circular(12),
-                child: Row(
-                  children: [
-                    // Custom height for the colored bar
-                    Container(
-                      width: 4, // Width of the border
-                      height: 50, // Set desired height for the border
-                      color: statusColor,
+            child: Dismissible(
+              key: Key(client['id'].toString() ?? 'client-$index'),
+              direction: DismissDirection.endToStart,
+              background: Container(
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(right: 20),
+                child: const Icon(
+                  Icons.delete,
+                  color: Colors.white,
+                ),
+              ),
+              confirmDismiss: (direction) async {
+                return await showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      title: const Text("Confirm Delete"),
+                      content: Text("Are you sure you want to delete ${client['name']}?"),
+                      actions: <Widget>[
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(false),
+                          child: Text(
+                            "CANCEL",
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(true),
+                          child: const Text(
+                            "DELETE",
+                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              onDismissed: (direction) {
+                // Call the onDelete callback
+                if (widget.onDelete != null) {
+                  widget.onDelete!(client['id'].toString(), index);
+                }
+
+                // Remove from local list
+                setState(() {
+                  _clients.removeAt(index);
+                });
+
+                // Show a snackbar with undo option
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${client['name']} deleted'),
+                    backgroundColor: colorFirstGrad,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    '${client.name![0].toUpperCase()}${client.name!.substring(1)}',
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
+                    action: SnackBarAction(
+                      label: 'UNDO',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        // Refresh the list to restore data
+                        widget.onRefresh();
+                      },
+                    ),
+                  ),
+                );
+              },
+              child: Card(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    children: [
+                      // Custom height for the colored bar
+                      Container(
+                        width: 4, // Width of the border
+                        height: 50, // Set desired height for the border
+                        color: statusColor,
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${client['name']![0].toUpperCase()}${client['name']!.substring(1)}',
+                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                Row(
-                                  children: [
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, size: 20),
-                                      onPressed: () => _showEditDialog(context, client),
-                                      tooltip: 'Edit Client',
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            Text(
-                              'City: ${client.city![0].toUpperCase()}${client.city!.substring(1)}',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[700],
+                                  Row(
+                                    children: [
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, size: 20),
+                                        onPressed: () => _showEditDialog(context, client),
+                                        tooltip: 'Edit Client',
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                              Text(
+                                'Email: ${client['email']!.toUpperCase()}',
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
         );
       },
-    );
-  }
-
-
-  Widget _buildStatusChip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
     );
   }
 
@@ -400,7 +561,7 @@ class _ClientListState extends State<ClientList> with SingleTickerProviderStateM
     );
   }
 
-  void _showEditDialog(BuildContext context, Client client) {
+  void _showEditDialog(BuildContext context, Map<String, dynamic> client) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -415,7 +576,7 @@ class _ClientListState extends State<ClientList> with SingleTickerProviderStateM
             ),
           ),
           content: Text(
-            'Edit details of ${client.name}',
+            'Edit details of ${client['name']}',
             style: Theme.of(context).textTheme.bodyLarge,
           ),
           actions: <Widget>[
@@ -451,185 +612,4 @@ class _ClientListState extends State<ClientList> with SingleTickerProviderStateM
   }
 }
 
-
-class CustomSearchField extends StatefulWidget {
-  final ValueChanged<String> onSearchChanged;
-
-  const CustomSearchField({Key? key, required this.onSearchChanged})
-      : super(key: key);
-
-  @override
-  _CustomSearchFieldState createState() => _CustomSearchFieldState();
-}
-
-class _CustomSearchFieldState extends State<CustomSearchField> {
-  TextEditingController _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Colors.blue,
-            Colors.green
-          ], // Replace with your gradient colors
-        ),
-        borderRadius: BorderRadius.circular(25.0),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        child: Row(
-          children: [
-            Icon(Icons.search, color: Colors.grey),
-            const SizedBox(width: 10.0),
-            Expanded(
-              child: TextField(
-                controller: _searchController,
-                onChanged: widget.onSearchChanged,
-                decoration: InputDecoration(
-                  hintText: 'Search',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: InputBorder.none,
-                ),
-                style: const TextStyle(
-                  fontSize: 16.0,
-                  color: Colors.black,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class GradientIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-
-  const GradientIconButton({
-    required this.icon,
-    required this.onPressed,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [colorFirstGrad, colorSecondGrad],
-        ),
-        borderRadius: BorderRadius.circular(25.0),
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white),
-        iconSize: 30.0,
-      ),
-    );
-  }
-}
-
-class CustomInputTextField extends StatelessWidget {
-  final String hintText;
-  final TextInputType keyboardType;
-
-  const CustomInputTextField({
-    required this.hintText,
-    required this.keyboardType,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.all(10.0),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10.0),
-          border: Border.all(color: Colors.transparent),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Transform.translate(
-                    offset: const Offset(5, 10),
-                    child: SizedBox(
-                      width: 200,
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          filled: false,
-                          hintText: hintText,
-                          contentPadding: EdgeInsets.symmetric(vertical: 8.0),
-                        ),
-                        keyboardType: keyboardType,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(
-                    width: 190,
-                    child: LinearGradientDivider(
-                      height: 1,
-                      gradient: LinearGradient(
-                        colors: [colorFirstGrad, colorSecondGrad],
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 21),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-
-class LinearGradientDivider extends StatelessWidget {
-  final double height;
-  final Gradient gradient;
-
-  const LinearGradientDivider({
-    required this.height,
-    required this.gradient,
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: height,
-      decoration: BoxDecoration(
-        gradient: gradient,
-      ),
-    );
-  }
-}
 

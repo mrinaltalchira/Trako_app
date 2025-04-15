@@ -50,6 +50,7 @@ class Machine {
   final String id;
   final String? modelName; // Nullable field
   final String? serialNo;  // Nullable field
+  final String? colors;  // Nullable field
   final String isActive;
   final int? addedBy; // Nullable field
   final DateTime createdAt;
@@ -59,6 +60,7 @@ class Machine {
     required this.id,
     this.modelName,
     this.serialNo,
+    this.colors,
     required this.isActive,
     this.addedBy,
     required this.createdAt,
@@ -70,6 +72,7 @@ class Machine {
       id: json['id'].toString(),
       modelName: json['model_name'] as String?,
       serialNo: json['serial_no'] as String?,
+      colors: json['colors'] as String?,
       isActive: json['isActive'].toString(),
       addedBy: json['added_by'] != null ? json['added_by'] as int : null,
       createdAt: DateTime.parse(json['created_at']),

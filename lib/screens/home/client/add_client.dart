@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:convert';
 import 'package:Trako/color/colors.dart';
 import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_clients.dart';
 import 'package:Trako/network/ApiService.dart';
-
 import '../../../model/all_machine.dart';
+import '../../../utils/global_textfields.dart';
+import '../../../utils/popup_radio_checkbox.dart';
+import '../../../utils/spnners.dart';
 import '../../add_toner/utils.dart';
 import '../../authFlow/utils.dart';
 
 class AddClient extends StatefulWidget {
-  final Client? client;
+  final Map<String, dynamic>? client;
 
   const AddClient({super.key, this.client});
 
@@ -19,47 +22,68 @@ class AddClient extends StatefulWidget {
 }
 
 class _AddClientState extends State<AddClient> {
-
   bool activeChecked = true;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
-  final TextEditingController addressController = TextEditingController();
+  final List<TextEditingController> addressControllers = [TextEditingController()];
   final TextEditingController contactPersonController = TextEditingController();
-  late  List<String> assignedMachines = []; // List to store assigned machine IDs
+  // Use a Set instead of List to ensure unique values
+  late Set<String> assignedMachines = {}; // Set to store unique assigned machine IDs
   String? fullPhoneNumber;
-  late Future<List<Machine>> machineFuture;
+  Map<String, dynamic>? selectedMachine;
+
+  late Future<List<Map<String, dynamic>>> machineFuture;
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
-    machineFuture = getMachineList("only_active");
+    machineFuture = getMachineList("unassigned");
     if (widget.client != null) {
-      nameController.text = widget.client!.name.toString();
-      cityController.text = widget.client!.city.toString();
-      emailController.text = widget.client!.email.toString();
-      fullPhoneNumber = widget.client!.phone;
-      assignedMachines = widget.client!.machines!.split(",");
-      String? phone = widget.client?.phone; // Access phone property safely
+      nameController.text = widget.client!['name'].toString();
+      cityController.text = widget.client!['city'].toString();
+      emailController.text = widget.client!['email'].toString();
+      fullPhoneNumber = widget.client!['phone'];
+      // Convert comma-separated string to Set for unique values
+      if (widget.client != null && widget.client!['machines'] != null) {
+        final machines = widget.client!['machines'] as String?;
+        if (machines != null && machines.isNotEmpty) {
+          assignedMachines = machines
+              .split(",")
+              .map((machine) => machine.trim())
+              .where((machine) => machine.isNotEmpty)
+              .toSet();
+        }
+      }
+      String? phone = widget.client?['phone']; // Access phone property safely
       List<String> phNumber = phone?.split(" ") ?? [];
-      phoneController.text = phNumber[1];
-      addressController.text = widget.client!.address.toString();
-      contactPersonController.text = widget.client!.contactPerson ?? '';
-      activeChecked = widget.client!.isActive == "0";
-      // assignedMachines.addAll(widget.client!.machines); // Assuming `machines` is a list of machine IDs
+      phoneController.text = phNumber.length > 1 ? phNumber[1] : '';
+
+      try {
+        // Try to parse the address as JSON
+        List<dynamic> addresses = json.decode(widget.client!['address'].toString());
+        addressControllers.clear();
+        for (var address in addresses) {
+          addressControllers.add(TextEditingController(text: address.toString()));
+        }
+      } catch (e) {
+        // If parsing fails, use the address as a single string
+        addressControllers.first.text = widget.client!['address'].toString();
+      }
+
+      contactPersonController.text = widget.client!['contactPerson'] ?? '';
+      activeChecked = widget.client!['isActive'] == "1";
     }
-    // Fetch available machines for dropdown
   }
 
-  Future<List<Machine>> getMachineList(String? filter) async {
+  Future<List<Map<String, dynamic>>> getMachineList(String? filter) async {
     try {
-      List<Machine> machines = await ApiService().getAllMachines(search: null,filter :filter.toString());
-      // Debug print to check the fetched machines
+      List<Map<String, dynamic>> machines = await ApiService().getAllMachines(search: null, filter: filter.toString());
       print('Fetched machines: $machines');
       return machines;
     } catch (e) {
-      // Handle error
       print('Error fetching machines: $e');
       return [];
     }
@@ -69,6 +93,53 @@ class _AddClientState extends State<AddClient> {
     setState(() {
       fullPhoneNumber = phoneNumber;
     });
+  }
+
+  void _addAddressField() {
+    // Check if the last address field is not empty
+    if (addressControllers.last.text.isNotEmpty) {
+      setState(() {
+        addressControllers.add(TextEditingController());
+      });
+    } else {
+      showSnackBar(context, "Please fill the current address field before adding a new one.");
+    }
+  }
+
+  void _removeAddressField(int index) {
+    if (addressControllers.length > 1) {
+      setState(() {
+        addressControllers.removeAt(index);
+      });
+    }
+  }
+
+  void _addMachine(Map<String, dynamic> machine) {
+    if (machine != null && machine.containsKey('serial_no')) {
+      String serialNo = machine['serial_no'];
+
+      // Check if the serial number is not empty and not already in the set
+      if (serialNo.isNotEmpty && !assignedMachines.contains(serialNo)) {
+        setState(() {
+          assignedMachines.add(serialNo);
+        });
+        print('Added machine: $serialNo');
+      } else if (assignedMachines.contains(serialNo)) {
+        showSnackBar(context, "This machine is already assigned.");
+      }
+    }
+  }
+
+  void _removeMachine(String serialNo) {
+    setState(() {
+      assignedMachines.remove(serialNo);
+      if(widget.client != null){
+        // here i want to add tech me how to do it with existing code or may be if we need modificatoin then plesse let me knoe
+
+
+      }
+    });
+    print('Removed machine: $serialNo');
   }
 
   @override
@@ -84,6 +155,8 @@ class _AddClientState extends State<AddClient> {
         actions: <Widget>[
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10.0),
+
+
             child: IconButton(
               icon: Icon(Icons.person),
               onPressed: () {
@@ -94,107 +167,193 @@ class _AddClientState extends State<AddClient> {
           SizedBox(width: 7),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 36.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SizedBox(height: 20),
-              Center(
-                child: Text(
-                  widget.client != null ? "Edit Client :" : "Add New :",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24.0,
-                    color: colorMixGrad,
-                    fontWeight: FontWeight.w600,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 36.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 20),
+                Center(
+                  child: Text(
+                    widget.client != null ? "Edit Client :" : "Add New :",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24.0,
+                      color: colorMixGrad,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-              ),
-              SizedBox(height: 20),
-              buildFieldTitle("Name"),
-              SizedBox(height: 5),
-              NameInputTextField(controller: nameController),
-              SizedBox(height: 20),
-              buildFieldTitle("City"),
-              SizedBox(height: 5),
-              CityInputTextField(controller: cityController),
-              SizedBox(height: 20),
-              buildFieldTitle("Email"),
-              SizedBox(height: 5),
-              EmailInputTextField(controller: emailController),
-              SizedBox(height: 20),
-              buildFieldTitle("Phone"),
-              SizedBox(height: 5),
-              IntlPhoneInputTextField(
-                controller: phoneController,
-                onPhoneNumberChanged: _handlePhoneNumberChanged,
-              ),
-              SizedBox(height: 20),
-              SizedBox(height: 5),
-              buildFieldTitle("Assign Machines"),
-              SizedBox(height: 5),
-              SerialNoSpinner(
-                onChanged: (String? newSerialNo) {
-                  setState(() {
-                    if (newSerialNo != null && !assignedMachines.contains(newSerialNo)) {
-                      List<String> parts = newSerialNo.split(" - ");
-                      assignedMachines.add(parts[0]);
+                SizedBox(height: 20),
+                buildFieldTitle("Name"),
+                SizedBox(height: 5),
+                CustomTextField(
+                  controller: nameController,
+                  hintText: 'Name',
+                  fieldType: TextFieldType.name,
+                ),
+
+                SizedBox(height: 20),
+                buildFieldTitle("Email"),
+                SizedBox(height: 5),
+                CustomTextField(
+                  controller: emailController,
+                  hintText: 'Email',
+                  fieldType: TextFieldType.email,
+                ),
+                const SizedBox(height: 20),
+                buildFieldTitle("Phone"),
+                SizedBox(height: 5),
+                CustomTextField(
+                  controller: phoneController,
+                  hintText: 'Phone number',
+                  fieldType: TextFieldType.intlPhone,
+                  // Optional custom validator for phone numbers
+                  phoneValidator: (phoneNumber) {
+                    if (phoneNumber == null || phoneNumber.number.isEmpty) {
+                      return 'Phone number is required';
                     }
-                  });
-                },
-                machines: machineFuture, // Pass the future of the machines list
-              ),
-              SizedBox(height: 20),
-              buildFieldTitle("Assigned Machines"),
-              SizedBox(height: 5),
-              ...assignedMachines.map((machine) => ListTile(
-                title: Text(machine),
-                trailing: IconButton(
-                  icon: Icon(Icons.remove_circle),
-                  onPressed: () {
+                    if (phoneNumber.number.length < 10) {
+                      return 'Please enter a valid phone number';
+                    }
+                    return null;
+                  },
+                  onChanged: _handlePhoneNumberChanged,
+                ),
+                SizedBox(height: 20),
+                buildFieldTitle("Assign Machines"),
+                SizedBox(height: 5),
+                FutureBuilder<List<Map<String, dynamic>>>(
+                  future: machineFuture,
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return SizedBox(
+                        height: 40, // Adjust height to match the spinner
+                        width: double.infinity, // Match the spinner width
+                        child: Center(
+                          child: SizedBox(
+                            height: 24, // Smaller loader size
+                            width: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        ),
+                      );
+                    } else if (snapshot.hasError) {
+                      return Text('Error: ${snapshot.error}');
+                    } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                      return Text('No machines available');
+                    } else {
+                      return MasterSpinner(
+                        dataFuture: machineFuture,
+                        displayKey: 'serial_no',
+                        onChanged: (selectedItem) {
+                          setState(() {
+                            selectedMachine = selectedItem;
+                            if (selectedItem != null) {
+                              _addMachine(selectedItem);
+                            }
+                          });
+                        },
+                        searchHint: 'Search serial number...',
+                        borderColor: colorMixGrad,
+                      );
+                    }
+                  },
+                ),
+                SizedBox(height: 20),
+                buildFieldTitle("Assigned Machines"),
+                SizedBox(height: 5),
+                assignedMachines.isEmpty
+                    ? Text("No machines assigned yet", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))
+                    : Column(
+                  children: assignedMachines.map((machine) => ListTile(
+                    title: Text(machine),
+                    trailing: IconButton(
+                      icon: Icon(Icons.remove_circle, color: Colors.red),
+                      onPressed: () {
+                        _removeMachine(machine);
+                      },
+                    ),
+                  )).toList(),
+                ),
+
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    buildFieldTitle("Full Address (Warehouse)"),
+                    IconButton(
+                      icon: Icon(Icons.add_circle, color: colorMixGrad),
+                      onPressed: _addAddressField,
+                      tooltip: "Add another address",
+                    ),
+                  ],
+                ),
+                SizedBox(height: 5),
+                ...List.generate(addressControllers.length, (index) =>
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 10.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: CustomTextField(
+                              controller: addressControllers[index],
+                              hintText: 'Address ${index + 1}',
+                              fieldType: TextFieldType.address,
+                              maxLines: 3,
+                            ),
+                          ),
+                          if (addressControllers.length > 1)
+                            IconButton(
+                              icon: Icon(Icons.remove_circle, color: Colors.red),
+                              onPressed: () => _removeAddressField(index),
+                            ),
+                        ],
+                      ),
+                    ),
+                ),
+                SizedBox(height: 20),
+                buildFieldTitle("Contact Name"),
+                SizedBox(height: 5),
+                CustomTextField(
+                  controller: contactPersonController,
+                  hintText: 'Contact Name',
+                  fieldType: TextFieldType.name,
+                  isOptional: true,
+                ),
+                SizedBox(height: 20),
+                CheckBoxRow(
+                  activeChecked: activeChecked,
+                  onActiveChanged: (bool? value) {
                     setState(() {
-                      assignedMachines.remove(machine);
+                      activeChecked = value ?? false;
                     });
                   },
                 ),
-              )),
-              SizedBox(height: 20),
-              buildFieldTitle("Address"),
-              SizedBox(height: 5),
-              AddressInputTextField(controller: addressController),
-              SizedBox(height: 20),
-              buildFieldTitle("Contact Name"),
-              SizedBox(height: 5),
-              ContactPersonInputTextField(controller: contactPersonController),
-
-              SizedBox(height: 20),
-              CheckBoxRow(
-                activeChecked: activeChecked,
-                onActiveChanged: (bool? value) {
-                  setState(() {
-                    activeChecked = value ?? false;
-                  });
-                },
-              ),
-              SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
-                child: GradientButton(
-                  gradientColors: [colorFirstGrad, colorSecondGrad],
-                  height: 45.0,
-                  width: double.infinity,
-                  radius: 25.0,
-                  buttonText: "Submit",
-                  onPressed: () {
-                    validate();
-                  },
+                SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.only(left: 50, right: 50, top: 50),
+                  child: GradientButton(
+                    gradientColors: [colorFirstGrad, colorSecondGrad],
+                    height: 45.0,
+                    width: double.infinity,
+                    radius: 25.0,
+                    buttonText: "Submit",
+                    onPressed: () {
+                      if (_formKey.currentState!.validate()) {
+                        validate();
+                      }
+                    },
+                  ),
                 ),
-              ),
-              SizedBox(height: 100),
-            ],
+                SizedBox(height: 100),
+              ],
+            ),
           ),
         ),
       ),
@@ -212,7 +371,7 @@ class _AddClientState extends State<AddClient> {
   }
 
   bool isValidPhoneNumber(String phone) {
-    final phoneRegExp = RegExp(r'^[0-9]{7,15}$'); // Example: valid phone numbers with 7 to 15 digits
+    final phoneRegExp = RegExp(r'^[0-9]{7,15}$');
     return phoneRegExp.hasMatch(phone);
   }
 
@@ -223,50 +382,16 @@ class _AddClientState extends State<AddClient> {
     return emailRegExp.hasMatch(email);
   }
 
-  bool isValidPhone(String phone) {
-    final phoneRegExp = RegExp(
-      r'^\d{10}$',
-    );
-    return phoneRegExp.hasMatch(phone);
-  }
-
-  void validate(){
-    if (nameController.text.isEmpty) {
-      showSnackBar(context, "Full name is required.");
-      return;
-    }
-
-    if (cityController.text.isEmpty) {
-      showSnackBar(context, "City is required.");
-      return;
-    }
-
-    if (emailController.text.isEmpty) {
-      showSnackBar(context, "Email is required.");
-      return;
-    }
-
-    if (!isValidEmail(emailController.text)) {
-      showSnackBar(context, "Please enter a valid email address.");
-      return;
-    }
-
-    if (phoneController.text.isEmpty) {
-      showSnackBar(context, "Phone is required.");
-      return;
-    }
-
-    if (!isValidPhoneNumber(phoneController.text)) {
-      showSnackBar(context, "Please enter a valid phone number.");
-      return;
-    }
-
-    if (addressController.text.isEmpty) {
-      showSnackBar(context, "Address is required.");
-      return;
-    }
+  void validate() {
     if (assignedMachines.isEmpty) {
       showSnackBar(context, "Add some machines to Client.");
+      return;
+    }
+
+    // Check if all address fields are filled
+    bool allAddressesFilled = addressControllers.every((controller) => controller.text.isNotEmpty);
+    if (!allAddressesFilled) {
+      showSnackBar(context, "Please fill all address fields or remove empty ones.");
       return;
     }
 
@@ -278,10 +403,9 @@ class _AddClientState extends State<AddClient> {
         );
       },
     );
-
   }
-  Future<void> validateAndCreateClient() async {
 
+  Future<void> validateAndCreateClient() async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -293,18 +417,24 @@ class _AddClientState extends State<AddClient> {
     try {
       final ApiService apiService = ApiService();
 
+      // Prepare the address as a JSON string
+      List<String> addresses = addressControllers.map((controller) => controller.text).toList();
+      String addressJson = json.encode(addresses);
+
+      // Convert Set to List and join with commas
+      String machinesList = assignedMachines.join(',');
+
       if (widget.client != null) {
         // Update existing client
         final updateClientResponse = await apiService.updateClient(
-          id: widget.client!.id.toString(),
-          name: nameController.text,
-          city: cityController.text,
-          email: emailController.text,
-          phone: fullPhoneNumber.toString(),
-          address: addressController.text,
-          isActive: activeChecked ? '0' : '1',
-          contactPerson: contactPersonController.text,
-            machines: assignedMachines.join(', ')
+            id: widget.client!['id'].toString(),
+            name: nameController.text,
+            email: emailController.text,
+            phone: fullPhoneNumber.toString(),
+            address: addressJson,
+            isActive: activeChecked ? '1' : '0',
+            contactPerson: contactPersonController.text,
+            machines: machinesList
         );
 
         Navigator.of(context).pop();
@@ -312,7 +442,7 @@ class _AddClientState extends State<AddClient> {
         if (updateClientResponse.containsKey('error') && updateClientResponse.containsKey('status')) {
           if (!updateClientResponse['error'] && updateClientResponse['status'] == 200) {
             if (updateClientResponse['message'] == 'Success') {
-              Navigator.pop(context,true);
+              Navigator.pop(context, true);
             } else {
               showSnackBar(context, updateClientResponse['message']);
             }
@@ -325,14 +455,14 @@ class _AddClientState extends State<AddClient> {
       } else {
         // Create new client
         final addClientResponse = await apiService.addClient(
-          name: nameController.text,
-          city: cityController.text,
-          email: emailController.text,
-          phone: fullPhoneNumber.toString(),
-          address: addressController.text,
-          isActive: activeChecked ? '0' : '1',
-          contactPerson: contactPersonController.text,
-            machines: assignedMachines.join(', ')
+            name: nameController.text,
+            city: cityController.text,
+            email: emailController.text,
+            phone: fullPhoneNumber.toString(),
+            address: addressJson,
+            isActive: activeChecked ? '1' : '0',
+            contactPerson: contactPersonController.text,
+            machines: machinesList
         );
 
         Navigator.of(context).pop();
@@ -344,9 +474,9 @@ class _AddClientState extends State<AddClient> {
               cityController.clear();
               emailController.clear();
               phoneController.clear();
-              addressController.clear();
+              addressControllers.forEach((controller) => controller.clear());
               contactPersonController.clear();
-              Navigator.pop(context,true);
+              Navigator.pop(context, true);
             } else {
               showSnackBar(context, addClientResponse['message']);
             }
@@ -363,404 +493,17 @@ class _AddClientState extends State<AddClient> {
     }
   }
 
-}
-
-class ConfirmSubmitDialog extends StatelessWidget {
-  final VoidCallback onConfirm;
-
-  const ConfirmSubmitDialog({Key? key, required this.onConfirm}) : super(key: key);
-
   @override
-  Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10.0),
-      ),
-      elevation: 0,
-      backgroundColor: Colors.transparent,
-      child: contentBox(context),
-    );
-  }
-
-  Widget contentBox(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10.0),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            offset: const Offset(0, 4),
-            blurRadius: 8.0,
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          const Padding(
-            padding: EdgeInsets.all(15.0),
-            child: Text(
-              'Confirm Submit',
-              style: TextStyle(
-                fontSize: 18.0,
-                fontWeight: FontWeight.bold,
-                color: colorMixGrad,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const Divider(
-            color: Colors.grey,
-            height: 0.5,
-          ),
-          const SizedBox(height: 8.0),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.0),
-            child: Text(
-              'Are you sure you want to submit?',
-              style: TextStyle(
-                fontSize: 16.0,
-                color: Colors.black,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ),
-          const SizedBox(height: 14.0),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: <Widget>[
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                },
-                child: const Text(
-                  'Cancel',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 16.0,
-                  ),
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close the dialog
-                  onConfirm(); // Call the callback to submit
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: colorMixGrad,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 24.0),
-                ),
-                child: const Text(
-                  'Confirm',
-                  style: TextStyle(
-                    fontSize: 16.0,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16.0),
-        ],
-      ),
-    );
-  }
-}
-
-class NameInputTextField extends StatefulWidget {
-  final TextEditingController controller;
-
-  const NameInputTextField({Key? key, required this.controller})
-      : super(key: key);
-
-  @override
-  _NameInputTextFieldState createState() => _NameInputTextFieldState();
-}
-
-class _NameInputTextFieldState extends State<NameInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      maxLength: 30,
-      keyboardType: TextInputType.text,
-      controller: widget.controller,
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')), // Allow only letters
-      ],
-      decoration: InputDecoration(
-        hintText: 'Name',
-        counterText: '',
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class CityInputTextField extends StatefulWidget {
-  final TextEditingController controller;
-
-  const CityInputTextField({Key? key, required this.controller})
-      : super(key: key);
-
-  @override
-  _CityInputTextFieldState createState() => _CityInputTextFieldState();
-}
-
-class _CityInputTextFieldState extends State<CityInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      keyboardType: TextInputType.emailAddress,
-      maxLength: 25,
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z ]')), // Allow only letters
-      ],
-      decoration: InputDecoration(
-        hintText: 'City',
-        counterText: '',
-
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class EmailInputTextField extends StatefulWidget {
-  final TextEditingController controller;
-
-  const EmailInputTextField({Key? key, required this.controller})
-      : super(key: key);
-
-  @override
-  _EmailInputTextFieldState createState() => _EmailInputTextFieldState();
-}
-
-class _EmailInputTextFieldState extends State<EmailInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      maxLength: 50,
-      keyboardType: TextInputType.emailAddress,
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // Allow only email characters
-      ],
-      decoration: InputDecoration(
-        hintText: 'Email',
-        counterText: '',
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-
-
-class AddressInputTextField extends StatefulWidget {
-  final TextEditingController controller;
-
-  const AddressInputTextField({Key? key, required this.controller})
-      : super(key: key);
-
-  @override
-  _AddressInputTextFieldState createState() => _AddressInputTextFieldState();
-}
-
-class _AddressInputTextFieldState extends State<AddressInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      keyboardType: TextInputType.multiline,
-      maxLines: 3,
-      maxLength: 100,
-      // Allows unlimited lines of text input
-
-      decoration: InputDecoration(
-        counterText: '',
-        hintText: 'Address',
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class ContactPersonInputTextField extends StatefulWidget {
-  final TextEditingController controller;
-
-  const ContactPersonInputTextField({Key? key, required this.controller})
-      : super(key: key);
-
-  @override
-  _ContactPersonInputTextFieldState createState() =>
-      _ContactPersonInputTextFieldState();
-}
-
-class _ContactPersonInputTextFieldState
-    extends State<ContactPersonInputTextField> {
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      maxLength: 45,
-      keyboardType: TextInputType.emailAddress,
-      decoration: InputDecoration(
-        hintText: 'Contact name (optional)',
-        counterText: '',
-        // Changed hintText to 'Email'
-        hintStyle: TextStyle(color: Colors.grey),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-        ),
-
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10.0),
-          borderSide:
-              BorderSide(color: colorMixGrad), // Border color when focused
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 12.0, horizontal: 16.0),
-      ),
-      style: TextStyle(
-        fontSize: 16.0,
-        color: Colors.black,
-      ),
-    );
-  }
-}
-
-class CheckBoxRow extends StatelessWidget {
-  final bool activeChecked;
-  final ValueChanged<bool?> onActiveChanged;
-
-  const CheckBoxRow({
-    required this.activeChecked,
-    required this.onActiveChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      SizedBox(height: 10),
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Active Status:',
-            textAlign: TextAlign.center,
-          ),
-          SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              CustomRadio(
-                value: true,
-                groupValue: activeChecked,
-                onChanged: onActiveChanged,
-                activeColor: colorMixGrad,
-              ),
-              const Text('Active'),
-              SizedBox(width: 20),
-              CustomRadio(
-                value: false,
-                groupValue: activeChecked,
-                onChanged: onActiveChanged,
-                activeColor: colorMixGrad,
-              ),
-              const Text('Inactive'),
-            ],
-          ),
-        ],
-      ),
-
-    ]);
-  }
-}
-class CustomRadio extends StatelessWidget {
-  final bool value;
-  final bool? groupValue;
-  final ValueChanged<bool?>? onChanged;
-  final Color activeColor;
-
-  const CustomRadio({
-    required this.value,
-    required this.groupValue,
-    required this.onChanged,
-    required this.activeColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Radio(
-      value: value,
-      groupValue: groupValue,
-      onChanged: onChanged,
-      activeColor: activeColor,
-    );
+  void dispose() {
+    // Clean up the controllers
+    nameController.dispose();
+    cityController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    for (var controller in addressControllers) {
+      controller.dispose();
+    }
+    contactPersonController.dispose();
+    super.dispose();
   }
 }

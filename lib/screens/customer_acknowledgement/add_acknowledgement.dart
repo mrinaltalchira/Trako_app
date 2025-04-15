@@ -4,6 +4,8 @@ import '../../color/colors.dart';
 import '../../globals.dart';
 import '../../model/supply_fields_data.dart';
 import '../../network/ApiService.dart';
+import '../../utils/popup_radio_checkbox.dart';
+import '../../utils/scanner.dart';
 import '../add_toner/utils.dart';
 import '../supply_chian/supplychain.dart';
 
@@ -18,7 +20,6 @@ class AddAcknowledgement extends StatefulWidget {
 
 class _AddAcknowledgementState extends State<AddAcknowledgement> {
   final ApiService _apiService = ApiService();
-  DispatchReceive? _selectedDispatchReceive = DispatchReceive.receive; // Default to receive
   List<String> scannedCodes = [];
   String? selectedClientName;
   String? selectedCityName;

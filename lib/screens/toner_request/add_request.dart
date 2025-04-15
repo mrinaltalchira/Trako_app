@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import '../../color/colors.dart';
 import '../../globals.dart';
 import '../../model/all_machine.dart';
+import '../../utils/spnners.dart';
 import '../add_toner/utils.dart'; // Adjust the import as needed
 
 class RequestToner extends StatefulWidget {
@@ -18,14 +19,15 @@ class _RequestTonerState extends State<RequestToner> {
   int quantity = 1;
   final TextEditingController _counterController = TextEditingController();
   String? _selectedColor;
-  late Future<List<Machine>> machineFuture;
+  late Future<List<Map<String, dynamic>>> machineFuture;
   List<TonerRequestModel> _cart = [];
   String? selected_serial_no;
   bool _isLoading = false;
   late Future<TonerColors?> tonerColorFuture = getTonerColor("");
-  Future<List<Machine>> getMachineList(String? filter) async {
+
+  Future<List<Map<String, dynamic>>> getMachineList(String? filter) async {
     try {
-      List<Machine> machines = await ApiService().getAllMachines(search: null,filter :filter.toString());
+      List<Map<String, dynamic>> machines = await ApiService().getAllMachines(search: null,filter :filter.toString());
       // Debug print to check the fetched machines
       print('Fetched machines: $machines');
       return machines;
@@ -349,17 +351,23 @@ class _RequestTonerState extends State<RequestToner> {
 
               // Machine Model No
               _buildSectionTitle('Select Serial no.'),
-          SerialNoSpinner(
-            onChanged: (String? newSerialNo) {
+
+          MasterSpinner(
+            dataFuture: machineFuture,
+            displayKey: 'serial_no',
+            onChanged: (selectedItem) {
               setState(() {
-                if (newSerialNo != null ) {
-                  List<String> parts = newSerialNo.split(" - ");
+                if (selectedItem != null ) {
+                  List<String> parts = selectedItem["model_no"].split(" - ");
                   selected_serial_no = parts[0];
                   tonerColorFuture = getTonerColor(selected_serial_no.toString());
                 }
+
               });
+              print('Selected machine: $selectedItem');
             },
-            machines: machineFuture, // Pass the future of the machines list
+            searchHint: 'Search serial number...',
+            borderColor: colorMixGrad,
           ),
               SizedBox(height: 24.0),
 

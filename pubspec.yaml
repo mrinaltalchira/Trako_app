@@ -33,8 +33,7 @@ dependencies:
   intl_phone_field: ^3.0.1
   pinput: ^3.0.0
   cupertino_icons: ^1.0.6
-  fluttertoast: ^8.0.8
-  mobile_scanner: ^5.2.1
+  mobile_scanner: ^6.0.7
   fl_chart: ^0.65.0
   intl: ^0.17.0
   build_runner: ^2.1.0
@@ -43,6 +42,8 @@ dependencies:
   freezed_annotation: ^2.0.0
   json_annotation: ^4.3.0
   dio: ^5.1.1
+  flutter_slidable: ^4.0.0
+  permission_handler: ^11.4.0
 
 dev_dependencies:
   flutter_test:

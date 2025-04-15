@@ -102,7 +102,7 @@ class _SupplyChainState extends State<SupplyChain> {
                             await Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const AddToner(),
+                                builder: (context) => const AddSupply(),
                               ),
                             );
                             refreshSupplyList();
@@ -407,21 +407,40 @@ class _SupplyChainListState extends State<SupplyChainList> with SingleTickerProv
   }
 
   CardStatus _getCardStatus(Supply item) {
-    if (item.dispatchReceive == "0") {
-      if (item.isAcknowledged == "1") {
-        return CardStatus(
-          label: 'Acknowledged',
-          color: Colors.orange[400] ?? Colors.orange,
-        );
-      }
-      return CardStatus(
+    final dispatch = item.dispatch ?? '0';
+    final isAcknowledged = item.isAcknowledged ?? '0';
+    final receive = item.isReceived ?? '0';
+    final receiveType = item.receiveType ?? '0';
+
+    if (dispatch == "1" && receive == "0") {
+      return isAcknowledged == "1"
+          ? CardStatus(
+        label: 'Acknowledged',
+        color: Colors.orange[400] ?? Colors.orange,
+      )
+          : CardStatus(
         label: 'Dispatched',
         color: Colors.red,
       );
     }
+
+    if (receive == "1") {
+      if (receiveType == "2") {
+        return CardStatus(
+          label: 'Damaged',
+          color: Colors.grey,
+        );
+      }
+      return CardStatus(
+        label: 'Received',
+        color: Colors.green[400] ?? Colors.green,
+      );
+    }
+
+    // Fallback for unexpected cases
     return CardStatus(
-      label: 'Received',
-      color: Colors.green[400] ?? Colors.green,
+      label: 'Unknown',
+      color: Colors.grey,
     );
   }
 
@@ -474,94 +493,7 @@ class CardStatus {
   });
 }
 
-class QRViewTracesci extends StatefulWidget {
-  const QRViewTracesci({Key? key}) : super(key: key);
 
-  @override
-  State<StatefulWidget> createState() => _QRViewTracesciState();
-}
-
-class _QRViewTracesciState extends State<QRViewTracesci> {
-  String? result;
-  bool flashOn = false;
-  MobileScannerController cameraController = MobileScannerController();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(right: 50),
-                alignment: Alignment.center,
-                child: Image.asset(
-                  'assets/images/ic_trako.png',
-                  fit: BoxFit.contain,
-                  height: 30,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-      body: Stack(
-        children: [
-          Column(
-            children: <Widget>[
-              Expanded(
-                flex: 4,
-                child: MobileScanner(
-                  controller: cameraController,
-                  onDetect: (BarcodeCapture barcodeCapture) {
-                    final List<Barcode> barcodes = barcodeCapture.barcodes;
-                    if (barcodes.isNotEmpty) {
-                      if (result == null) {
-                        setState(() {
-                          result = barcodes.first.rawValue;
-                        });
-                        _navigateToAddToner();
-                      }
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-          Align(
-            alignment: Alignment.bottomRight,
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: FloatingActionButton(
-                onPressed: () async {
-                  await cameraController.toggleTorch();
-                  setState(() {
-                    flashOn = !flashOn;
-                  });
-                },
-                child: Icon(flashOn ? Icons.flash_on : Icons.flash_off),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _navigateToAddToner() {
-    if (result != null) {
-      Navigator.pop(context, result);
-    }
-  }
-
-  @override
-  void dispose() {
-    cameraController.dispose();
-    super.dispose();
-  }
-}
 
 
 class CustomSearchField extends StatefulWidget {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../color/colors.dart';
 import '../../globals.dart';
+import '../../utils/global_textfields.dart';
 import '../home/client/add_client.dart';
 
 class ForgotPass extends StatefulWidget {
@@ -82,7 +83,11 @@ class _ForgotPassState extends State<ForgotPass> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          EmailInputTextField(controller: emailController),
+                          CustomTextField(
+                            controller: emailController,
+                            hintText: 'Email',
+                            fieldType: TextFieldType.email,
+                          ),
                           SizedBox(height: 20),
                           SizedBox(
                             child: GradientButton(

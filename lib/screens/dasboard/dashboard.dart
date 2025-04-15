@@ -293,8 +293,8 @@
 import 'package:Trako/color/colors.dart';
 import 'package:Trako/model/dashboard.dart';
 import 'package:Trako/network/ApiService.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:intl/intl.dart';
 
 class CategoriesDashboard extends StatefulWidget {
@@ -572,53 +572,83 @@ class AnalyticsChart extends StatelessWidget {
             const SizedBox(height: 24),
             SizedBox(
               height: 300,
-              child: SfCartesianChart(
-                plotAreaBorderWidth: 0,
-                primaryXAxis: CategoryAxis(
-                  majorGridLines: const MajorGridLines(width: 0),
-                  labelStyle: const TextStyle(fontWeight: FontWeight.w500),
-                ),
-                primaryYAxis: NumericAxis(
-                  majorGridLines: MajorGridLines(
-                    width: 1,
-                    color: Colors.grey[200],
+              child: LineChart(
+                LineChartData(
+                  gridData: FlGridData(
+                    show: true,
+                    drawVerticalLine: false,
+                    getDrawingHorizontalLine: (value) => FlLine(
+                      color: Colors.grey[200]!,
+                      strokeWidth: 1,
+                    ),
                   ),
-                  axisLine: const AxisLine(width: 0),
+                  titlesData: FlTitlesData(
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 40,
+                        getTitlesWidget: (value, meta) => Text(
+                          value.toInt().toString(),
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        getTitlesWidget: (value, meta) => Text(
+                          graphData[value.toInt()].month,
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ),
+                  ),
+                  borderData: FlBorderData(show: false),
+                  lineBarsData: _getChartSeries(graphData),
                 ),
-                legend: Legend(isVisible: false),
-                tooltipBehavior: TooltipBehavior(enable: true),
-                series: _getChartSeries(graphData),
               ),
             ),
+
           ],
         ),
       ),
     );
   }
-
-  List<ChartSeries> _getChartSeries(List<GraphData> data) {
+  List<LineChartBarData> _getChartSeries(List<GraphData> data) {
     return [
-      SplineSeries<GraphData, String>(
-        dataSource: data,
-        xValueMapper: (data, _) => data.month,
-        yValueMapper: (data, _) => parseValueSafely(data.receive),
-        name: 'Receive',
+      LineChartBarData(
+        spots: data
+            .asMap()
+            .entries
+            .map((e) => FlSpot(e.key.toDouble(), parseValueSafely(e.value.receive)))
+            .toList(),
+        isCurved: true,
         color: const Color(0xFF1E88E5),
-        width: 3,
-        markerSettings: const MarkerSettings(isVisible: true),
+        barWidth: 3,
+        isStrokeCapRound: true,
+        belowBarData: BarAreaData(show: false),
+        dotData: FlDotData(show: true),
       ),
-      SplineSeries<GraphData, String>(
-        dataSource: data,
-        xValueMapper: (data, _) => data.month,
-        yValueMapper: (data, _) => parseValueSafely(data.dispatch),
-        name: 'Dispatch',
+      LineChartBarData(
+        spots: data
+            .asMap()
+            .entries
+            .map((e) => FlSpot(e.key.toDouble(), parseValueSafely(e.value.dispatch)))
+            .toList(),
+        isCurved: true,
         color: const Color(0xFFE91E63),
-        width: 3,
-        markerSettings: const MarkerSettings(isVisible: true),
+        barWidth: 3,
+        isStrokeCapRound: true,
+        belowBarData: BarAreaData(show: false),
+        dotData: FlDotData(show: true),
       ),
     ];
   }
-}
+
+  double parseValueSafely(dynamic value) {
+    return value != null ? double.tryParse(value.toString()) ?? 0.0 : 0.0;
+  }
+ }
 
 class ChartLegend extends StatelessWidget {
   const ChartLegend({Key? key}) : super(key: key);

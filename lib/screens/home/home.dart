@@ -5,13 +5,14 @@ import 'package:Trako/globals.dart';
 import 'package:Trako/pref_manager.dart';
 import 'package:Trako/screens/dasboard/dashboard.dart';
 import 'package:Trako/screens/home/client/client.dart';
-import 'package:Trako/screens/products/machine.dart';
+import 'package:Trako/screens/products/machine_serial_module.dart';
 import 'package:Trako/screens/reports/reports.dart';
 import 'package:Trako/screens/supply_chian/supplychain.dart';
 import 'package:Trako/screens/users/users.dart';
 
 import '../authFlow/signin.dart';
 import '../customer_acknowledgement/client_acknowledgement.dart';
+import '../products/machine_model_module.dart';
 import '../toner_request/toner_request.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -55,9 +56,10 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           children: <Widget>[
             const CategoriesDashboard(),
-            const ClientModule(),
             SupplyChain(),
-            MachineModule(),
+            MachineModelModule(),
+            MachineSerialModule(),
+            const ClientModule(),
             Acknowledgement(),
             TonerRequest(),
             MyReportScreen(),
@@ -181,47 +183,54 @@ class _HomeScreenState extends State<HomeScreen> {
                     text: 'Dashboard',
                     index: 0,
                   ),
-                  if (showClientItem)
-                    _buildDrawerItem(
-                      icon: Icons.person,
-                      text: 'Clients',
-                      index: 1,
-                    ),
+
                   if(supplyChainItem)
                   _buildDrawerItem(
                     icon: Icons.account_tree_outlined,
                     text: 'Supply Chain',
-                    index: 2,
+                    index: 1,
                   ),
                   if (showMachinesItem)
                     _buildDrawerItem(
                       icon: Icons.add_business,
-                      text: 'Machines',
+                      text: 'Machines Models',
+                      index: 2,
+                    ),
+                  if (showMachinesItem)
+                    _buildDrawerItem(
+                      icon: Icons.model_training,
+                      text: 'Machines Serials ',
                       index: 3,
+                    ),
+                  if (showClientItem)
+                    _buildDrawerItem(
+                      icon: Icons.person,
+                      text: 'Clients',
+                      index: 4,
                     ),
                   if (acknowledgeItem)
                     _buildDrawerItem(
                       icon: Icons.quick_contacts_mail_outlined,
                       text: 'Acknowledgement',
-                      index: 4,
+                      index: 5,
                     ),
                   if (tonerRequestItem)
                   _buildDrawerItem(
                       icon: Icons.voicemail,
                       text: 'Toner Request',
-                      index: 5,
+                      index: 6,
                     ),
 
                  if (isUserAdmin == "Admin" || isUserAdmin == "admin") _buildDrawerItem(
                     icon: Icons.report,
                     text: 'Reports',
-                    index: 6,
+                    index: 7,
                   ),
                   if (showUserItem)
                     _buildDrawerItem(
                       icon: Icons.add,
                       text: 'Users',
-                      index: 7,
+                      index: 8,
                     ),
                   ListTile(
                     leading: const Icon(Icons.exit_to_app, color: Colors.white),

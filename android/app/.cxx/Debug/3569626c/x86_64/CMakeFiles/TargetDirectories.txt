@@ -1,0 +1,2 @@
+/Users/Tracesci/Documents/GitHub/ApplicationProject/Trako_app/android/app/.cxx/Debug/3569626c/x86_64/CMakeFiles/edit_cache.dir
+/Users/Tracesci/Documents/GitHub/ApplicationProject/Trako_app/android/app/.cxx/Debug/3569626c/x86_64/CMakeFiles/rebuild_cache.dir

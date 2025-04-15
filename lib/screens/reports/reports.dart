@@ -12,6 +12,7 @@ import 'package:Trako/network/ApiService.dart';
 
 import '../../model/all_clients.dart';
 import '../../pref_manager.dart';
+import '../../utils/spnners.dart';
 import '../add_toner/utils.dart';
 
 
@@ -33,9 +34,10 @@ class _MyReportScreenState extends State<MyReportScreen> {
   String? selectedClientId;
   late DateTime _selectedFromDate;
   late DateTime _selectedToDate;
-  Client? _selectedClient;
+  Map<String, dynamic>? _selectedClient;
   String? isUserAdmin;
   String? adminName;
+  late Future<List<Map<String, dynamic>>> clientsFuture;
 
 
   void _initializeHideDispatchFields() async {
@@ -69,9 +71,9 @@ class _MyReportScreenState extends State<MyReportScreen> {
     }
   }
 
-  Future<List<Client>> getClientsList(String? filter) async {
+  Future<List<Map<String, dynamic>>> getClientsList(String? filter) async {
     try {
-      List<Client> clients = await _apiService.getAllClients(search:null);
+      List<Map<String, dynamic>> clients = await _apiService.getAllClients(search:null);
       // Debug print to check the fetched clients
       print('Fetched clients: $clients');
       return clients;
@@ -82,15 +84,6 @@ class _MyReportScreenState extends State<MyReportScreen> {
     }
   }
 
-  void _onClientChanged(Client? client){
-    if (client != null) {
-      setState(() {
-        _selectedClient = client;
-        selectedClientId = client.id.toString();
-        selectedClientName = client.name.toString();
-      });
-    }
-  }
 
 
 
@@ -99,6 +92,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
     super.initState();
     _selectedFromDate = DateTime.now();
     _selectedToDate = DateTime.now();
+    clientsFuture = getClientsList('');
     _initializeHideDispatchFields();
     fetchSpinnerData();
   }
@@ -173,9 +167,23 @@ class _MyReportScreenState extends State<MyReportScreen> {
               ),
             ),
             SizedBox(height: 5),
-            if (isUserAdmin == "Admin") ClientNameSpinner(
-              fetchClients: getClientsList,
-              onChanged: _onClientChanged,
+            if (isUserAdmin == "Admin") MasterSpinner(
+              dataFuture: clientsFuture,
+              displayKey: 'name',
+              onChanged: (selectedItem) {
+                if (selectedItem != null) {
+
+                    setState(() {
+                      _selectedClient = selectedItem;
+                      selectedClientId = selectedItem['id'].toString();
+                      selectedClientName = selectedItem['name'].toString();
+                    });
+
+                }
+                print('Selected client name: $selectedItem');
+              },
+              searchHint: 'Search client name...',
+              borderColor: colorMixGrad,
             ),
             const SizedBox(height: 15),
             DatePickerRow(

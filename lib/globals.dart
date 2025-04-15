@@ -243,14 +243,7 @@ class _NoDataFoundWidgetState extends State<NoDataFoundWidget> {
                 ? const CircularProgressIndicator()
                 : SizedBox(
               width: screenWidth * 0.4, // Responsive button width
-              child: GradientButton(
-                gradientColors: const [colorMixGrad, colorMixGrad],
-                height: 45.0,
-                width: 10.0,
-                radius: 25.0,
-                buttonText: "Try Again",
-                onPressed: _handleRefresh,
-              ),
+
             ),
           ],
         ),
@@ -258,28 +251,10 @@ class _NoDataFoundWidgetState extends State<NoDataFoundWidget> {
     );
   }
 
-  Future<void> _handleRefresh() async {
-    setState(() {
-      _isLoading = true;
-    });
-    print("Loading started");
-    try {
-      await widget.onRefresh();
-      print("API called");
-    } catch (e) {
-      print("Error: $e");
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        print("Loading finished");
-      }
-    }
-  }
+
 }
 
-class ConfirmSubmitDialog extends StatelessWidget {
+/*class ConfirmSubmitDialog extends StatelessWidget {
   final VoidCallback onConfirm;
 
   const ConfirmSubmitDialog({Key? key, required this.onConfirm})
@@ -387,4 +362,4 @@ class ConfirmSubmitDialog extends StatelessWidget {
       ),
     );
   }
-}
+}*/

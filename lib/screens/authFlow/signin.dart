@@ -5,6 +5,7 @@ import 'package:Trako/pref_manager.dart';
 import 'package:Trako/screens/authFlow/utils.dart';
 import '../../color/colors.dart';
 import '../../globals.dart';
+import '../../utils/global_textfields.dart';
 import '../home/home.dart';
 
 class AuthProcess extends StatefulWidget {
@@ -99,13 +100,27 @@ class _AuthProcessState extends State<AuthProcess> {
                   ],
                 ),
                 isPhoneInput
-                    ? IntlPhoneInputTextField(
-                        controller: phoneController,
-                  onPhoneNumberChanged: _handlePhoneNumberChanged,
-                      )
-                    : EmailInputTextField(
-                        controller: emailController,
-                      ),
+                    ? CustomTextField(
+                  controller: phoneController,
+                  hintText: 'Phone number',
+                  fieldType: TextFieldType.intlPhone,
+                  // Optional custom validator for phone numbers
+                  phoneValidator: (phoneNumber) {
+                    if (phoneNumber == null || phoneNumber.number.isEmpty) {
+                      return 'Phone number is required';
+                    }
+                    if (phoneNumber.number.length < 10) {
+                      return 'Please enter a valid phone number';
+                    }
+                    return null;
+                  },
+                  onChanged: _handlePhoneNumberChanged,
+                )
+                    :  CustomTextField(
+                  controller: emailController,
+                  hintText: 'Email',
+                  fieldType: TextFieldType.email,
+                ),
                 // Dynamic widget, removed const
                 SizedBox(height: 10),
                 // Removed const from SizedBox
@@ -137,8 +152,10 @@ class _AuthProcessState extends State<AuthProcess> {
                     SizedBox(height: 5), // Removed const from SizedBox
                   ],
                 ),
-                PasswordInputTextField(
+                CustomTextField(
                   controller: passwordController,
+                  hintText: 'Password',
+                  fieldType: TextFieldType.password,
                 ),
                 SizedBox(height: 60),
                 // Removed const from SizedBox

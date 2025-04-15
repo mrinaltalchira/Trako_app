@@ -1,4 +1,5 @@
 import 'package:Trako/screens/authFlow/forgetPass.dart';
+import 'package:Trako/utils/scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:Trako/app_data.dart';
@@ -88,7 +89,7 @@ class MyApp extends StatelessWidget {
             '/add_client': (context) => AddClient(),
             '/add_machine': (context) => AddMachine(),
             '/rq_view_tracesci': (context) => const QRViewTracesci(),
-            '/add_toner': (context) => const AddToner(),
+            '/add_toner': (context) => const AddSupply(),
             '/users': (context) => const UsersModule(),
             '/add_user': (context) => const AddUser(),
             '/user_status': (context) => UserStatus(),
