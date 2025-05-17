@@ -165,15 +165,6 @@ class PrefManager {
 
   // supplyChain module
 
-  Future<String?> getSupplyChainModule() async {
-    final prefs = await _prefs;
-    return prefs.getString('supply_chain_module');
-  }
-
-  Future<void> setSupplyChainModule(String machineModule) async {
-    final prefs = await _prefs;
-    await prefs.setString('supply_chain_module', machineModule);
-  }
 
 
 

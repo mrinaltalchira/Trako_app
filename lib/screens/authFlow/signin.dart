@@ -244,7 +244,7 @@ class _AuthProcessState extends State<AuthProcess> {
     );
   }
 
-  Future<void> validateAndSignIn() async {
+ /* Future<void> validateAndSignIn() async {
     // Validate phone number or email
     if (isPhoneInput) {
       if (phoneController.text.isEmpty) {
@@ -289,16 +289,16 @@ class _AuthProcessState extends State<AuthProcess> {
         loginResponse = await apiService.login(
             emailController.text, null, passwordController.text);
       }
-
+print("sdfdffdsdxdd   $loginResponse");
       // Dismiss loading indicator
       Navigator.of(context).pop();
 
       // Check response structure
-      if (loginResponse.containsKey('error') &&
+      if (loginResponse.containsKey('success') &&
           loginResponse.containsKey('status')) {
 
-        if (!loginResponse['error'] && loginResponse['status'] == 200) {
-          if (loginResponse['message'] == 'Success') {
+        if (loginResponse['success'] ) {
+          if (loginResponse['status'] == 200) {
             try {
               // Extract and handle user data
               User user = User.fromJson(loginResponse['data']['user']);
@@ -311,17 +311,14 @@ class _AuthProcessState extends State<AuthProcess> {
                 await PrefManager().setUserEmail(user.email);
                 await PrefManager().setUserPhone(user.phone);
                 await PrefManager().setUserRole(user.userRole);
-                await PrefManager().setUserStatus(user.isActive);
-                await PrefManager().setUserModule(user.userModule);
-                await PrefManager().setClientModule(user.clientModule);
-                await PrefManager().setMachineModule(user.machineModule);
-                await PrefManager().setSupplyChainModule(user.supplyChain);
-                await PrefManager().setAcknowledgeModuleModule(user.acknowledgeModule);
-                await PrefManager().setTonerRequestModule(user.tonerRequestModule);
-                await PrefManager().setDispatchModule(user.dispatchModule);
-                await PrefManager().setReceiveModule(user.receiveModule);
-                await PrefManager().setReceiveModule(user.userRole);
-
+                await PrefManager().setUserStatus(user.isActive.toString());
+                await PrefManager().setUserModule(user.userModule.toString());
+                await PrefManager().setClientModule(user.clientModule.toString());
+                await PrefManager().setMachineModule(user.machineModule.toString());
+                await PrefManager().setAcknowledgeModuleModule(user.acknowledgeModule.toString());
+                await PrefManager().setTonerRequestModule(user.tonerRequestModule.toString());
+                await PrefManager().setDispatchModule(user.dispatchModule.toString());
+                await PrefManager().setReceiveModule(user.receiveModule.toString());
                 await PrefManager().setIsLoggedIn(true);
 
                 // Navigate to home screen
@@ -356,8 +353,184 @@ class _AuthProcessState extends State<AuthProcess> {
       showSnackBar(context, "Failed to connect to the server. Please try again later.");
       print("Login API Error: $e");
     }
+  }*/
+  Future<void> validateAndSignIn() async {
+    // Validate phone number or email
+    if (isPhoneInput) {
+      if (phoneController.text.isEmpty) {
+        showSnackBar(context, "Phone number is required.");
+        return;
+      }
+      if (phoneController.text.length < 7) {
+        showSnackBar(context, "Phone number is invalid.");
+        return;
+      }
+    } else {
+      if (emailController.text.isEmpty) {
+        showSnackBar(context, "Email is required.");
+        return;
+      }
+      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(emailController.text)) {
+        showSnackBar(context, "Please enter a valid email address.");
+        return;
+      }
+    }
+
+    // Validate password
+    if (passwordController.text.isEmpty) {
+      showSnackBar(context, "Password is required.");
+      return;
+    }
+
+    // Show loading indicator with improved UI
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                const Text(
+                  "Signing in...",
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    try {
+      final ApiService apiService = ApiService();
+      Map<String, dynamic> loginResponse;
+
+      // Determine whether to use phone or email for login
+      if (isPhoneInput) {
+        loginResponse = await apiService.login(
+            null,
+            fullPhoneNumber.toString(),
+            passwordController.text
+        );
+      } else {
+        loginResponse = await apiService.login(
+            emailController.text,
+            null,
+            passwordController.text
+        );
+      }
+
+      // Log response for debugging
+      print("Login response: $loginResponse");
+
+      // Dismiss loading indicator
+      Navigator.of(context, rootNavigator: true).pop();
+
+      // Handle response based on success flag
+      if (loginResponse.containsKey('success')) {
+        if (loginResponse['success'] == true) {
+          // Show success message
+          if (loginResponse.containsKey('message')) {
+            // Optional: Show success message briefly
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(loginResponse['message']),
+                backgroundColor: Colors.green,
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+
+          // Process user data and login
+          if (loginResponse.containsKey('data') &&
+              loginResponse['data'] is Map<String, dynamic> &&
+              loginResponse['data'].containsKey('user')) {
+            try {
+              final userData = loginResponse['data']['user'];
+              final userType = loginResponse['data']['user_type'] ?? '';
+              final token = loginResponse['data']['token'] ?? '';
+
+              // Ensure token exists in user data
+              if (!userData.containsKey('token') || userData['token'] == null) {
+                userData['token'] = token;
+              }
+
+              // Add user_type to user data
+              userData['user_type'] = userType;
+
+              // Parse user data
+              User user = User.fromJson(userData);
+
+              // Verify token exists
+              if (user.token.isNotEmpty) {
+                // Save user data to preferences
+                await saveUserData(user);
+
+                // Navigate to home screen
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => const HomeScreen(),
+                  ),
+                );
+              } else {
+                showSnackBar(context, "Authentication error: Token not found.");
+              }
+            } catch (e) {
+              showSnackBar(context, "Error processing user data: ${e.toString()}");
+              print("User parsing error: $e");
+            }
+          } else {
+            showSnackBar(context, "Invalid response format from server.");
+          }
+        } else {
+          // Show error message from server
+          String errorMessage = loginResponse['message'] ?? "Login failed. Please check your credentials.";
+          showSnackBar(context, errorMessage);
+        }
+      } else {
+        showSnackBar(context, "Unexpected response from server. Please try again.");
+      }
+    } catch (e) {
+      // Dismiss loading indicator if still showing
+      if (Navigator.canPop(context)) {
+        Navigator.of(context, rootNavigator: true).pop();
+      }
+
+      // Handle general errors
+      showSnackBar(context, "Connection error. Please check your internet and try again.");
+      print("Login process error: $e");
+    }
   }
 
+// Helper function to save user data to preferences
+  Future<void> saveUserData(User user) async {
+    await PrefManager().setToken(user.token);
+    await PrefManager().setUserName(user.name);
+    await PrefManager().setUserEmail(user.email);
+    await PrefManager().setUserPhone(user.phone);
+    await PrefManager().setUserRole(user.userRole);
+    await PrefManager().setUserStatus(user.isActive.toString());
+    await PrefManager().setUserModule(user.userModule.toString());
+    await PrefManager().setClientModule(user.clientModule.toString());
+    await PrefManager().setMachineModule(user.machineModule.toString());
+    await PrefManager().setAcknowledgeModuleModule(user.acknowledgeModule.toString());
+    await PrefManager().setTonerRequestModule(user.tonerRequestModule.toString());
+    await PrefManager().setDispatchModule(user.dispatchModule.toString());
+    await PrefManager().setReceiveModule(user.receiveModule.toString());
+
+    await PrefManager().setIsLoggedIn(true);
+  }
 
   }
 

@@ -23,12 +23,17 @@ class AddClient extends StatefulWidget {
 
 class _AddClientState extends State<AddClient> {
   bool activeChecked = true;
+  bool isUnassigning = false;
+  bool isEditing = false;
   final TextEditingController nameController = TextEditingController();
   final TextEditingController cityController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final List<TextEditingController> addressControllers = [TextEditingController()];
   final TextEditingController contactPersonController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
+
   // Use a Set instead of List to ensure unique values
   late Set<String> assignedMachines = {}; // Set to store unique assigned machine IDs
   String? fullPhoneNumber;
@@ -40,14 +45,15 @@ class _AddClientState extends State<AddClient> {
   @override
   void initState() {
     super.initState();
+    isEditing = widget.client != null;
     machineFuture = getMachineList("unassigned");
-    if (widget.client != null) {
+    if (isEditing) {
       nameController.text = widget.client!['name'].toString();
       cityController.text = widget.client!['city'].toString();
       emailController.text = widget.client!['email'].toString();
       fullPhoneNumber = widget.client!['phone'];
       // Convert comma-separated string to Set for unique values
-      if (widget.client != null && widget.client!['machines'] != null) {
+      if (isEditing && widget.client!['machines'] != null) {
         final machines = widget.client!['machines'] as String?;
         if (machines != null && machines.isNotEmpty) {
           assignedMachines = machines
@@ -106,6 +112,23 @@ class _AddClientState extends State<AddClient> {
     }
   }
 
+  Future<void> unassignedSerial(String serialNo,String clientId) async {
+    try {
+
+      Map<String, dynamic> responce = await ApiService().unassignedSerialFromClient(context: context,serialNo: serialNo ,clientId: clientId);
+      print('unassigned successfully: $responce');
+      if(responce['status'] == 200){
+        assignedMachines.remove(serialNo);
+        machineFuture = getMachineList("unassigned");
+        setState(() {
+
+        });
+      }
+    } catch (e) {
+      print('Error fetching machines: $e');
+      return ;
+    }
+  }
   void _removeAddressField(int index) {
     if (addressControllers.length > 1) {
       setState(() {
@@ -133,11 +156,6 @@ class _AddClientState extends State<AddClient> {
   void _removeMachine(String serialNo) {
     setState(() {
       assignedMachines.remove(serialNo);
-      if(widget.client != null){
-        // here i want to add tech me how to do it with existing code or may be if we need modificatoin then plesse let me knoe
-
-
-      }
     });
     print('Removed machine: $serialNo');
   }
@@ -179,7 +197,7 @@ class _AddClientState extends State<AddClient> {
                 SizedBox(height: 20),
                 Center(
                   child: Text(
-                    widget.client != null ? "Edit Client :" : "Add New :",
+                    isEditing ? "Edit Client :" : "Add New :",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 24.0,
@@ -267,19 +285,76 @@ class _AddClientState extends State<AddClient> {
                 SizedBox(height: 20),
                 buildFieldTitle("Assigned Machines"),
                 SizedBox(height: 5),
-                assignedMachines.isEmpty
-                    ? Text("No machines assigned yet", style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey))
-                    : Column(
-                  children: assignedMachines.map((machine) => ListTile(
-                    title: Text(machine),
-                    trailing: IconButton(
-                      icon: Icon(Icons.remove_circle, color: Colors.red),
-                      onPressed: () {
-                        _removeMachine(machine);
-                      },
+                Stack(
+                  children: [
+                    assignedMachines.isEmpty
+                        ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.devices_other,
+                            size: 48,
+                            color: Colors.grey[400],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            "No machines assigned yet",
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                        : Column(
+                      children: [
+                        ...assignedMachines.map((machine) => Card(
+                          margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 0),
+                          elevation: 1,
+                          child: ListTile(
+                            title: Text(
+                              machine,
+                              style: const TextStyle(fontWeight: FontWeight.w500),
+                            ),
+                            trailing: isUnassigning
+                                ? Container(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Theme.of(context).primaryColor,
+                                ),
+                              ),
+                            )
+                                : IconButton(
+                              icon: const Icon(Icons.remove_circle, color: Colors.red),
+                              onPressed: () async {
+                                setState(() {
+                                  isUnassigning = true;
+                                });
+
+                                if (isEditing) {
+                                  await unassignedSerial(machine, widget.client!['id'].toString());
+                                } else {
+                                  _removeMachine(machine);
+                                }
+
+                                setState(() {
+                                  isUnassigning = false;
+                                });
+                              },
+                            ),
+                          ),
+                        )),
+                      ],
                     ),
-                  )).toList(),
+                  ],
                 ),
+
 
                 SizedBox(height: 20),
                 Row(
@@ -316,6 +391,25 @@ class _AddClientState extends State<AddClient> {
                         ],
                       ),
                     ),
+                ),
+
+                _buildFormField(
+                  "Password ${isEditing ? '(Optional for update)' : ''}",
+                  CustomTextField(
+                    controller: passwordController,
+                    hintText: isEditing ? 'Enter to change password' : 'Password',
+                    fieldType: TextFieldType.password,
+                      validator: (_) => null
+                  ),
+                ),
+                _buildFormField(
+                  "Confirm Password ${isEditing ? '(Optional for update)' : ''}",
+                  CustomTextField(
+                    controller: confirmPasswordController,
+                    hintText: isEditing ? 'Confirm new password' : 'Confirm Password',
+                    fieldType: TextFieldType.password,
+                      validator: (_) => null
+                  ),
                 ),
                 SizedBox(height: 20),
                 buildFieldTitle("Contact Name"),
@@ -360,6 +454,32 @@ class _AddClientState extends State<AddClient> {
     );
   }
 
+  Widget _buildFormField(String label, Widget field) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionHeader(label),
+          field,
+        ],
+      ),
+    );
+  }
+  Widget _buildSectionHeader(String title){
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+
   Widget buildFieldTitle(String title) {
     return Text(
       title,
@@ -382,10 +502,40 @@ class _AddClientState extends State<AddClient> {
     return emailRegExp.hasMatch(email);
   }
 
+  bool isValidPassword(String password) {
+    final passwordRegExp = RegExp(
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$',
+    );
+    return passwordRegExp.hasMatch(password);
+  }
+
   void validate() {
     if (assignedMachines.isEmpty) {
       showSnackBar(context, "Add some machines to Client.");
       return;
+    }
+
+    if (!isEditing || passwordController.text.isNotEmpty) {
+      if (passwordController.text.isEmpty && !isEditing) {
+        showSnackBar(context, "Password is required for new users.");
+        return;
+      }
+
+      if (passwordController.text.isNotEmpty && !isValidPassword(passwordController.text)) {
+        showSnackBar(context,
+            "Password must be at least 8 characters long and include uppercase, lowercase, digit, and special character.");
+        return;
+      }
+
+      if (passwordController.text.isNotEmpty && confirmPasswordController.text.isEmpty) {
+        showSnackBar(context, "Confirm Password is required.");
+        return ;
+      }
+
+      if (passwordController.text.isNotEmpty && confirmPasswordController.text != passwordController.text) {
+        showSnackBar(context, "Confirm password not matched! Please check.");
+        return ;
+      }
     }
 
     // Check if all address fields are filled
@@ -406,11 +556,12 @@ class _AddClientState extends State<AddClient> {
   }
 
   Future<void> validateAndCreateClient() async {
+    // Show loading indicator
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        return Center(child: CircularProgressIndicator());
+        return const Center(child: CircularProgressIndicator());
       },
     );
 
@@ -424,75 +575,116 @@ class _AddClientState extends State<AddClient> {
       // Convert Set to List and join with commas
       String machinesList = assignedMachines.join(',');
 
-      if (widget.client != null) {
+      Map<String, dynamic> response;
+
+      if (isEditing) {
         // Update existing client
-        final updateClientResponse = await apiService.updateClient(
-            id: widget.client!['id'].toString(),
-            name: nameController.text,
-            email: emailController.text,
-            phone: fullPhoneNumber.toString(),
-            address: addressJson,
-            isActive: activeChecked ? '1' : '0',
-            contactPerson: contactPersonController.text,
-            machines: machinesList
+        response = await apiService.updateClient(
+          id: widget.client!['id'].toString(),
+          name: nameController.text,
+          email: emailController.text,
+          phone: fullPhoneNumber.toString(),
+          address: addressJson,
+          isActive: activeChecked ? '1' : '0',
+          contactPerson: contactPersonController.text,
+          machines: machinesList,
+          // Only include password if it's not empty
+          password: passwordController.text.isNotEmpty ? passwordController.text : null,
         );
-
-        Navigator.of(context).pop();
-
-        if (updateClientResponse.containsKey('error') && updateClientResponse.containsKey('status')) {
-          if (!updateClientResponse['error'] && updateClientResponse['status'] == 200) {
-            if (updateClientResponse['message'] == 'Success') {
-              Navigator.pop(context, true);
-            } else {
-              showSnackBar(context, updateClientResponse['message']);
-            }
-          } else {
-            showSnackBar(context, "Failed to update client: ${updateClientResponse['message']}");
-          }
-        } else {
-          showSnackBar(context, "Unexpected response from server. Please try again later.");
-        }
       } else {
         // Create new client
-        final addClientResponse = await apiService.addClient(
-            name: nameController.text,
-            city: cityController.text,
-            email: emailController.text,
-            phone: fullPhoneNumber.toString(),
-            address: addressJson,
-            isActive: activeChecked ? '1' : '0',
-            contactPerson: contactPersonController.text,
-            machines: machinesList
+        response = await apiService.addClient(
+          name: nameController.text,
+          city: cityController.text,
+          email: emailController.text,
+          phone: fullPhoneNumber.toString(),
+          address: addressJson,
+          isActive: activeChecked ? '1' : '0',
+          contactPerson: contactPersonController.text,
+          machines: machinesList,
+          password: passwordController.text,
         );
-
-        Navigator.of(context).pop();
-
-        if (addClientResponse.containsKey('error') && addClientResponse.containsKey('status')) {
-          if (!addClientResponse['error'] && addClientResponse['status'] == 200) {
-            if (addClientResponse['message'] == 'Success') {
-              nameController.clear();
-              cityController.clear();
-              emailController.clear();
-              phoneController.clear();
-              addressControllers.forEach((controller) => controller.clear());
-              contactPersonController.clear();
-              Navigator.pop(context, true);
-            } else {
-              showSnackBar(context, addClientResponse['message']);
-            }
-          } else {
-            showSnackBar(context, "Failed to create client: ${addClientResponse['message']}");
-          }
-        } else {
-          showSnackBar(context, "Unexpected response from server. Please try again later.");
-        }
       }
-    } catch (e) {
+
+      // Dismiss loading indicator
       Navigator.of(context).pop();
+
+      // Process the response based on the updated API format
+      if (response.containsKey('success')) {
+        // New API format handling (using success flag)
+        if (response['success'] == true) {
+          // Success case
+          showSnackBar(
+              context,
+              isEditing
+                  ? "Client updated successfully"
+                  : "Client created successfully"
+          );
+
+          // Clear fields if creating a new client
+          if (isEditing) {
+            _clearFields();
+          }
+
+          // Return to previous screen with success result
+          Navigator.pop(context, true);
+        } else {
+          // API returned success:false
+          showSnackBar(context, response['message'] ?? "Operation failed");
+        }
+      } else if (response.containsKey('error')) {
+        // Legacy API format handling (using error flag)
+        // This branch handles the old response format during transition
+        if (!response['error'] && response['status'] == 200 && response['message'] == 'Success') {
+          // Success case for legacy format
+          showSnackBar(
+              context,
+              isEditing
+                  ? "Client updated successfully"
+                  : "Client created successfully"
+          );
+
+          // Clear fields if creating a new client
+          if (isEditing) {
+            _clearFields();
+          }
+
+          // Return to previous screen with success result
+          Navigator.pop(context, true);
+        } else {
+          // Error message from server
+          showSnackBar(context, response['message'] ?? "Operation failed");
+        }
+      } else {
+        // Unexpected response format
+        showSnackBar(context, "Unexpected response from server. Please try again later.");
+      }
+    } on ApiException catch (e) {
+      // Handle specific API exceptions (assuming ApiException class exists)
+      Navigator.of(context).pop(); // Dismiss loading indicator
+      showSnackBar(context, e.message);
+    } catch (e) {
+      // General error handling
+      Navigator.of(context).pop(); // Dismiss loading indicator
       showSnackBar(context, "An error occurred. Please try again later.");
+      debugPrint("Client operation error: $e");
     }
   }
 
+// Helper method to clear form fields
+  void _clearFields() {
+    nameController.clear();
+    cityController.clear();
+    emailController.clear();
+    phoneController.clear();
+    passwordController.clear();
+    addressControllers.forEach((controller) => controller.clear());
+    contactPersonController.clear();
+    setState(() {
+      assignedMachines = {}; // Clear selected machines
+      activeChecked = true; // Reset to default
+    });
+  }
   @override
   void dispose() {
     // Clean up the controllers
@@ -506,4 +698,7 @@ class _AddClientState extends State<AddClient> {
     contactPersonController.dispose();
     super.dispose();
   }
+
+
+
 }

@@ -1,3 +1,4 @@
+import 'package:Trako/globals.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
@@ -143,6 +144,30 @@ class _MyReportScreenState extends State<MyReportScreen> {
     }
   }
 
+  Future<void> sendTonerDataOnMail() async {
+    try {
+      final response = await _apiService.sendReportOnMail(
+        client_id: selectedClientId.toString(),
+        from_date: DateFormat('yyyy-MM-dd').format(_selectedFromDate),
+        to_date: DateFormat('yyyy-MM-dd').format(_selectedToDate),
+      );
+
+      print('API response: $response');
+
+      // Always show the message, whether success or error
+
+
+      if (response['success']) {
+        showSnackBar(context, response['message']);
+      }else{
+        showSnackBar(context, response['message']);
+      }
+    } catch (e) {
+      print('Error in sendTonerDataOnMail: $e');
+      showSnackBar(context, 'Failed to send mail. Please try again later.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -225,7 +250,7 @@ class _MyReportScreenState extends State<MyReportScreen> {
                 width: double.infinity,
                 radius: 25.0,
                 buttonText: "Get Report on Mail",
-                onPressed: _fetchReportData,
+                onPressed:sendTonerDataOnMail,
               ),
             ),
           ],
@@ -265,6 +290,8 @@ class _TonerDetailsPageState extends State<TonerDetailsPage> {
       toDate: widget.toDate,
     );
   }
+
+
 
   Future<ClientReportResponse> fetchTonerData({
     required String clientId,

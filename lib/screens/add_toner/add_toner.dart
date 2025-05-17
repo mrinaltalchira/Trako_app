@@ -51,16 +51,21 @@ class _AddSupplyState extends State<AddSupply> {
   TextEditingController referenceController = TextEditingController();
   DateTime? _selectedDateTime = DateTime.now();
   bool hideDispatchFields = false;
+  bool hideReceiveFields = false;
 
    late Future<List<Map<String, dynamic>>> machineFuture = Future.value([]) ;
 
 
   void _initializeHideDispatchFields() async {
     String? dispatchModuleValue = await PrefManager().getDispatchModule();
+    String? receiveModuleValue = await PrefManager().getReceiveModule();
     setState(() {
-      hideDispatchFields = dispatchModuleValue == "1";
+      hideDispatchFields = dispatchModuleValue == "0";
+      hideReceiveFields = receiveModuleValue == "0";
       if(hideDispatchFields){
         _selectedDispatchReceive = DispatchReceive.receive;
+      }else{
+        _selectedDispatchReceive = DispatchReceive.dispatch;
       }
     });
   }
@@ -304,7 +309,7 @@ class _AddSupplyState extends State<AddSupply> {
               ),
               const SizedBox(height: 10),
               // Hide the DispatchReceiveRadioButton if dispatchModule is "1"
-              if (!hideDispatchFields)
+              if (!hideDispatchFields && !hideReceiveFields)
                 DispatchReceiveRadioButton(
                   onChanged: (DispatchReceive? value) {
                     setState(() {
@@ -315,8 +320,7 @@ class _AddSupplyState extends State<AddSupply> {
                 ),
               const SizedBox(height: 15),
               // Hide the entire Column if dispatchModule is "1"
-              if (!hideDispatchFields &&
-                  _selectedDispatchReceive == DispatchReceive.dispatch)
+              if (!hideDispatchFields && _selectedDispatchReceive == DispatchReceive.dispatch)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

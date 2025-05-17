@@ -305,7 +305,7 @@ class _UserListState extends State<UserList> with SingleTickerProviderStateMixin
   }
 
   Widget _buildUserCard(User user, int index) {
-    final bool isActive = user.isActive == "0";
+    final bool isActive = user.isActive == "1";
     final Color statusColor = isActive ? Colors.green : Colors.red;
 
     return TweenAnimationBuilder<double>(

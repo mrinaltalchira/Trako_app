@@ -149,7 +149,7 @@ class _AddModelState extends State<AddModel> {
               const SizedBox(height: 20),
               Center(
                 child: Text(
-                  widget.machineData != null ? "Update Machine:" : "Add New Machine:",
+                  widget.machineData != null ? "Update Model:" : "Add New Model:",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24.0,
@@ -160,7 +160,6 @@ class _AddModelState extends State<AddModel> {
               ),
               const SizedBox(height: 30),
 
-              // Model Name field
               Text(
                 "Model Name",
                 style: TextStyle(
@@ -169,10 +168,8 @@ class _AddModelState extends State<AddModel> {
                 ),
               ),
               SizedBox(height: 5),
-              CustomTextField(controller: machine_name_Controller, hintText: 'Model No.'),
+              CustomTextField(controller: machine_name_Controller, hintText: 'Model No.',),
               const SizedBox(height: 20),
-
-              // Colors section
               Text(
                 "Colors",
                 style: TextStyle(
@@ -309,6 +306,7 @@ class _AddModelState extends State<AddModel> {
       final ApiService apiService = ApiService();
 
       final addMachineResponse = await apiService.addMachineModel(
+        id:widget.machineData != null ? widget.machineData!['id'].toString(): null,
         model_no: machine_name_Controller.text,
         colors: colorsList,
         isActive: activeChecked, // Invert value to match backend expectation (activeChecked means inactive in UI)

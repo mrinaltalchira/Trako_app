@@ -1,10 +1,6 @@
-import 'dart:developer';
-import 'dart:io';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:Trako/color/colors.dart';
 import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_supply.dart';
@@ -492,9 +488,6 @@ class CardStatus {
     required this.color,
   });
 }
-
-
-
 
 class CustomSearchField extends StatefulWidget {
   final ValueChanged<String> onSearchChanged;

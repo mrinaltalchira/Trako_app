@@ -56,7 +56,6 @@ class User {
   String updatedAt;
   String machineModule;
   String clientModule;
-  String supplyChainModule;
   String acknowledgeModule;
   String tonerRequestModule;
   String dispatchModule;
@@ -75,7 +74,6 @@ class User {
     required this.updatedAt,
     required this.machineModule,
     required this.clientModule,
-    required this.supplyChainModule,
     required this.acknowledgeModule,
     required this.tonerRequestModule,
     required this.dispatchModule,
@@ -96,7 +94,6 @@ class User {
       updatedAt: json['updated_at'] ?? "",
       machineModule: json['machine_module'] ?? "",
       clientModule: json['client_module'] ?? "",
-      supplyChainModule: json['supply_chain_module'] ?? "",
       acknowledgeModule: json['acknowledge_module'] ?? "",
       tonerRequestModule: json['toner_request_module'] ?? "",
       dispatchModule: json['dispatch_module'] ?? "",

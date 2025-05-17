@@ -7,6 +7,7 @@ import 'package:Trako/screens/products/add_machine.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'dart:convert';
 
+import '../../utils/action_confirm_dialog.dart';
 import '../../utils/custome_search_field.dart';
 import '../home/client/client.dart';
 import 'add_models.dart';
@@ -54,6 +55,21 @@ class _MachineModelModuleState extends State<MachineModelModule> {
     });
   }
 
+  void softDeleteModel(String? modelId) async {
+    try {
+      _apiService.softDeleteModelNo(
+          modelId: modelId.toString() // Fetching only 2 items per page
+      );
+      setState(() {
+        machineFuture = getMachineList(null);
+      });
+
+    } catch (e) {
+      print('Error fetching models: $e');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,7 +82,7 @@ class _MachineModelModuleState extends State<MachineModelModule> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Machine",
+                  "Machine Models",
                   style: TextStyle(
                     fontSize: 24.0,
                     color: colorMixGrad,
@@ -141,9 +157,15 @@ class _MachineModelModuleState extends State<MachineModelModule> {
                           onRefresh: refreshMachineList,
                           onDelete: (machineId) async {
                             try {
-                              // Call your delete API here
-                              // await _apiService.deleteModel(machineId);
-                              refreshMachineList();
+                              ActionConfirmationDialog.showDelete(
+                                itemName: machineId.toString(),
+                                context: context,
+                                  message:"Are you sure you want to delete this $machineId, This will remove all its serial no, client ",
+                                onConfirm: () async {
+                                  softDeleteModel(machineId.toString());
+                                },
+                              );
+
                             } catch (e) {
                               print('Error deleting machine: $e');
                               // Show error message
@@ -366,103 +388,182 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
       builder: (context, value, child) {
         return Transform.translate(
           offset: Offset(0, 20 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: Slidable(
-              key: ValueKey(machine['id']),
-              endActionPane: ActionPane(
-                motion: const ScrollMotion(),
-                dismissible: DismissiblePane(
-                  onDismissed: () {
-                    widget.onDelete(machine['id']);
-                  },
-                ),
+          child: Card(
+            child: InkWell(
+              onTap: () => _showEditDialog(context, machine),
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
                 children: [
-                  SlidableAction(
-                    onPressed: (context) {
-                      widget.onDelete(machine['id']);
-                    },
-                    backgroundColor: Colors.red,
-                    foregroundColor: Colors.white,
-                    icon: Icons.delete,
-                    label: 'Delete',
+                  // Custom height for the colored bar
+                  Container(
+                    width: 4, // Width of the border
+                    height: 50, // Set desired height for the border
+                    color: statusColor,
                   ),
-                ],
-              ),
-              child: Card(
-                child: InkWell(
-                  onTap: () => _showEditDialog(context, machine),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Row(
-                    children: [
-                      // Custom height for the colored bar
-                      Container(
-                        width: 4, // Width of the border
-                        height: 50, // Set desired height for the border
-                        color: statusColor,
-                      ),
-                      Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '${machine['model_no'].toString()[0].toUpperCase()}${machine['model_no'].toString().substring(1)}',
-                                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                              Expanded(
+                                child: Text(
+                                  '${machine['model_no'].toString()[0].toUpperCase()}${machine['model_no'].toString().substring(1)}',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
                                   ),
-                                  Row(
-                                    children: [
-                                      const SizedBox(width: 8),
-                                      IconButton(
-                                        icon: const Icon(Icons.edit, size: 20),
-                                        onPressed: () => _showEditDialog(context, machine),
-                                        tooltip: 'Edit Machine',
-                                      ),
-                                    ],
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, size: 20),
+                                    onPressed: () => _showEditDialog(context, machine),
+                                    tooltip: 'Edit Machine',
                                   ),
                                 ],
                               ),
-                              if (colorNames.isNotEmpty) ...[
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  children: colorNames.map((colorName) =>
-                                      Chip(
-                                        label: Text(
-                                          colorName,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                        backgroundColor: colorMixGrad,
-                                        padding: EdgeInsets.symmetric(horizontal: 4),
-                                      )
-                                  ).toList(),
-                                ),
-                              ],
                             ],
                           ),
-                        ),
+                          if (colorNames.isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 8,
+                              children: colorNames.map((colorName) =>
+                                  Chip(
+                                    label: Text(
+                                      colorName,
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    backgroundColor: colorMixGrad,
+                                    padding: EdgeInsets.symmetric(horizontal: 4),
+                                  )
+                              ).toList(),
+                            ),
+                          ],
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ),
         );
       },
     );
+
+    // return TweenAnimationBuilder<double>(
+    //   duration: const Duration(milliseconds: 300),
+    //   tween: Tween(begin: 0.0, end: 1.0),
+    //   builder: (context, value, child) {
+    //     return Transform.translate(
+    //       offset: Offset(0, 20 * (1 - value)),
+    //       child: Opacity(
+    //         opacity: value,
+    //         child: Slidable(
+    //           key: ValueKey(machine['id']),
+    //           endActionPane: ActionPane(
+    //             motion: const ScrollMotion(),
+    //             dismissible: DismissiblePane(
+    //               onDismissed: () {
+    //                 widget.onDelete(machine['id']);
+    //               },
+    //             ),
+    //             children: [
+    //               SlidableAction(
+    //                 onPressed: (context) {
+    //                   widget.onDelete(machine['id']);
+    //                 },
+    //                 backgroundColor: Colors.red,
+    //                 foregroundColor: Colors.white,
+    //                 icon: Icons.delete,
+    //                 label: 'Delete',
+    //               ),
+    //             ],
+    //           ),
+    //           child: Card(
+    //             child: InkWell(
+    //               onTap: () => _showEditDialog(context, machine),
+    //               borderRadius: BorderRadius.circular(12),
+    //               child: Row(
+    //                 children: [
+    //                   // Custom height for the colored bar
+    //                   Container(
+    //                     width: 4, // Width of the border
+    //                     height: 50, // Set desired height for the border
+    //                     color: statusColor,
+    //                   ),
+    //                   Expanded(
+    //                     child: Padding(
+    //                       padding: const EdgeInsets.all(16),
+    //                       child: Column(
+    //                         crossAxisAlignment: CrossAxisAlignment.start,
+    //                         children: [
+    //                           Row(
+    //                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    //                             children: [
+    //                               Expanded(
+    //                                 child: Text(
+    //                                   '${machine['model_no'].toString()[0].toUpperCase()}${machine['model_no'].toString().substring(1)}',
+    //                                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
+    //                                     fontWeight: FontWeight.bold,
+    //                                   ),
+    //                                   overflow: TextOverflow.ellipsis,
+    //                                 ),
+    //                               ),
+    //                               Row(
+    //                                 children: [
+    //                                   const SizedBox(width: 8),
+    //                                   IconButton(
+    //                                     icon: const Icon(Icons.edit, size: 20),
+    //                                     onPressed: () => _showEditDialog(context, machine),
+    //                                     tooltip: 'Edit Machine',
+    //                                   ),
+    //                                 ],
+    //                               ),
+    //                             ],
+    //                           ),
+    //                           if (colorNames.isNotEmpty) ...[
+    //                             const SizedBox(height: 8),
+    //                             Wrap(
+    //                               spacing: 8,
+    //                               children: colorNames.map((colorName) =>
+    //                                   Chip(
+    //                                     label: Text(
+    //                                       colorName,
+    //                                       style: TextStyle(
+    //                                         fontSize: 12,
+    //                                         color: Colors.white,
+    //                                       ),
+    //                                     ),
+    //                                     backgroundColor: colorMixGrad,
+    //                                     padding: EdgeInsets.symmetric(horizontal: 4),
+    //                                   )
+    //                               ).toList(),
+    //                             ),
+    //                           ],
+    //                         ],
+    //                       ),
+    //                     ),
+    //                   ),
+    //                 ],
+    //               ),
+    //             ),
+    //           ),
+    //         ),
+    //       ),
+    //     );
+    //   },
+    // );
   }
 
   Widget _buildLoaderIndicator() {
@@ -534,35 +635,3 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
     );
   }
 }
-
-// You'll need to update your ApiService class to include these methods:
-
-/*
-class ApiService {
-  Future<Map<String, dynamic>> getAllModelsRaw({
-    String? search,
-    String? filter,
-    required int page,
-    required int perPage,
-  }) async {
-    // Implementation goes here
-    // Return raw JSON response
-  }
-  
-  Future<Map<String, dynamic>> getAllModelsRawPaginated({
-    String? search,
-    String? filter,
-    required int page,
-    required int perPage,
-  }) async {
-    // Implementation for paginated data
-  }
-  
-  Future<void> deleteModel(int machineId) async {
-    // Implementation for deleting a model
-  }
-}
-*/
-
-// Don't forget to add this package to your pubspec.yaml:
-// flutter_slidable: ^2.0.0 (or the latest version)

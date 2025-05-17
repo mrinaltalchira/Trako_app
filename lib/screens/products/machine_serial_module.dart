@@ -4,6 +4,7 @@ import 'package:Trako/color/colors.dart';
 import 'package:Trako/globals.dart';
 import 'package:Trako/network/ApiService.dart';
 import 'package:Trako/screens/products/add_machine.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 
 import '../../utils/custome_search_field.dart';
 
@@ -27,13 +28,27 @@ class _MachineSerialModuleState extends State<MachineSerialModule> {
       List<Map<String, dynamic>> machines = await _apiService.getAllMachines(
         search: search,
         filter: null,
-        page: 1,      // Fetching the first page
-        perPage: 20,  // Fetching 20 items per page
+        page: 1, // Fetching the first page
+        perPage: 20, // Fetching 20 items per page
       );
       return machines;
     } catch (e) {
       print('Error fetching machines: $e');
       return [];
+    }
+  }
+
+  void softDeleteSerial(String? serialId) async {
+    try {
+      _apiService.softDeleteSerialNo(
+          serialId: serialId.toString() // Fetching only 2 items per page
+      );
+      setState(() {
+        machineFuture = getMachineList(null);
+      });
+
+    } catch (e) {
+      print('Error fetching models: $e');
     }
   }
 
@@ -55,7 +70,7 @@ class _MachineSerialModuleState extends State<MachineSerialModule> {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  "Machine",
+                  "Serial No.",
                   style: TextStyle(
                     fontSize: 24.0,
                     color: colorMixGrad,
@@ -66,7 +81,8 @@ class _MachineSerialModuleState extends State<MachineSerialModule> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 25.0, vertical: 10.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -128,6 +144,17 @@ class _MachineSerialModuleState extends State<MachineSerialModule> {
                         return MachineList(
                           initialMachines: machines,
                           onRefresh: refreshMachineList,
+                          onDelete: (machineId) async {
+                            try {
+                              softDeleteSerial(machineId.toString());
+                            } catch (e) {
+                              print('Error deleting machine: $e');
+                              // Show error message
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to delete machine')),
+                              );
+                            }
+                          },
                         );
                       }
                     }
@@ -147,6 +174,7 @@ class MachineList extends StatefulWidget {
   final String? search;
   final String? filter;
   final Future<void> Function() onRefresh;
+  final Function(int) onDelete;
 
   const MachineList({
     Key? key,
@@ -154,13 +182,15 @@ class MachineList extends StatefulWidget {
     this.search,
     this.filter,
     required this.onRefresh,
+    required this.onDelete,
   }) : super(key: key);
 
   @override
   _MachineListState createState() => _MachineListState();
 }
 
-class _MachineListState extends State<MachineList> with SingleTickerProviderStateMixin {
+class _MachineListState extends State<MachineList>
+    with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   late List<Map<String, dynamic>> _machines;
   bool _isLoading = false;
@@ -200,7 +230,8 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
   }
 
   void _onScroll() {
-    if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
       _loadMoreMachines();
     }
   }
@@ -264,7 +295,8 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
           child: NotificationListener<ScrollNotification>(
             onNotification: (ScrollNotification scrollInfo) {
               if (!_isLoading &&
-                  scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                  scrollInfo.metrics.pixels ==
+                      scrollInfo.metrics.maxScrollExtent &&
                   _hasMoreData) {
                 _loadMoreMachines();
                 return true;
@@ -298,7 +330,8 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
     final String modelName = machine['model_no'] ?? '';
     final String serialNo = machine['serial_no'] ?? '';
 
-    return TweenAnimationBuilder<double>(
+
+   /* return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 300),
       tween: Tween(begin: 0.0, end: 1.0),
       builder: (context, value, child) {
@@ -306,66 +339,171 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
           offset: Offset(0, 20 * (1 - value)),
           child: Opacity(
             opacity: value,
-            child: Card(
-              child: InkWell(
-                onTap: () => _showEditDialog(context, machine),
-                borderRadius: BorderRadius.circular(12),
-                child: Row(
-                  children: [
-                    // Custom height for the colored bar
-                    Container(
-                      width: 4, // Width of the border
-                      height: 50, // Set desired height for the border
-                      color: statusColor,
-                    ),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    modelName.isNotEmpty
-                                        ? '${modelName[0].toUpperCase()}${modelName.substring(1)}'
-                                        : 'Unknown Model',
-                                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.bold,
+            child: Slidable(
+              key: ValueKey(machine['id']),
+              endActionPane: ActionPane(
+                motion: const ScrollMotion(),
+                dismissible: DismissiblePane(
+                  onDismissed: () {
+                    widget.onDelete(machine['id']);
+                  },
+                ),
+                children: [
+                  SlidableAction(
+                    onPressed: (context) {
+                      widget.onDelete(machine['id']);
+                    },
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    icon: Icons.delete,
+                    label: 'Delete',
+                  ),
+                ],
+              ),
+              child:Card(
+                child: InkWell(
+                  onTap: () => _showEditDialog(context, machine),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Row(
+                    children: [
+                      // Custom height for the colored bar
+                      Container(
+                        width: 4, // Width of the border
+                        height: 50, // Set desired height for the border
+                        color: statusColor,
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      '${serialNo.isNotEmpty ? '${serialNo[0].toUpperCase()}${serialNo.substring(1)}' : 'Unknown'}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                Row(
-                                  children: [
-                                    const SizedBox(width: 8),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit, size: 20),
-                                      onPressed: () => _showEditDialog(context, machine),
-                                      tooltip: 'Edit Serial No',
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Serial No: ${serialNo.isNotEmpty
-                                  ? '${serialNo[0].toUpperCase()}${serialNo.substring(1)}'
-                                  : 'Unknown'}',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[700],
+                                  Row(
+                                    children: [
+                                      const SizedBox(width: 8),
+                                      IconButton(
+                                        icon: const Icon(Icons.edit, size: 20),
+                                        onPressed: () =>
+                                            _showEditDialog(context, machine),
+                                        tooltip: 'Edit Serial No',
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
+                              const SizedBox(height: 8),
+                              Text(
+                                modelName.isNotEmpty
+                                    ? 'Model No: ${modelName[0].toUpperCase()}${modelName.substring(1)}'
+                                    : 'Unknown Model',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+*/
+
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Card(
+            child: InkWell(
+              onTap: () => _showEditDialog(context, machine),
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
+                children: [
+                  // Custom height for the colored bar
+                  Container(
+                    width: 4, // Width of the border
+                    height: 50, // Set desired height for the border
+                    color: statusColor,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${serialNo.isNotEmpty ? '${serialNo[0].toUpperCase()}${serialNo.substring(1)}' : 'Unknown'}',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleLarge
+                                      ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, size: 20),
+                                    onPressed: () =>
+                                        _showEditDialog(context, machine),
+                                    tooltip: 'Edit Serial No',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            modelName.isNotEmpty
+                                ? 'Model No: ${modelName[0].toUpperCase()}${modelName.substring(1)}'
+                                : 'Unknown Model',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -406,8 +544,8 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
           title: Text(
             'Edit Machine',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           content: Text(
             'Edit details of $modelName',
@@ -426,7 +564,8 @@ class _MachineListState extends State<MachineList> with SingleTickerProviderStat
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               ),
               child: const Text('Edit'),
               onPressed: () {

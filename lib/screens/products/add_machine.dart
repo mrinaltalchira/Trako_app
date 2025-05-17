@@ -105,7 +105,7 @@ class _AddMachineState extends State<AddMachine> {
               const SizedBox(height: 20),
               Center(
                 child: Text(
-                  widget.machine != null ? "Update Machine:" : "Add New Machine:",
+                  widget.machine != null ? "Update Serial no." : "Add New Serial no.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 24.0,
@@ -117,6 +117,14 @@ class _AddMachineState extends State<AddMachine> {
 
               SizedBox(height: 5),
               const SizedBox(height: 35),
+              Text(
+                "Select Model",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
               MasterSpinner(
                 dataFuture: machineFuture,
                 displayKey: 'model_no',
@@ -131,14 +139,6 @@ class _AddMachineState extends State<AddMachine> {
                 },
                 searchHint: 'Search model number...',
                 borderColor: colorMixGrad,
-              ),
-              const SizedBox(height: 15),
-              Text(
-                "Model Name",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
               ),
 
               FutureBuilder<List<Map<String, dynamic>>>(
@@ -165,11 +165,7 @@ class _AddMachineState extends State<AddMachine> {
               // Changed from CustomTextField to a non-editable display field
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12, vertical: 15),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey[200],
-                ),
+
                 child: Text(
                   machine_name_Controller.text.isEmpty ? 'Selected Model no.' : machine_name_Controller.text,
                   style: TextStyle(
@@ -229,7 +225,8 @@ class _AddMachineState extends State<AddMachine> {
   }
 
   Future<void> validateAndSignIn() async {
-    if (machine_name_Controller.text.isEmpty) {
+
+    if (machine_name_Controller.text.isEmpty){
       showSnackBar(context, "Model Name is required.");
       return;
     }
@@ -258,8 +255,9 @@ class _AddMachineState extends State<AddMachine> {
         return Center(child: CircularProgressIndicator());
       },
     );
-
+    print("zdkgbdfjhgbjhdfg1");
     if (widget.machine != null) {
+      print("zdkgbdfjhgbjhdfg2");
       try {
         final addMachineResponse = await _apiService.updateMachine(
           id: widget.machine!['id'].toString(),
@@ -292,6 +290,7 @@ class _AddMachineState extends State<AddMachine> {
       }
     } else {
       try {
+        print("zdkgbdfjhgbjhdfg3");
         final addMachineResponse = await _apiService.addMachine(
           model_name: selectedMachine!['id'].toString() ,
           serial_no: machine_code_Controller.text,

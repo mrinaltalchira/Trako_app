@@ -364,7 +364,7 @@ class _TonerRequestListState extends State<TonerRequestList> with SingleTickerPr
                             const SizedBox(height: 8),
                             _buildInfoRow(
                               context,
-                              'Serial No',
+                              'Serial no. ID',
                               item.serialNo ?? 'N/A',
                             ),
                             _buildInfoRow(

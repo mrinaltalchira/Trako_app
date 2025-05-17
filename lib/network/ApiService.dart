@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:Trako/globals.dart';
 import 'package:Trako/model/all_clients.dart';
 import 'package:Trako/model/all_machine.dart';
 import 'package:Trako/model/all_supply.dart';
@@ -75,8 +76,8 @@ class LoggerInterceptor extends Interceptor {
 
 class ApiService {
 
-  // final String baseUrl = 'https://trako.tracesci.in/api';
-     final String baseUrl = 'http://192.168.2.58:8000/api';
+  final String baseUrl = 'https://trako.tracesci.in/api';
+     // final String baseUrl = 'http://192.168.2.125:8000/api';
 
   late Dio _dio;
   late String? token;
@@ -147,123 +148,186 @@ class ApiService {
   }
 
 
-  Future<Map<String, dynamic>> login(String? email, String? phone, String password) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before login
+     Future<Map<String, dynamic>> login(String? email, String? phone, String password) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before login
 
-      final response = await _dio.post(
-        '$baseUrl/login',
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-          },
+         final response = await _dio.post(
+           '$baseUrl/login',
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+             },
+           ),
+           data: jsonEncode({
+             if (email != null && email.isNotEmpty) 'email': email,
+             if (phone != null && phone.isNotEmpty) 'phone': phone,
+             'password': password,
+           }),
+         ).timeout(const Duration(seconds: 15));
 
-        ),
-        data: jsonEncode({
-          if (email != null && email.isNotEmpty) 'email': email,
-            if (phone != null && phone.isNotEmpty) 'phone': phone,
-          'password': password,
-        }),
-      ).timeout(const Duration(seconds: 15));
+         return response.data;
+       } on DioException catch (e) {
+         // Handle Dio specific errors with response data if available
+         if (e.response != null && e.response!.data is Map<String, dynamic>) {
+           print('Login API error: ${e.response!.data}');
+           return e.response!.data as Map<String, dynamic>;
+         } else {
+           print('Login API error: $e');
+           return {
+             'success': false,
+             'message': e.message ?? 'Network error occurred',
+             'status': e.response?.statusCode ?? 500
+           };
+         }
+       } catch (e) {
+         print('Login API error: $e');
+         return {
+           'success': false,
+           'message': 'Connection failed. Please check your internet connection.',
+           'status': 500
+         };
+       }
+     }
 
-      return response.data;
-    } catch (e) {
-      print('Login API error: $e');
-      throw Exception('Login API Failed to connect to the server.');
-    }
-  }
+     ///////////////////////////////// client
 
+     Future<Map<String, dynamic>> addClient({
+       required String name,
+       required String city,
+       required String email,
+       required String phone,
+       required String address,
+       required String contactPerson,
+       required String password,
+       required String isActive,
+       required String machines,
+     }) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized
 
-  ///////////////////////////////// client
+         final url = '/add-client';
+         final response = await _dio.post(
+           baseUrl + url,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+           data: json.encode({
+             'name': name,
+             'city': city,
+             'email': email,
+             'phone': phone,
+             'isActive': isActive,
+             'address': address,
+             'contact_person': contactPerson,
+             'machines': machines,
+             'password': password
+           }),
+         );
 
-  Future<Map<String, dynamic>> addClient({
-    required String name,
-    required String city,
-    required String email,
-    required String phone,
-    required String address,
-    required String contactPerson,
-    required String isActive, required String machines,
-  }) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before addClient
+         // Handle all possible response codes
+         if (response.statusCode == 200) {
+           final responseData = response.data;
+           // Check for success flag in response
+           if (responseData['success'] == false) {
+             throw ApiException(
+               responseData['message'] ?? 'Failed to add client',
+               responseData['status'] ?? 400,
+             );
+           }
+           return responseData;
+         } else {
+           throw ApiException('Server error: ${response.statusCode}', response.statusCode ?? 500);
+         }
+       } on DioException catch (e) {
+         if (e.response != null) {
+           final errorData = e.response!.data;
+           throw ApiException(
+             errorData['message'] ?? 'Error connecting to server',
+             e.response!.statusCode ?? 500,
+           );
+         } else {
+           throw ApiException('Network error: ${e.message}', 0);
+         }
+       } catch (e) {
+         print('Add Client API error: $e');
+         throw ApiException('Failed to connect to the server.', 0);
+       }
+     }
 
-      final url = '/add-client'; // Adjust endpoint as per your API
-      final response = await _dio.post(
-        baseUrl + url,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ),
-        data: json.encode({
-          'name': name,
-          'city': city,
-          'email': email,
-          'phone': phone,
-          "isActive": isActive,
-          'address': address,
-          'contact_person': contactPerson,
-          'machines':machines
-        }),
-      );
+     Future<Map<String, dynamic>> updateClient({
+       required String id,
+       required String name,
+       required String email,
+       required String phone,
+       required String address,
+       required String contactPerson,
+       String? password,
+       required String isActive,
+       required String machines,
+     }) async {
+       try {
+         await initializeApiService();
 
-      if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        throw Exception('Failed to add client');
-      }
-    } catch (e) {
-      print('Add Client API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
+         final url = '/update-client';
+         final Map<String, dynamic> requestData = {
+           'name': name,
+           'email': email,
+           'phone': phone,
+           'isActive': isActive,
+           'address': address,
+           'contact_person': contactPerson,
+           'id': id,
+           'machines': machines,
+         };
 
+         // Only include password if it's provided and not empty
+         if (password != null && password.isNotEmpty) {
+           requestData['password'] = password;
+         }
 
-  Future<Map<String, dynamic>> updateClient({
-    required String id,
-    required String name,
-    required String email,
-    required String phone,
-    required String address,
-    required String contactPerson,
-    required String isActive, required String machines,
-  }) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before addClient
+         final response = await _dio.post(
+           baseUrl + url,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+           data: json.encode(requestData),
+         );
 
-      final url = '/update-client'; // Adjust endpoint as per your API
-      final response = await _dio.post(
-        baseUrl + url,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ),
-        data: json.encode({
-          'name': name,
-          'email': email,
-          'phone': phone,
-          "isActive": isActive,
-          'address': address,
-          'contact_person': contactPerson,
-          'id':id,
-          'machines':machines
-      }),
-      );
+         if (response.statusCode == 200) {
+           final responseData = response.data;
+           if (responseData['success'] == false) {
+             throw ApiException(
+               responseData['message'] ?? 'Failed to update client',
+               responseData['status'] ?? 400,
+             );
+           }
+           return responseData;
+         } else {
+           throw ApiException('Server error: ${response.statusCode}', response.statusCode ?? 500);
+         }
+       } on DioException catch (e) {
+         if (e.response != null) {
+           final errorData = e.response!.data;
+           throw ApiException(
+             errorData['message'] ?? 'Error connecting to server',
+             e.response!.statusCode ?? 500,
+           );
+         } else {
+           throw ApiException('Network error: ${e.message}', 0);
+         }
+       } catch (e) {
+         print('Update Client API error: $e');
+         throw ApiException('Failed to connect to the server.', 0);
+       }
+     }
 
-      if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        throw Exception('Failed to add client');
-      }
-    } catch (e) {
-      print('Add Client API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
 
      Future<List<Map<String, dynamic>>> getAllClients({
        String? search,
@@ -353,7 +417,9 @@ class ApiService {
 
 
      Future<Map<String, dynamic>> addMachineModel({
+
        required String model_no,
+       required String? id,
        required bool isActive,
        required List<String> colors,
      }) async {
@@ -364,6 +430,7 @@ class ApiService {
 
          // Create the request data
          Map<String, dynamic> requestData = {
+           'model_id': id,
            'model_no': model_no,
            'isActive': isActive,
            'colors': colors.join(','), // Convert list to comma-separated string
@@ -417,6 +484,94 @@ class ApiService {
            return response.data;
          } else {
            throw Exception('Failed to soft delete client');
+         }
+       } catch (e) {
+         print('Soft delete API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
+
+     Future<Map<String, dynamic>> unassignedSerialFromClient({required String serialNo,required BuildContext context,required String clientId}) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before making API requests
+
+         final deleteUrl = '/unassign-machine/$serialNo'; // Soft delete API endpoint
+
+         final response = await _dio.post(
+           baseUrl + deleteUrl,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+           data: json.encode({
+             'client_id': clientId,
+           }),
+         );
+
+         if (response.statusCode == 200) {
+           print('Client soft deleted successfully');
+           return response.data;
+         } else {
+           showSnackBar(context, response.data.message);
+           throw Exception('Failed to soft delete client');
+         }
+       } catch (e) {
+         print('Soft delete API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
+
+     Future<Map<String, dynamic>> softDeleteSerialNo({required String serialId}) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before making API requests
+
+         final deleteUrl = '/delete-serial/$serialId'; // Soft delete API endpoint
+
+         final response = await _dio.delete(
+           baseUrl + deleteUrl,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+         );
+
+         if (response.statusCode == 200) {
+           print('Serial soft deleted successfully');
+           return response.data;
+         } else {
+           throw Exception('Failed to soft delete Serial');
+         }
+       } catch (e) {
+         print('Soft delete API error: $e');
+         throw Exception('Failed to connect to the server.');
+       }
+     }
+
+     Future<Map<String, dynamic>> softDeleteModelNo({required String modelId}) async {
+       try {
+         await initializeApiService(); // Ensure token is initialized before making API requests
+
+         final deleteUrl = '/delete-model/$modelId'; // Soft delete API endpoint
+
+         final response = await _dio.delete(
+           baseUrl + deleteUrl,
+           options: Options(
+             headers: {
+               'Content-Type': 'application/json',
+               'Authorization': 'Bearer $token',
+             },
+           ),
+         );
+
+         if (response.statusCode == 200) {
+           print('Model soft deleted successfully');
+           return response.data;
+         } else {
+           throw Exception('Failed to soft delete model');
          }
        } catch (e) {
          print('Soft delete API error: $e');
@@ -551,86 +706,30 @@ class ApiService {
 
      ////////////////////////////////////  User
 
-
-  Future<Map<String, dynamic>> addUser({
-    required String name,
-    required String email,
-    required String phone,
-    required String isActive,
-    required String userRole,
-    required String password,
-    required String machineModule,
-    required String clientModule,
-    required String userModule,
-     required String supplyChainModule,
-    required String acknowledgeModule,
-    required String tonerRequestModule,
-    required String dispatchModule,
-    required String receiveModule,
-
-  }) async {
-    try {
-      await initializeApiService(); // Ensure token is initialized before addUser
-
-      final url = '/add-user'; // Adjust endpoint as per your API
-      final response = await _dio.post(
-        baseUrl + url,
-        options: Options(
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer $token',
-          },
-        ),
-        data: json.encode({
-          "name": name,
-          "email": email,
-          "phone": phone,
-          "is_active": isActive,
-          "user_role": userRole,
-          "password": password,
-          "machine_module": machineModule,
-          "client_module": clientModule,
-          "user_module": userModule,
-          "supply_chain_module": supplyChainModule,
-          "acknowledge_module": acknowledgeModule,
-          "toner_request_module": tonerRequestModule,
-          "dispatch_module": dispatchModule,
-          "receive_module": receiveModule,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        return response.data;
-      } else {
-        throw Exception('Failed to add user');
-      }
-    } catch (e) {
-      print('Add user API error: $e');
-      throw Exception('Failed to connect to the server.');
-    }
-  }
-
-     Future<Map<String, dynamic>> updateUser({
-       required String name,
-       required String user_id,
-       required String email,
-       required String phone,
-       required String isActive,
-       required String userRole,
-       required String password,
-       required String machineModule,
-       required String clientModule,
-       required String userModule,
-       required String supplyChainModule,
-       required String acknowledgeModule,
-       required String tonerRequestModule,
-       required String dispatchModule,
-       required String receiveModule,
-     }) async {
+     Future<Map<String, dynamic>> addUser(Map<String, String> userData) async {
        try {
-         await initializeApiService(); // Ensure token is initialized before updateUser
+         await initializeApiService(); // Ensure token is initialized before addUser
 
-         final url = '/update-user'; // Adjust endpoint as per your API
+         final url = '/add-user'; // Adjust endpoint as per your API
+
+         // Prepare request data with snake_case keys for API
+         final requestData = {
+           "name": userData['name'],
+           "email": userData['email'],
+           "phone": userData['phone'],
+           "is_active": userData['isActive'],
+           "user_role": userData['userRole'],
+           "password": userData['password'] ?? '', // Handle optional password
+           "machine_module": userData['machineModule'],
+           "client_module": userData['clientModule'],
+           "user_module": userData['userModule'],
+           "supply_chain_module": userData['supplyChainModule'],
+           "acknowledge_module": userData['acknowledgeModule'],
+           "toner_request_module": userData['tonerRequestModule'],
+           "dispatch_module": userData['dispatchModule'],
+           "receive_module": userData['receiveModule'],
+         };
+
          final response = await _dio.post(
            baseUrl + url,
            options: Options(
@@ -639,36 +738,97 @@ class ApiService {
                'Authorization': 'Bearer $token',
              },
            ),
-           data: json.encode({
-             "name": name,
-             "user_id": user_id,
-             "email": email,
-             "phone": phone,
-             "is_active": isActive,
-             "user_role": userRole,
-             "password": password,
-             "machine_module": machineModule,
-             "client_module": clientModule,
-             "user_module": userModule,
-             "supply_chain_module": supplyChainModule,
-             "acknowledge_module": acknowledgeModule,
-             "toner_request_module": tonerRequestModule,
-             "dispatch_module": dispatchModule,
-             "receive_module": receiveModule,
-           }),
+           data: json.encode(requestData),
          );
 
          if (response.statusCode == 200) {
-           return response.data as Map<String, dynamic>;
+           return response.data;
          } else {
-           throw Exception('Failed to update user');
+           throw Exception('Failed to add user: ${response.statusMessage}');
          }
        } catch (e) {
-         print('Update user API error: $e');
-         throw Exception('Failed to connect to the server.');
+         debugPrint('Add user API error: $e');
+         if (e is DioException) {
+           if (e.response != null && e.response!.data != null) {
+             return {
+               'error': true,
+               'status': e.response!.statusCode ?? 500,
+               'message': e.response!.data['message'] ?? 'Server error occurred'
+             };
+           }
+         }
+         return {
+           'error': true,
+           'status': 500,
+           'message': 'Failed to connect to the server.'
+         };
        }
      }
 
+// Also implement the updateUser method for consistency
+  Future<Map<String, dynamic>> updateUser(Map<String, String> userData) async {
+    try {
+      await initializeApiService(); // Ensure token is initialized
+
+      final url = '/update-user'; // Adjust endpoint as per your API
+
+      // Prepare request data with snake_case keys for API
+      final requestData = {
+        "user_id": userData['user_id'],
+        "name": userData['name'],
+        "email": userData['email'],
+        "phone": userData['phone'],
+        "is_active": userData['isActive'],
+        "user_role": userData['userRole'],
+        "machine_module": userData['machineModule'],
+        "client_module": userData['clientModule'],
+        "user_module": userData['userModule'],
+        "supply_chain_module": userData['supplyChainModule'],
+        "acknowledge_module": userData['acknowledgeModule'],
+        "toner_request_module": userData['tonerRequestModule'],
+        "dispatch_module": userData['dispatchModule'],
+        "receive_module": userData['receiveModule'],
+      };
+
+      // Only add password if provided
+      if (userData.containsKey('password') && userData['password']!.isNotEmpty) {
+        requestData["password"] = userData['password'];
+      }
+
+      final response = await _dio.post(
+        baseUrl + url,
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+        ),
+        data: json.encode(requestData),
+      );
+
+      if (response.statusCode == 200) {
+        return response.data;
+      } else {
+        throw Exception('Failed to update user: ${response.statusMessage}');
+      }
+    } catch (e) {
+      debugPrint('Update user API error: $e');
+      if (e is DioException) {
+        if (e.response != null && e.response!.data != null) {
+          return {
+            'error': true,
+            'status': e.response!.statusCode ?? 500,
+            'message': e.response!.data['message'] ?? 'Server error occurred'
+          };
+        }
+      }
+      return {
+        'error': true,
+        'status': 500,
+        'message': 'Failed to connect to the server.'
+      };
+    }
+  }
 
      Future<List<User>> getAllUsers({String? search, int? perPage, int? page}) async {
        try {
@@ -867,6 +1027,64 @@ class ApiService {
       // Print detailed error information
       print('GET REPORT API error: $e');
       throw Exception('Failed to connect to the server.');
+    }
+  }
+
+  Future<Map<String, dynamic>> sendReportOnMail({
+    required String client_id,
+    required String from_date,
+    required String to_date,
+  }) async {
+    try {
+      await initializeApiService();
+
+      final url = '/send-report';
+
+      print('Request to: $baseUrl$url');
+      print('Request Data: {client_id: $client_id, from_date: $from_date, to_date: $to_date}');
+
+      final response = await _dio.post(
+        baseUrl + url,
+        data: {
+          'client_id': client_id,
+          'from_date': from_date,
+          'to_date': to_date,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $token',
+          },
+          validateStatus: (status) => true, // Accept any status code to handle it ourselves
+        ),
+      );
+
+      print('Response status: ${response.statusCode}');
+      print('Response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'data': response.data['data'] ?? {},
+          'message': response.data['message'] ?? "Report has been sent successfully.",
+        };
+      } else if (response.statusCode == 404) {
+        return {
+          'success': false,
+          'message': response.data['message'] ?? "No data found for the given period.",
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Failed to send mail. Status code: ${response.statusCode}',
+        };
+      }
+    } catch (e) {
+      print('SEND REPORT API error: $e');
+      return {
+        'success': false,
+        'message': 'Failed to send mail. Check your connection and try again.',
+      };
     }
   }
 
@@ -1103,23 +1321,23 @@ class ApiService {
   }
 
 
-  Future<TonerColors?> getTonerColors(String serialNo) async {
+  Future<List<TonerColors>> getTonerColors(String modelNo) async {
     try {
-      await initializeApiService(); // Ensure token is initialized before making the API call
+      await initializeApiService();
 
       final url = '$baseUrl/toner-color';
-      print('Sending request to: $url with serial_no: $serialNo');
+      print('Sending request to: $url with model_id: $modelNo');
 
       final response = await _dio.post(
         url,
         options: Options(
           headers: {
-            'Authorization': 'Bearer $token', // Use the initialized token
-            'Content-Type': 'application/json', // Ensure correct content type
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
           },
         ),
         data: json.encode({
-          'serial_no': serialNo,
+          'serial_no_id': modelNo,
         }),
       );
 
@@ -1128,14 +1346,15 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final responseData = response.data;
-        final tonerColorsJson = responseData['data']['toner_colors'];
+        final tonerColorsList = responseData['data']['toner_colors'];
 
-        if (tonerColorsJson != null) {
-          // Convert the toner_colors object into a TonerColors instance
-          return TonerColors.fromJson(tonerColorsJson);
+        if (tonerColorsList != null && tonerColorsList is List) {
+          return tonerColorsList
+              .map<TonerColors>((item) => TonerColors.fromJson(item))
+              .toList();
         } else {
-          print('No toner colors found for the given serial number.');
-          return null; // Handle no data case
+          print('No toner colors found for the given model ID.');
+          return [];
         }
       } else if (response.statusCode == 401) {
         throw Exception('Unauthorized: Invalid token.');
@@ -1149,8 +1368,16 @@ class ApiService {
   }
 
 
-
 }
 
+class ApiException implements Exception {
+  final String message;
+  final int statusCode;
+
+  ApiException(this.message, this.statusCode);
+
+  @override
+  String toString() => message;
+}
 
 

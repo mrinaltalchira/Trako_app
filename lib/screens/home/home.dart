@@ -116,7 +116,6 @@ class _HomeScreenState extends State<HomeScreen> {
             PrefManager().getMachineModule(),
             PrefManager().getClientModule(),
             PrefManager().getUserModule(),
-            PrefManager().getSupplyChainModule(),
             PrefManager().getAcknowledgeModuleModule(),
             PrefManager().getTonerRequestModule(),
             PrefManager().getDispatchModule(),
@@ -130,33 +129,29 @@ class _HomeScreenState extends State<HomeScreen> {
               String? machineModule = snapshot.data![0];
               String? clientModule = snapshot.data![1];
               String? userModule = snapshot.data![2];
-              String? supplyChain = snapshot.data![3];
-              String? acknowledgeModule = snapshot.data![4];
-              String? tonerRequestModule = snapshot.data![5];
-              String? dispatch = snapshot.data![6];
-              String? receive = snapshot.data![7];
-              String? isAdmin = snapshot.data![8];
+              String? acknowledgeModule = snapshot.data![3];
+              String? tonerRequestModule = snapshot.data![4];
+              String? dispatch = snapshot.data![5];
+              String? receive = snapshot.data![6];
+              String? isAdmin = snapshot.data![7];
 
-              bool showMachinesItem = machineModule != "1";
-              bool showClientItem = clientModule != "1";
-              bool showUserItem = userModule != "1";
-              bool supplyChainItem = supplyChain != "1";
-              bool acknowledgeItem = acknowledgeModule != "1";
-              bool tonerRequestItem = tonerRequestModule != "1";
-              bool dispatchItem = dispatch != "1";
-              bool receiveItem = receive != "1";
+              bool showMachinesItem = machineModule != "0";
+              bool showClientItem = clientModule != "0";
+              bool showUserItem = userModule != "0";
+              bool acknowledgeItem = acknowledgeModule != "0";
+              bool tonerRequestItem = tonerRequestModule != "0";
+              bool dispatchItem = dispatch != "0";
+              bool receiveItem = receive != "0";
               String? isUserAdmin = isAdmin;
 
               print("dgdfgubgdbfdkugbdjh "
                   "showMachinesItem: $showMachinesItem, "
                   "showClientItem: $showClientItem, "
                   "showUserItem: $showUserItem, "
-                  "supplyChainItem: $supplyChainItem, "
                   "acknowledgeItem: $acknowledgeItem, "
                   "tonerRequestItem: $tonerRequestItem, "
                   "dispatchItem: $dispatchItem, "
                   "receiveItem: $receiveItem");
-
 
               return ListView(
                 padding: EdgeInsets.zero,
@@ -183,13 +178,12 @@ class _HomeScreenState extends State<HomeScreen> {
                     text: 'Dashboard',
                     index: 0,
                   ),
-
-                  if(supplyChainItem)
-                  _buildDrawerItem(
+                  if(dispatchItem || receiveItem)
+                    _buildDrawerItem(
                     icon: Icons.account_tree_outlined,
                     text: 'Supply Chain',
                     index: 1,
-                  ),
+                    ),
                   if (showMachinesItem)
                     _buildDrawerItem(
                       icon: Icons.add_business,
@@ -279,8 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildDrawerItem(
-      {required IconData icon, required String text, required int index}) {
+  Widget _buildDrawerItem({required IconData icon, required String text, required int index}) {
     return ListTile(
       leading: Icon(icon, color: Colors.white),
       title: Text(text, style: TextStyle(color: Colors.white)),

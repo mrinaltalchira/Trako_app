@@ -26,7 +26,7 @@ class AllTonerRequest {
   factory AllTonerRequest.fromJson(Map<String, dynamic> json) {
     return AllTonerRequest(
       id: json['id'],
-      serialNo: json['serial_no'],
+      serialNo: json['serial_id'],
       color: json['color'],
       quantity: json['quantity'],
       lastCounter: json['last_counter'],

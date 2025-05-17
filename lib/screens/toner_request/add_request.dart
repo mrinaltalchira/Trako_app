@@ -21,9 +21,10 @@ class _RequestTonerState extends State<RequestToner> {
   String? _selectedColor;
   late Future<List<Map<String, dynamic>>> machineFuture;
   List<TonerRequestModel> _cart = [];
-  String? selected_serial_no;
+  String? selected_serial_id;
   bool _isLoading = false;
-  late Future<TonerColors?> tonerColorFuture = getTonerColor("");
+  late Future<List<TonerColors>> tonerColorFuture = getTonerColor("");
+
 
   Future<List<Map<String, dynamic>>> getMachineList(String? filter) async {
     try {
@@ -38,19 +39,21 @@ class _RequestTonerState extends State<RequestToner> {
     }
   }
 
-  Future<TonerColors?> getTonerColor(String serialNo) async {
+  Future<List<TonerColors>> getTonerColor(String modelNo) async {
     try {
-      TonerColors? tonerColors = await ApiService().getTonerColors(serialNo);
+      List<TonerColors> tonerColors = await ApiService().getTonerColors(modelNo);
       print('Fetched TonerColors: $tonerColors');
       return tonerColors;
     } catch (e) {
       print('Error fetching tonerColors: $e');
-      return TonerColors(serialNo: 'Unknown', color: 'Unknown');
+      return [TonerColors(modelId: 'Unknown', color: 'Unknown')];
     }
   }
 
 
+
   @override
+
   void initState() {
     super.initState();
     machineFuture = getMachineList("only_active");
@@ -97,9 +100,9 @@ class _RequestTonerState extends State<RequestToner> {
 
   void _addToCart() {
 
-    if (selected_serial_no != null && _counterController.text.isNotEmpty && _selectedColor != null) {
+    if (selected_serial_id != null && _counterController.text.isNotEmpty && _selectedColor != null) {
       final tonerRequest = TonerRequestModel(
-        serial_no: selected_serial_no!,
+        serial_id: selected_serial_id!,
         color: _selectedColor!,
         quantity: quantity ,
         lastCounter: _counterController.text,
@@ -110,7 +113,6 @@ class _RequestTonerState extends State<RequestToner> {
         quantity = 1;
         _selectedColor = _selectedColor;
         _counterController.text = "";
-
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -199,7 +201,7 @@ class _RequestTonerState extends State<RequestToner> {
                                 child: ListTile(
                                   contentPadding: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                   title: Text(
-                                    '${request.serial_no} - ${request.color}',
+                                    '${request.serial_id} - ${request.color}',
                                     style: TextStyle(fontWeight: FontWeight.w600),
                                   ),
                                   subtitle: Text(
@@ -358,15 +360,14 @@ class _RequestTonerState extends State<RequestToner> {
             onChanged: (selectedItem) {
               setState(() {
                 if (selectedItem != null ) {
-                  List<String> parts = selectedItem["model_no"].split(" - ");
-                  selected_serial_no = parts[0];
-                  tonerColorFuture = getTonerColor(selected_serial_no.toString());
+                  selected_serial_id = selectedItem["id"].toString();
+                  tonerColorFuture = getTonerColor(selected_serial_id.toString());
                 }
 
               });
               print('Selected machine: $selectedItem');
             },
-            searchHint: 'Search serial number...',
+            searchHint: 'Search model number...',
             borderColor: colorMixGrad,
           ),
               SizedBox(height: 24.0),
@@ -382,7 +383,7 @@ class _RequestTonerState extends State<RequestToner> {
               SizedBox(height: 10.0),
               // Color Selection
               _buildSectionTitle('Select Color'),
-              FutureBuilder<TonerColors?>(
+              FutureBuilder<List<TonerColors>>(
                 future: tonerColorFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -391,29 +392,30 @@ class _RequestTonerState extends State<RequestToner> {
                   } else if (snapshot.hasError) {
                     _selectedColor = null;
                     return Center(child: Text('Error: ${snapshot.error}'));
-                  } else if (!snapshot.hasData || snapshot.data?.color.isEmpty == true) {
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
                     _selectedColor = null;
                     return Center(child: Text('No colors available'));
                   } else {
-                    // Process the data from the snapshot
-                    final tonerColors = snapshot.data!;
-                    final List<String> colors = tonerColors.color.split(",");
+                    final List<TonerColors> tonerColorsList = snapshot.data!;
+                    final List<String> colors = tonerColorsList.map((e) => e.color).toList();
 
-                    // Update the color list and selected color
+                    print(colors); // For debugging
 
                     return ColorSpinner(
                       selectedValue: _selectedColor,
                       onChanged: (String? newColor) {
                         setState(() {
                           _selectedColor = newColor;
-                          print("sfsdfdsf ${_selectedColor}" );
+                          print("Selected color: $_selectedColor");
                         });
                       },
                       colorList: colors,
                     );
                   }
                 },
-              ),SizedBox(height: 24.0),
+              ),
+              SizedBox(height: 24.0),
+
               // Toner Quantity
               _buildSectionTitle('Toner Quantity'),
           QuantitySelector(
@@ -483,13 +485,13 @@ class _RequestTonerState extends State<RequestToner> {
 }
 
 class TonerRequestModel {
-  final String serial_no;
+  final String serial_id;
   final String color;
   final int quantity;
   final String lastCounter;
 
   TonerRequestModel({
-    required this.serial_no,
+    required this.serial_id,
     required this.color,
     required this.quantity,
     required this.lastCounter,
@@ -498,7 +500,7 @@ class TonerRequestModel {
   // Method to convert the instance to JSON
   Map<String, dynamic> toJson() {
     return {
-      'serial_no': serial_no,
+      'serial_id': serial_id,
       'color': color,
       'quantity': quantity,
       'last_counter': lastCounter,
@@ -526,7 +528,7 @@ class CustomTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
-      maxLength: 10,
+      maxLength: 50,
       inputFormatters: keyboardType == TextInputType.number ? [FilteringTextInputFormatter.digitsOnly] : null,
       decoration: InputDecoration(
         hintText: hintText,

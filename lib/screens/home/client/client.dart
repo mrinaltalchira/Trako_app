@@ -395,7 +395,7 @@ class _ClientListState extends State<ClientList> with SingleTickerProviderStateM
     final bool isActive = client['isActive'] == "0";
     final Color statusColor = isActive ? Colors.red : Colors.green;
 
-    return TweenAnimationBuilder<double>(
+   /* return TweenAnimationBuilder<double>(
       duration: const Duration(milliseconds: 300),
       tween: Tween(begin: 0.0, end: 1.0),
       builder: (context, value, child) {
@@ -539,10 +539,76 @@ class _ClientListState extends State<ClientList> with SingleTickerProviderStateM
           ),
         );
       },
+    );*/
+
+      return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 300),
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Card(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              child: Row(
+                children: [
+                  // Custom height for the colored bar
+                  Container(
+                    width: 4, // Width of the border
+                    height: 50, // Set desired height for the border
+                    color: statusColor,
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  '${client['name']![0].toUpperCase()}${client['name']!.substring(1)}',
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Row(
+                                children: [
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, size: 20),
+                                    onPressed: () => _showEditDialog(context, client),
+                                    tooltip: 'Edit Client',
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Text(
+                            'Email: ${client['email']!.toUpperCase()}',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildLoaderIndicator() {
+  Widget _buildLoaderIndicator(){
     if (!_isLoading) return const SizedBox.shrink();
 
     return Container(
